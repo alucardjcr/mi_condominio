@@ -106,7 +106,7 @@ export default function AdminStackNavigator() {
         component={EstacionamientosArriendoScreen}
         options={{ title: "Estacionamientos en arriendo" }}
       />
-      <Stack.Screen name="AdminVetados" component={AdminVetadosScreen} options={{ title: "VETADOS" }} />
+      <Stack.Screen name="AdminVetados" component={AdminVetadosScreen} options={{ title: "Vetados" }} />
       <Stack.Screen name="Bitacora" component={BitacoraScreen} options={{ title: "Bitácora de guardias" }} />
       <Stack.Screen name="Mascotas" component={MascotasScreen} options={{ title: "Mascotas" }} />
       <Stack.Screen name="Notificaciones" component={NotificacionesScreen} options={{ title: "Notificaciones" }} />

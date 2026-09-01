@@ -32,7 +32,7 @@ export const SECCIONES_MENU_ADMIN: SeccionMenu[] = [
       { label: "Patentes de residentes", route: "AdminPatentes", icon: "🔎" },
       { label: "Guardias", route: "AdminGuardias", icon: "🛡️" },
       { label: "Personal externo", route: "AdminPersonal", icon: "🧰" },
-      { label: "VETADOS", route: "AdminVetados", icon: "⛔" },
+      { label: "Vetados", route: "AdminVetados", icon: "⛔" },
       { label: "Mascotas", route: "Mascotas", icon: "🐾" },
     ],
   },
