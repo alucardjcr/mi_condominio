@@ -85,3 +85,43 @@ export function requireCondominioAccess(req: Request, res: Response, next: NextF
   }
   next();
 }
+
+// Ronda 27: usar SIEMPRE después de requireAuth, para las rutas exclusivas
+// del dueño del sistema (/super-admin/*: crear cuentas Administrador,
+// configurar/marcar facturación). A propósito NO usa calificaParaRol — un
+// Residente-comité (que cuenta como Administrador en todo lo demás) NO
+// debe pasar acá; este rol es estrictamente "SuperAdmin", sin
+// equivalencias.
+export function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
+  if (req.guardia?.rol !== "SuperAdmin") {
+    return res.status(403).json({ error: "Esta acción requiere el perfil de administrador del sistema." });
+  }
+  next();
+}
+
+// Ronda 27: usar SIEMPRE después de requireAuth (y después de
+// requireCondominioAccess si la ruta también lo usa), en toda ruta
+// scopeada a un condominio — corta con 402 si ese condominio tiene la
+// mensualidad pendiente (ver facturacion.service.ts ->
+// condominioEstaBloqueado). Nunca aplica a SuperAdmin (no está atado a
+// ningún condominio) ni a rutas sin condominio en el token.
+//
+// Por qué este chequeo hace falta ADEMÁS de que los condominios bloqueados
+// ya no aparezcan en el selector de login (ver auth.service.ts): un token
+// ya emitido dura hasta 30 días — si el condominio se bloquea a mitad de
+// ese período, sin este middleware la sesión ya abierta seguiría
+// funcionando igual hasta que expirara sola.
+export async function requireSuscripcionAlDia(req: Request, res: Response, next: NextFunction) {
+  if (req.guardia?.rol === "SuperAdmin") return next();
+  const condominioId = req.guardia?.condominio_id_condominio;
+  if (!condominioId) return next();
+
+  const { condominioEstaBloqueado } = await import("../services/facturacion.service");
+  if (await condominioEstaBloqueado(condominioId)) {
+    return res.status(402).json({
+      error: "Este condominio tiene la mensualidad pendiente. Regulariza el pago para volver a usar la app.",
+      pagoPendiente: true,
+    });
+  }
+  next();
+}

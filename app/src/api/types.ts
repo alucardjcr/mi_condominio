@@ -128,11 +128,21 @@ export interface LoginResponse {
     // comité de administración (mismos permisos que Administrador).
     esComite?: boolean;
   };
-  rol: "Guardia" | "Administrador" | "Residente" | "Personal" | "JefeGuardias" | string;
+  rol: "Guardia" | "Administrador" | "Residente" | "Personal" | "JefeGuardias" | "SuperAdmin" | string;
   // Ronda 26: nombre del condominio con el que quedó esta sesión (ver
   // guardia.condominio_id_condominio) — para mostrarlo en el menú en vez
   // de un nombre fijo.
   condominio_nombre?: string;
+}
+
+// Ronda 27, a pedido explícito del usuario: cuando TODOS los condominios
+// de esta cuenta tienen la mensualidad pendiente, POST /auth/login
+// devuelve esto en vez de LoginResponse — no es un error de login (la
+// cuenta y contraseña son correctas), simplemente ningún condominio está
+// disponible ahora mismo. Ver PagoPendienteScreen.
+export interface PagoPendienteResponse {
+  pagoPendiente: true;
+  rol: string;
 }
 
 // Ronda 26 (fase 2): ya no es exclusivo de Administrador — cualquier rol
@@ -749,3 +759,36 @@ export interface Mascota {
   numero_unidad?: string;
   nombre_torre?: string;
 }
+
+// --- Ronda 27: SuperAdmin — crear Administradores + facturación -------------
+
+export interface CondominioSimple {
+  id_condominio: number;
+  nombre: string;
+}
+
+export interface AdministradorCuenta {
+  id_usuario: number;
+  nombre_usuario: string;
+  usuariocol: string;
+  flg_vigencia: number;
+  condominio_home: string;
+}
+
+export interface CrearAdministradorInput {
+  nombre_usuario: string;
+  usuariocol: string;
+  password: string;
+  condominio_id_condominio: number;
+}
+
+export interface CondominioConFacturacion {
+  id_condominio: number;
+  nombre: string;
+  monto_mensualidad: number | null;
+  dia_limite_pago: number;
+  bloqueado: boolean;
+  periodo_actual: string;
+  pagado_periodo_actual: boolean;
+}
+

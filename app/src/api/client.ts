@@ -56,6 +56,11 @@ import {
   CrearCondominioInput,
   CrearCondominioResponse,
   RequiereSeleccionCondominioResponse,
+  PagoPendienteResponse,
+  CondominioSimple,
+  AdministradorCuenta,
+  CrearAdministradorInput,
+  CondominioConFacturacion,
 } from "./types";
 
 // Ronda 17: con la sesión persistida (expo-secure-store), un token puede
@@ -69,10 +74,25 @@ export function setUnauthorizedHandler(fn: (() => void) | null) {
   onUnauthorized = fn;
 }
 
+// Ronda 27: igual que arriba pero para 402 — el condominio de la sesión
+// activa se bloqueó por falta de pago DESPUÉS de loguearse (el token dura
+// hasta 30 días, ver auth.service.ts). Sin este aviso, cada pantalla
+// mostraría un error suelto distinto en vez de llevar a la persona a la
+// pantalla de "mensualidad pendiente". AuthContext fuerza un logout y,
+// como login() ya filtra los condominios bloqueados, el siguiente intento
+// de entrar mostrará la pantalla correcta automáticamente.
+let onPagoPendiente: (() => void) | null = null;
+export function setPagoPendienteHandler(fn: (() => void) | null) {
+  onPagoPendiente = fn;
+}
+
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T;
   if (res.status === 401) {
     onUnauthorized?.();
+  }
+  if (res.status === 402) {
+    onPagoPendiente?.();
   }
   const body = await res.json();
   if (!res.ok) {
@@ -102,7 +122,7 @@ async function send<T>(path: string, method: string, token: string, body?: objec
 export async function login(
   usuariocol: string,
   password: string
-): Promise<LoginResponse | RequiereSeleccionCondominioResponse> {
+): Promise<LoginResponse | RequiereSeleccionCondominioResponse | PagoPendienteResponse> {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -674,3 +694,31 @@ export const actualizarMascota = (
 ) => send<Mascota>(`/mascotas/${id}`, "PATCH", token, input);
 
 export const eliminarMascota = (token: string, id: number) => send<void>(`/mascotas/${id}`, "DELETE", token);
+
+// --- Ronda 27: SuperAdmin — crear Administradores + facturación -------------
+
+export const superAdminGetCondominios = (token: string) => get<CondominioSimple[]>(`/super-admin/condominios`, token);
+
+export const superAdminGetAdministradores = (token: string) =>
+  get<AdministradorCuenta[]>(`/super-admin/administradores`, token);
+
+export const superAdminCrearAdministrador = (token: string, input: CrearAdministradorInput) =>
+  send<AdministradorCuenta>(`/super-admin/administradores`, "POST", token, input);
+
+export const superAdminActualizarAdministrador = (
+  token: string,
+  id: number,
+  input: { password?: string; flg_vigencia?: number }
+) => send<AdministradorCuenta>(`/super-admin/administradores/${id}`, "PATCH", token, input);
+
+export const superAdminGetFacturacion = (token: string) =>
+  get<CondominioConFacturacion[]>(`/super-admin/facturacion`, token);
+
+export const superAdminConfigurarFacturacion = (
+  token: string,
+  condominioId: number,
+  input: { monto_mensualidad: number | null; dia_limite_pago?: number }
+) => send<{ ok: boolean }>(`/super-admin/facturacion/${condominioId}`, "PUT", token, input);
+
+export const superAdminMarcarPagado = (token: string, condominioId: number, input: { periodo?: string; monto: number }) =>
+  send<{ ok: boolean }>(`/super-admin/facturacion/${condominioId}/marcar-pagado`, "POST", token, input);

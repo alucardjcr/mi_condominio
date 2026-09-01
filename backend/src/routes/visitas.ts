@@ -4,15 +4,16 @@ import {
   registrarSalida,
   listarVisitasActivas,
 } from "../services/estacionamientoVisita.service";
-import { requireAuth, requireRol, requireCondominioAccess } from "../middleware/auth";
+import { requireAuth, requireRol, requireCondominioAccess, requireSuscripcionAlDia } from "../middleware/auth";
 
 export const visitasRouter = Router();
 
 // Con el portal de residentes, "logeado" ya no implica "Guardia o
 // Administrador" — hay que restringirlo explícitamente. Un residente no
-// registra entradas/salidas de visitas. Ronda 26: requireCondominioAccess
-// va DESPUÉS de requireAuth a propósito (necesita req.guardia ya seteado).
-visitasRouter.use(requireAuth, requireRol("Guardia", "Administrador"), requireCondominioAccess);
+// registra entradas/salidas de visitas. Ronda 26/27: requireCondominioAccess
+// y requireSuscripcionAlDia van DESPUÉS de requireAuth a propósito
+// (necesitan req.guardia ya seteado).
+visitasRouter.use(requireAuth, requireRol("Guardia", "Administrador"), requireCondominioAccess, requireSuscripcionAlDia);
 
 // Debe coincidir con el id sembrado en seed.ts para tipo_visita "Peatonal".
 const TIPO_VISITA_PEATONAL_ID = 2;

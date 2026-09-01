@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "../db/client";
 import { verificarTurnoParaLogin } from "./turnos.service";
+import { condominioEstaBloqueado } from "./facturacion.service";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-cambiar-en-produccion";
 
@@ -90,13 +91,50 @@ export async function login(usuariocol: string, password: string) {
     throw new Error("Usuario o contraseña incorrectos.");
   }
 
-  const membresias = await obtenerMembresiasDeUsuario(usuario.id_usuario);
+  // Ronda 27: SuperAdmin (el dueño del sistema, no un Administrador de
+  // condominio) no está atado a ningún condominio en particular — se
+  // detecta ANTES de tocar `membresia` y se salta por completo esa lógica
+  // (incluido el filtro de facturación de abajo, que no le aplica).
+  const esSuperAdmin = (await db
+    .prepare(
+      `SELECT 1 FROM usuario u
+       JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
+       WHERE u.id_usuario = ? AND tu.gls_tipousuario = 'SuperAdmin'`
+    )
+    .get(usuario.id_usuario)) as unknown;
+  if (esSuperAdmin) {
+    return emitirTokenFinal({ id_usuario: usuario.id_usuario, nombre_usuario: usuario.nombre_usuario, rol: "SuperAdmin" });
+  }
 
-  if (membresias.length === 0) {
+  const membresiasCrudas = await obtenerMembresiasDeUsuario(usuario.id_usuario);
+
+  if (membresiasCrudas.length === 0) {
     // No debería pasar (el backfill del schema le da una membresía a todo
     // usuario que ya existía) — solo podría darse en un usuario creado a
     // mano sin pasar por los flujos normales de creación.
     throw new Error("Tu cuenta no tiene ningún condominio asignado. Contacta al administrador.");
+  }
+
+  // Ronda 27, a pedido explícito del usuario: un condominio con la
+  // mensualidad pendiente simplemente NO APARECE — ni en el selector, ni
+  // como login directo si era el único. No es un error de login (la
+  // cuenta y la contraseña son correctas), es que ese condominio no está
+  // disponible ahora mismo.
+  const membresias = [];
+  for (const m of membresiasCrudas) {
+    if (!(await condominioEstaBloqueado(m.condominio_id_condominio))) membresias.push(m);
+  }
+
+  if (membresias.length === 0) {
+    // Tenía condominio(s), pero TODOS con la mensualidad pendiente.
+    return {
+      pagoPendiente: true as const,
+      // El rol de la primera membresía (para que el front decida si
+      // mostrar el botón de pago — hoy solo Administrador lo verá, ver
+      // PagoPendienteScreen) — si tuviera varias con roles distintos, da
+      // lo mismo cuál se muestre primero, es solo para el mensaje.
+      rol: membresiasCrudas[0].gls_tipousuario,
+    };
   }
 
   if (membresias.length > 1) {
@@ -118,8 +156,9 @@ export async function login(usuariocol: string, password: string) {
     };
   }
 
-  // Una sola membresía: se salta el selector y se entra directo, como
-  // siempre — sin cambio de comportamiento para el caso más común hoy.
+  // Una sola membresía disponible: se salta el selector y se entra
+  // directo, como siempre — sin cambio de comportamiento para el caso más
+  // común hoy.
   return await construirSesionDesdeMembresia(usuario.id_usuario, usuario.nombre_usuario, membresias[0]);
 }
 
@@ -206,14 +245,25 @@ export async function seleccionarCondominio(token: string, condominioId: number)
   if (!elegida) {
     throw new Error("No tienes acceso a ese condominio.");
   }
+  // Defensa en profundidad: aunque el selector del front nunca debería
+  // mostrar un condominio bloqueado (login() ya los filtra), por si el
+  // condominio se bloqueó justo entre que se armó la lista y se hizo clic.
+  if (await condominioEstaBloqueado(condominioId)) {
+    throw new Error("No tienes acceso a ese condominio.");
+  }
 
   return construirSesionDesdeMembresia(payload.id_usuario, payload.nombre_usuario, elegida);
 }
 
-/** Lista los condominios de un usuario — usada por la pantalla de selección/cambio para poder refrescarla (ej. recién creó un condominio nuevo). */
+/** Lista los condominios de un usuario (sin los bloqueados por falta de pago) — usada por la pantalla de selección/cambio para poder refrescarla (ej. recién creó un condominio nuevo). */
 export async function listarCondominiosDeUsuario(idUsuario: number) {
   const membresias = await obtenerMembresiasDeUsuario(idUsuario);
-  return membresias.map((m) => ({ id_condominio: m.condominio_id_condominio, nombre: m.gls_condominio, rol: m.gls_tipousuario }));
+  const resultado = [];
+  for (const m of membresias) {
+    if (await condominioEstaBloqueado(m.condominio_id_condominio)) continue;
+    resultado.push({ id_condominio: m.condominio_id_condominio, nombre: m.gls_condominio, rol: m.gls_tipousuario });
+  }
+  return resultado;
 }
 
 /**

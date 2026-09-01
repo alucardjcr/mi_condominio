@@ -5,6 +5,7 @@ import {
   registrarPushToken,
   seleccionarCondominio as apiSeleccionarCondominio,
   setUnauthorizedHandler,
+  setPagoPendienteHandler,
 } from "../api/client";
 import { CondominioOpcion } from "../api/types";
 import { setCondominioIdActual } from "../config/api";
@@ -29,7 +30,7 @@ interface Guardia {
   esPropietario?: boolean;
 }
 
-type Rol = "Guardia" | "Administrador" | "Residente" | "Personal" | "JefeGuardias";
+type Rol = "Guardia" | "Administrador" | "Residente" | "Personal" | "JefeGuardias" | "SuperAdmin";
 
 interface AuthContextValue {
   token: string | null;
@@ -53,6 +54,15 @@ interface AuthContextValue {
   // en vez de Login/Home mientras esto es true.
   requiereSeleccionCondominio: boolean;
   condominiosDisponibles: CondominioOpcion[];
+  // Ronda 27, a pedido del usuario: true cuando TODOS los condominios de
+  // esta cuenta tienen la mensualidad pendiente — App.tsx muestra
+  // PagoPendienteScreen en vez de Login/Home mientras esto es true. La
+  // cuenta y contraseña son correctas (no es un error de login).
+  pagoPendiente: boolean;
+  // Rol con el que se detectó el pago pendiente — PagoPendienteScreen solo
+  // muestra el botón de pago si es "Administrador" (los demás roles no
+  // gestionan la facturación, ven un mensaje más simple).
+  rolPagoPendiente: string | null;
   // Ronda 26: token intermedio de la selección post-login — lo necesita
   // CrearCondominioScreen para poder crear un condominio ANTES de que
   // exista una sesión completa (cuando se llega a esa pantalla desde el
@@ -106,6 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [tokenIntermedio, setTokenIntermedio] = useState<string | null>(null);
   const [condominiosDisponibles, setCondominiosDisponibles] = useState<CondominioOpcion[]>([]);
   const [nombreCondominioActual, setNombreCondominioActual] = useState<string | null>(null);
+  const [pagoPendiente, setPagoPendiente] = useState(false);
+  const [rolPagoPendiente, setRolPagoPendiente] = useState<string | null>(null);
 
   const logout = () => {
     setToken(null);
@@ -114,6 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTokenIntermedio(null);
     setCondominiosDisponibles([]);
     setNombreCondominioActual(null);
+    setPagoPendiente(false);
+    setRolPagoPendiente(null);
     SecureStore.deleteItemAsync(CLAVE_SESION).catch(() => {});
   };
 
@@ -124,6 +138,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTokenIntermedio(null);
     setCondominiosDisponibles([]);
     setNombreCondominioActual(resultado.condominio_nombre ?? null);
+    setPagoPendiente(false);
+    setRolPagoPendiente(null);
     // Ver la nota en config/api.ts: esto es lo que hace que las ~20
     // pantallas existentes (Paquetes, Reservas, etc.) empiecen a trabajar
     // con el condominio correcto sin tener que tocarlas una por una.
@@ -184,7 +200,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Se suscribe una sola vez: cualquier 401 de cualquier request cierra
     // sesión y vuelve al login (ver client.ts).
     setUnauthorizedHandler(() => logout());
-    return () => setUnauthorizedHandler(null);
+    // Ronda 27: igual, pero para 402 — el condominio se bloqueó por falta
+    // de pago mientras la sesión seguía abierta. Se resuelve con un
+    // logout: login() ya filtra los condominios bloqueados, así que el
+    // siguiente intento de entrar va a mostrar la pantalla correcta solo.
+    setPagoPendienteHandler(() => logout());
+    return () => {
+      setUnauthorizedHandler(null);
+      setPagoPendienteHandler(null);
+    };
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -197,10 +221,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       restaurandoSesion,
       requiereSeleccionCondominio: tokenIntermedio !== null,
       condominiosDisponibles,
+      pagoPendiente,
+      rolPagoPendiente,
       tokenIntermedio,
       nombreCondominioActual,
       login: async (usuariocol: string, password: string) => {
         const resultado = await apiLogin(usuariocol, password);
+        if ("pagoPendiente" in resultado) {
+          setPagoPendiente(true);
+          setRolPagoPendiente(resultado.rol);
+          return;
+        }
         if ("requiereSeleccionCondominio" in resultado) {
           setTokenIntermedio(resultado.token);
           setCondominiosDisponibles(resultado.condominios);
@@ -220,7 +251,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       logout,
     }),
-    [token, guardia, rol, restaurandoSesion, tokenIntermedio, condominiosDisponibles, nombreCondominioActual]
+    [token, guardia, rol, restaurandoSesion, tokenIntermedio, condominiosDisponibles, nombreCondominioActual, pagoPendiente, rolPagoPendiente]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

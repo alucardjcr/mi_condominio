@@ -296,6 +296,63 @@ SELECT id_usuario, condominio_id_condominio, tipo_usuario_id_tipousuario,
        tipo_personal_id_tipopersonal
 FROM usuario
 WHERE flg_vigencia = 1;
+
+-- Ronda 27: rol "SuperAdmin" — a pedido explícito del usuario, SOLO él
+-- (dueño del sistema, no un Administrador de condominio) puede crear
+-- cuentas con rol Administrador (ver services/superadmin.service.ts /
+-- routes/super-admin.ts). No se crea ninguna cuenta SuperAdmin automática
+-- acá — eso se hace a mano una sola vez con
+-- backend/src/db/crear-superadmin.ts (nunca con credenciales hardcodeadas
+-- en el código). Este rol no está atado a NINGÚN condominio en particular
+-- (administra el sistema completo, no un condominio) — login() lo detecta
+-- y le entrega un token sin condominio_id_condominio, saltándose por
+-- completo la lógica de membresías.
+INSERT IGNORE INTO tipo_usuario (id_tipousuario, gls_tipousuario) VALUES (6, 'SuperAdmin');
+
+-- Ronda 27: facturación por condominio — a pedido del usuario, cada
+-- condominio paga una mensualidad; si no paga dentro de los primeros N
+-- días del mes (dia_limite_pago), el condominio queda bloqueado: deja de
+-- aparecer en el selector de condominios de TODOS sus usuarios (Guardia,
+-- Residente, Personal, Administrador — ver auth.service.ts -> login()) y,
+-- por si alguien ya tenía una sesión abierta de antes, cualquier request
+-- a la API para ese condominio se corta con 402 (ver middleware
+-- requireSuscripcionAlDia). monto_mensualidad = NULL significa "todavía
+-- sin configurar" — un condominio en ese estado NUNCA se bloquea (así los
+-- condominios que ya existían antes de esta ronda, como Valles de Varoli,
+-- no quedan bloqueados de sorpresa hasta que el SuperAdmin les configure
+-- un precio a propósito).
+CREATE TABLE IF NOT EXISTS condominio_facturacion (
+  id_condominiofacturacion INT AUTO_INCREMENT PRIMARY KEY,
+  condominio_id_condominio INT NOT NULL UNIQUE,
+  monto_mensualidad        DECIMAL(10,0) NULL,
+  dia_limite_pago          TINYINT NOT NULL DEFAULT 5,
+  CONSTRAINT fk_condominiofacturacion_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Un pago = un período (mes) de un condominio. Por ahora se registra a
+-- mano (ver superadmin.service.ts -> marcarPagado, "transferencia,
+-- efectivo, etc." a pedido del usuario), dejando la estructura lista para
+-- que en el futuro un webhook de una pasarela de pago (Webpay u otra)
+-- inserte estas filas automáticamente en vez del SuperAdmin a mano —
+-- ninguna otra parte del sistema necesitaría cambiar para eso, ya que la
+-- verificación de bloqueo (condominioEstaBloqueado) solo mira si existe la
+-- fila con fecha_pago para el período actual.
+CREATE TABLE IF NOT EXISTS pago_condominio (
+  id_pagocondominio INT AUTO_INCREMENT PRIMARY KEY,
+  condominio_id_condominio INT NOT NULL,
+  periodo             CHAR(7) NOT NULL, -- 'YYYY-MM'
+  monto                DECIMAL(10,0) NOT NULL,
+  fecha_pago            DATETIME NULL, -- NULL = registrado pero no confirmado (no debería pasar con el flujo manual actual, pero deja lugar para un futuro estado "pendiente de confirmación" de una pasarela)
+  registrado_por_usuario_id INT NULL, -- SuperAdmin que lo marcó a mano; NULL si en el futuro lo inserta un webhook de pago automático
+  CONSTRAINT fk_pagocondominio_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio),
+  CONSTRAINT fk_pagocondominio_usuario FOREIGN KEY (registrado_por_usuario_id)
+    REFERENCES usuario (id_usuario),
+  UNIQUE KEY uq_pagocondominio_periodo (condominio_id_condominio, periodo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ronda 25: recuperación de contraseña ("olvidé mi contraseña" en Login).
 -- Flujo de 2 pasos: el usuario pide un código de 6 dígitos (identificándose
 -- por usuariocol o por correo_usuario, ver auth.service.ts) y luego lo
 -- ingresa junto a la contraseña nueva. Se guarda solo el HASH del código

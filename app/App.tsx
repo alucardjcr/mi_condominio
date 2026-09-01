@@ -9,6 +9,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { colors, navHeaderOptions } from "./src/theme/theme";
 import AdminDrawerNavigator from "./src/navigation/AdminDrawerNavigator";
+import SuperAdminStackNavigator from "./src/navigation/SuperAdminStackNavigator";
+import PagoPendienteScreen from "./src/screens/PagoPendienteScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import RecuperarPasswordScreen from "./src/screens/RecuperarPasswordScreen";
 import SeleccionarCondominioScreen from "./src/screens/SeleccionarCondominioScreen";
@@ -43,7 +45,8 @@ import JefeGuardiasGuardiasScreen from "./src/screens/jefeguardias/JefeGuardiasG
 const Stack = createNativeStackNavigator();
 
 function AppNavigator() {
-  const { token, rol, esAdmin, restaurandoSesion, requiereSeleccionCondominio } = useAuth();
+  const { token, rol, esAdmin, restaurandoSesion, requiereSeleccionCondominio, pagoPendiente } = useAuth();
+  const esSuperAdmin = rol === "SuperAdmin";
   // Un residente del comité (esAdmin=true aunque rol="Residente") navega
   // igual que Administrador, no por la rama de Residente.
   const esResidente = rol === "Residente" && !esAdmin;
@@ -69,7 +72,15 @@ function AppNavigator() {
 
   return (
     <Stack.Navigator screenOptions={navHeaderOptions}>
-      {!token && requiereSeleccionCondominio ? (
+      {!token && pagoPendiente ? (
+        // Ronda 27, a pedido del usuario: todos los condominios de esta
+        // cuenta tienen la mensualidad pendiente — ver
+        // AuthContext.pagoPendiente. Se corta ANTES que Login/selector:
+        // token sigue null (la cuenta y contraseña eran correctas, pero
+        // login() no entrega sesión mientras no haya ningún condominio
+        // disponible).
+        <Stack.Screen name="PagoPendiente" component={PagoPendienteScreen} options={{ headerShown: false }} />
+      ) : !token && requiereSeleccionCondominio ? (
         // Ronda 26: Administrador logeado pero con más de un condominio —
         // ver AuthContext.requiereSeleccionCondominio. Se corta acá ANTES
         // que la rama de Login: token sigue siendo null en este punto (la
@@ -96,6 +107,10 @@ function AppNavigator() {
             options={{ headerShown: false }}
           />
         </>
+      ) : esSuperAdmin ? (
+        // Ronda 27: panel del dueño del sistema — nada que ver con ningún
+        // condominio en particular, por eso va antes que esAdmin.
+        <Stack.Screen name="SuperAdminRoot" component={SuperAdminStackNavigator} options={{ headerShown: false }} />
       ) : esAdmin ? (
         // Ronda 24: Administrador (y Residente-comité) navega por su propio
         // Drawer con el menú de todos los módulos a la izquierda — ver
