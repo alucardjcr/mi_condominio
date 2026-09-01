@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, TouchableOpacity } from "react-native";
-import { DrawerActions } from "@react-navigation/native";
+import { DrawerActions, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import HomeScreen from "../screens/HomeScreen";
@@ -37,7 +37,14 @@ const Stack = createNativeStackNavigator();
 // este stack, la única pantalla sin flecha de "atrás" que pueda chocar con
 // este botón). En el resto de las pantallas de administrador el menú sigue
 // alcanzable arrastrando desde el borde izquierdo (gesto nativo del Drawer).
-function BotonMenu({ navigation }: any) {
+//
+// Importante: headerLeft NO recibe `navigation` como prop (a diferencia de
+// un componente de pantalla normal) — hay que pedirlo con el hook
+// useNavigation(). Este era el bug de la ronda 24 ("Cannot read property
+// 'getParent' of undefined"): se esperaba `navigation` por props y nunca
+// llegaba, así que `navigation` era undefined.
+function BotonMenu() {
+  const navigation = useNavigation();
   return (
     <TouchableOpacity
       onPress={() => navigation.getParent()?.dispatch(DrawerActions.openDrawer())}
@@ -60,7 +67,7 @@ export default function AdminStackNavigator() {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: "Mi Condominio", headerLeft: (props) => <BotonMenu {...props} /> }}
+        options={{ title: "Mi Condominio", headerLeft: () => <BotonMenu /> }}
       />
       <Stack.Screen name="CambiarPassword" component={CambiarPasswordScreen} options={{ title: "Cambiar contraseña" }} />
       <Stack.Screen name="Disponibilidad" component={DisponibilidadScreen} options={{ title: "Disponibilidad" }} />
