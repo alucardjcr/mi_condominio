@@ -1,14 +1,21 @@
 // Dirección del backend del módulo de estacionamientos de visita.
 //
-// - En el emulador Android, "localhost" del backend se ve como
-//   "10.0.2.2" desde la app.
-// - En un iPhone/Android físico, tiene que ser la IP de tu computador
-//   en la red local (ej: "http://192.168.1.10:3000") o la URL pública
-//   una vez que el backend esté desplegado.
+// Ronda 22: backend desplegado en Railway (repo alucardjcr/mi_condominio,
+// servicio con Root Directory=backend + MySQL administrado en el mismo
+// proyecto) — la app ahora apunta directo a esa URL pública en vez de
+// localhost, así que funciona igual desde el emulador y desde un
+// teléfono físico sin configuración adicional.
 //
-// Por ahora está fijo para poder probar rápido; en la próxima iteración
-// conviene moverlo a variables de entorno de Expo (app.config.ts + EAS).
-export const API_BASE_URL = "http://localhost:3000";
+// Para volver a apuntar a un backend local durante desarrollo, cambia
+// esto temporalmente a:
+// - "http://10.0.2.2:3000" en el emulador Android (localhost del host
+//   se ve así desde el emulador).
+// - "http://<IP-de-tu-computador-en-la-red-local>:3000" en un teléfono
+//   físico conectado al mismo Wi-Fi que el backend.
+//
+// En la próxima iteración conviene mover esto a variables de entorno de
+// Expo (app.config.ts + EAS) en vez de un valor fijo en el código.
+export const API_BASE_URL = "https://micondominio-production.up.railway.app";
 
 // Condominio con el que trabaja este MVP (todavía no hay login/selector
 // de condominio — se agrega cuando construyamos el módulo de usuarios).
