@@ -29,6 +29,8 @@ import AdminVetadosScreen from "../screens/admin/AdminVetadosScreen";
 import AdminEstacionamientosScreen from "../screens/admin/AdminEstacionamientosScreen";
 import AdminPrivacidadScreen from "../screens/admin/AdminPrivacidadScreen";
 import AdminLogAuditoriaScreen from "../screens/admin/AdminLogAuditoriaScreen";
+import AdminRetencionScreen from "../screens/admin/AdminRetencionScreen";
+import AdminIncidentesScreen from "../screens/admin/AdminIncidentesScreen";
 import MisDatosScreen from "../screens/MisDatosScreen";
 import AvisoPrivacidadScreen from "../screens/AvisoPrivacidadScreen";
 import BitacoraScreen from "../screens/BitacoraScreen";
@@ -85,6 +87,8 @@ export default function AdminStackNavigator() {
       />
       <Stack.Screen name="AdminPrivacidad" component={AdminPrivacidadScreen} options={{ title: "Solicitudes de datos" }} />
       <Stack.Screen name="AdminLogAuditoria" component={AdminLogAuditoriaScreen} options={{ title: "Registro de auditoría" }} />
+      <Stack.Screen name="AdminRetencion" component={AdminRetencionScreen} options={{ title: "Retención de datos" }} />
+      <Stack.Screen name="AdminIncidentes" component={AdminIncidentesScreen} options={{ title: "Incidentes de seguridad" }} />
       <Stack.Screen name="Disponibilidad" component={DisponibilidadScreen} options={{ title: "Disponibilidad" }} />
       <Stack.Screen name="PaqueteBusqueda" component={PaqueteBusquedaScreen} options={{ title: "Buscar paquetes" }} />
       <Stack.Screen name="AdminGuardias" component={AdminGuardiasScreen} options={{ title: "Guardias" }} />

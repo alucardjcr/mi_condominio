@@ -885,3 +885,48 @@ export interface LogAuditoria {
   usuariocol: string | null;
 }
 
+// --- Ronda 34: retención de datos (Ley 21.719) ------------------------------
+
+export type CategoriaRetencion = "Visitas" | "Bitacora" | "LogAuditoria";
+
+export interface PoliticaRetencionItem {
+  categoria: CategoriaRetencion;
+  nombre: string;
+  dias_retencion: number | null;
+}
+
+export interface ResultadoLimpieza {
+  categoria: CategoriaRetencion;
+  nombre: string;
+  dias_retencion: number;
+  filas_eliminadas: number;
+}
+
+// --- Ronda 34: notificación de brechas de seguridad (Ley 21.719) -----------
+
+export interface IncidenteSeguridad {
+  id_incidenteseguridad: number;
+  condominio_id_condominio: number;
+  fecha_deteccion: string;
+  descripcion: string;
+  datos_afectados: string;
+  personas_afectadas_estimado: number | null;
+  acciones_tomadas: string | null;
+  notificado_agencia_fecha: string | null;
+  notificado_afectados_fecha: string | null;
+  estado: "Abierto" | "Cerrado";
+  creado_por_usuario_id: number;
+  fecha_creacion: string;
+  plazo_vencimiento: string;
+  horas_restantes: number;
+  plazo_vencido: boolean;
+}
+
+export interface CrearIncidenteInput {
+  fecha_deteccion: string;
+  descripcion: string;
+  datos_afectados: string;
+  personas_afectadas_estimado?: number | null;
+  acciones_tomadas?: string | null;
+}
+

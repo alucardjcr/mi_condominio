@@ -24,6 +24,8 @@ import {
 } from "../services/admin.service";
 import { listarSolicitudesArcoAdmin, resolverSolicitudArco } from "../services/arco.service";
 import { listarAuditoria } from "../services/auditoria.service";
+import { listarPoliticasRetencion, configurarPoliticaRetencion, ejecutarLimpiezaRetencion } from "../services/retencion.service";
+import { crearIncidente, listarIncidentes, marcarNotificadoAgencia, marcarNotificadoAfectados, cerrarIncidente } from "../services/incidentes.service";
 import { reporteGastoComun, generarExcelGastoComun } from "../services/reportes.service";
 import { crearComunicado } from "../services/notificaciones.service";
 import {
@@ -808,6 +810,81 @@ adminRouter.get("/auditoria", async (req, res) => {
         q: q ? String(q) : undefined,
       })
     );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 34, Ley 21.719: retención de datos — configurar cuántos días se
+// guarda cada categoría operativa, y disparar la limpieza (ver la nota
+// completa en retencion.service.ts).
+adminRouter.get("/retencion", async (req, res) => {
+  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  res.json(await listarPoliticasRetencion(condominioId));
+});
+
+adminRouter.put("/retencion/:categoria", async (req, res) => {
+  try {
+    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const { dias_retencion } = req.body;
+    await configurarPoliticaRetencion(
+      condominioId,
+      req.params.categoria as any,
+      dias_retencion === null || dias_retencion === "" ? null : Number(dias_retencion)
+    );
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+adminRouter.post("/retencion/ejecutar", async (req, res) => {
+  try {
+    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    res.json(await ejecutarLimpiezaRetencion(condominioId));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 34, Ley 21.719: notificación de brechas de seguridad — plazo de 72
+// horas desde la detección para avisar a la Agencia de Protección de
+// Datos. Ver incidentes.service.ts.
+adminRouter.get("/incidentes", async (req, res) => {
+  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  res.json(await listarIncidentes(condominioId));
+});
+
+adminRouter.post("/incidentes", async (req, res) => {
+  try {
+    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const { fecha_deteccion, descripcion, datos_afectados, personas_afectadas_estimado, acciones_tomadas } = req.body;
+    res.status(201).json(
+      await crearIncidente(condominioId, req.guardia!.id_usuario, {
+        fecha_deteccion,
+        descripcion,
+        datos_afectados,
+        personas_afectadas_estimado: personas_afectadas_estimado ? Number(personas_afectadas_estimado) : null,
+        acciones_tomadas,
+      })
+    );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+adminRouter.post("/incidentes/:id/notificar-agencia", async (req, res) => {
+  res.json(await marcarNotificadoAgencia(Number(req.params.id)));
+});
+
+adminRouter.post("/incidentes/:id/notificar-afectados", async (req, res) => {
+  res.json(await marcarNotificadoAfectados(Number(req.params.id)));
+});
+
+adminRouter.post("/incidentes/:id/cerrar", async (req, res) => {
+  try {
+    const { acciones_tomadas } = req.body;
+    res.json(await cerrarIncidente(Number(req.params.id), acciones_tomadas));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

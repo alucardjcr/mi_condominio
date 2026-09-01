@@ -69,6 +69,11 @@ import {
   SolicitudArco,
   SolicitudArcoAdmin,
   LogAuditoria,
+  CategoriaRetencion,
+  PoliticaRetencionItem,
+  ResultadoLimpieza,
+  IncidenteSeguridad,
+  CrearIncidenteInput,
 } from "./types";
 
 // Ronda 17: con la sesión persistida (expo-secure-store), un token puede
@@ -797,3 +802,35 @@ export const adminGetAuditoria = (
   if (filtro.q) params.set("q", filtro.q);
   return get<LogAuditoria[]>(`/admin/auditoria?${params.toString()}`, token);
 };
+
+// --- Ronda 34: retención de datos (Ley 21.719) ------------------------------
+
+export const adminGetRetencion = (token: string, condominioId: number) =>
+  get<PoliticaRetencionItem[]>(`/admin/retencion?condominio_id=${condominioId}`, token);
+
+export const adminConfigurarRetencion = (
+  token: string,
+  condominioId: number,
+  categoria: CategoriaRetencion,
+  diasRetencion: number | null
+) => send<{ ok: boolean }>(`/admin/retencion/${categoria}`, "PUT", token, { condominio_id_condominio: condominioId, dias_retencion: diasRetencion });
+
+export const adminEjecutarLimpiezaRetencion = (token: string, condominioId: number) =>
+  send<ResultadoLimpieza[]>(`/admin/retencion/ejecutar`, "POST", token, { condominio_id_condominio: condominioId });
+
+// --- Ronda 34: notificación de brechas de seguridad (Ley 21.719) -----------
+
+export const adminGetIncidentes = (token: string, condominioId: number) =>
+  get<IncidenteSeguridad[]>(`/admin/incidentes?condominio_id=${condominioId}`, token);
+
+export const adminCrearIncidente = (token: string, condominioId: number, input: CrearIncidenteInput) =>
+  send<IncidenteSeguridad>(`/admin/incidentes`, "POST", token, { ...input, condominio_id_condominio: condominioId });
+
+export const adminNotificarAgencia = (token: string, id: number) =>
+  send<IncidenteSeguridad>(`/admin/incidentes/${id}/notificar-agencia`, "POST", token, {});
+
+export const adminNotificarAfectados = (token: string, id: number) =>
+  send<IncidenteSeguridad>(`/admin/incidentes/${id}/notificar-afectados`, "POST", token, {});
+
+export const adminCerrarIncidente = (token: string, id: number, accionesTomadas: string) =>
+  send<IncidenteSeguridad>(`/admin/incidentes/${id}/cerrar`, "POST", token, { acciones_tomadas: accionesTomadas });

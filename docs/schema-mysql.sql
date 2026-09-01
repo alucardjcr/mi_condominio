@@ -444,6 +444,56 @@ CREATE TABLE IF NOT EXISTS log_auditoria (
   INDEX idx_logauditoria_condominio_fecha (condominio_id_condominio, fecha)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 34, a pedido explícito del usuario: retención de datos — la Ley
+-- 21.719 exige minimización (no guardar datos personales más tiempo del
+-- necesario). Cada condominio configura cuántos días quiere conservar cada
+-- categoría de dato operativo antes de que se pueda borrar automáticamente
+-- (ver retencion.service.ts). Mismo criterio "sin configurar = no se toca
+-- nada" que ya usa condominio_facturacion — ningún condominio pierde datos
+-- de sorpresa por esta ronda, alguien tiene que configurar un plazo a
+-- propósito primero.
+--
+-- Categorías cubiertas (deliberadamente acotado a lo operativo, NADA
+-- financiero/contable ni la ficha de residentes/guardias/vetados, que
+-- tienen su propio ciclo de vida ligado a la relación con el condominio,
+-- no a un plazo fijo): 'Visitas', 'Bitacora', 'LogAuditoria'.
+CREATE TABLE IF NOT EXISTS politica_retencion (
+  id_politicaretencion INT AUTO_INCREMENT PRIMARY KEY,
+  condominio_id_condominio INT NOT NULL,
+  categoria             VARCHAR(30) NOT NULL, -- 'Visitas' | 'Bitacora' | 'LogAuditoria'
+  dias_retencion         INT NOT NULL,
+  CONSTRAINT fk_politicaretencion_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio),
+  UNIQUE KEY uq_politicaretencion_categoria (condominio_id_condominio, categoria)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ronda 34, a pedido explícito del usuario: notificación de brechas de
+-- seguridad — la Ley 21.719 exige avisar a la Agencia de Protección de
+-- Datos dentro de 72 HORAS desde que se detecta un incidente que
+-- comprometa datos personales, y a los afectados si el riesgo es alto.
+-- Esta tabla es el registro formal del incidente (cuándo se detectó, qué
+-- pasó, qué datos se vieron afectados, y cuándo se notificó a cada uno) —
+-- sirve como evidencia de cumplimiento del plazo, y como recordatorio
+-- visual mientras el plazo sigue corriendo (ver incidentes.service.ts).
+CREATE TABLE IF NOT EXISTS incidente_seguridad (
+  id_incidenteseguridad     INT AUTO_INCREMENT PRIMARY KEY,
+  condominio_id_condominio  INT NOT NULL,
+  fecha_deteccion           DATETIME NOT NULL,
+  descripcion               TEXT NOT NULL,
+  datos_afectados           TEXT NOT NULL, -- qué tipo de datos se vieron comprometidos
+  personas_afectadas_estimado INT NULL,
+  acciones_tomadas          TEXT NULL,
+  notificado_agencia_fecha  DATETIME NULL,
+  notificado_afectados_fecha DATETIME NULL,
+  estado                    VARCHAR(20) NOT NULL DEFAULT 'Abierto', -- 'Abierto' | 'Cerrado'
+  creado_por_usuario_id     INT NOT NULL,
+  fecha_creacion            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_incidenteseguridad_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio),
+  CONSTRAINT fk_incidenteseguridad_usuario FOREIGN KEY (creado_por_usuario_id)
+    REFERENCES usuario (id_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Ronda 25: recuperación de contraseña ("olvidé mi contraseña" en Login).
 -- Flujo de 2 pasos: el usuario pide un código de 6 dígitos (identificándose
 -- por usuariocol o por correo_usuario, ver auth.service.ts) y luego lo

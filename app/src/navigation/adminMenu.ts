@@ -59,6 +59,8 @@ export const SECCIONES_MENU_ADMIN: SeccionMenu[] = [
     items: [
       { label: "Solicitudes de residentes", route: "AdminPrivacidad", icon: "🔐" },
       { label: "Registro de auditoría", route: "AdminLogAuditoria", icon: "📋" },
+      { label: "Retención de datos", route: "AdminRetencion", icon: "🗓️" },
+      { label: "Incidentes de seguridad", route: "AdminIncidentes", icon: "🚨" },
       { label: "Mis datos", route: "MisDatos", icon: "🙋" },
     ],
   },
