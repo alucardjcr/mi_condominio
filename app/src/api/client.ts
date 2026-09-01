@@ -68,6 +68,7 @@ import {
   TipoSolicitudArco,
   SolicitudArco,
   SolicitudArcoAdmin,
+  LogAuditoria,
 } from "./types";
 
 // Ronda 17: con la sesión persistida (expo-secure-store), un token puede
@@ -782,3 +783,17 @@ export const adminResolverSolicitudArco = (
   id: number,
   input: { estado: "Resuelta" | "Rechazada"; respuesta_admin: string }
 ) => send<SolicitudArcoAdmin>(`/admin/privacidad/solicitudes/${id}`, "PATCH", token, input);
+
+export const adminGetAuditoria = (
+  token: string,
+  condominioId: number,
+  filtro: { usuario_id?: number; accion?: string; desde?: string; hasta?: string; q?: string } = {}
+) => {
+  const params = new URLSearchParams({ condominio_id: String(condominioId) });
+  if (filtro.usuario_id) params.set("usuario_id", String(filtro.usuario_id));
+  if (filtro.accion) params.set("accion", filtro.accion);
+  if (filtro.desde) params.set("desde", filtro.desde);
+  if (filtro.hasta) params.set("hasta", filtro.hasta);
+  if (filtro.q) params.set("q", filtro.q);
+  return get<LogAuditoria[]>(`/admin/auditoria?${params.toString()}`, token);
+};

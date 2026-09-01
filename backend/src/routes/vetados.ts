@@ -2,6 +2,7 @@ import { Router } from "express";
 import { listarVetados, crearVetado, actualizarVetado, buscarVetadoPorRut } from "../services/vetados.service";
 import { requireRol } from "../middleware/auth";
 import { guardarImagenBase64 } from "../utils/imagenes";
+import { registrarAuditoria } from "../services/auditoria.service";
 import { CONDOMINIO_ID_DEFAULT } from "../config";
 
 // Ronda 20: listado VETADOS. Información sensible (puede involucrar
@@ -19,6 +20,19 @@ vetadosRouter.get("/buscar", requireRol("Guardia", "Administrador"), async (req,
     }
     const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
     const resultado = await buscarVetadoPorRut(condominioId, rut);
+    // Ronda 33, Ley 21.719: consultar la lista VETADOS por RUT es una
+    // lectura sensible (puede involucrar una orden de alejamiento) —
+    // queda registrada aparte del middleware genérico (que solo cubre
+    // mutaciones), con el RUT consultado en el detalle.
+    registrarAuditoria({
+      usuarioId: req.guardia?.id_usuario ?? null,
+      rol: req.guardia?.rol ?? null,
+      condominioId: req.guardia?.condominio_id_condominio ?? null,
+      accion: "GET",
+      ruta: "/vetados/buscar",
+      statusCode: 200,
+      detalle: `RUT consultado: ${rut}${resultado ? " (encontrado)" : " (sin coincidencia)"}`,
+    });
     res.json({ vetado: resultado ?? null });
   } catch (err: any) {
     res.status(400).json({ error: err.message });

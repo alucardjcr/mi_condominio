@@ -871,3 +871,17 @@ export interface SolicitudArcoAdmin extends SolicitudArco {
   nombre_torre: string | null;
 }
 
+// --- Ronda 33: log de auditoría (Ley 21.719) --------------------------------
+
+export interface LogAuditoria {
+  id_logauditoria: number;
+  accion: string;
+  ruta: string;
+  status_code: number | null;
+  detalle: string | null;
+  fecha: string;
+  rol: string | null;
+  nombre_usuario: string | null;
+  usuariocol: string | null;
+}
+

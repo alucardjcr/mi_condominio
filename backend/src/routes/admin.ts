@@ -23,6 +23,7 @@ import {
   actualizarEstacionamientoAdmin,
 } from "../services/admin.service";
 import { listarSolicitudesArcoAdmin, resolverSolicitudArco } from "../services/arco.service";
+import { listarAuditoria } from "../services/auditoria.service";
 import { reporteGastoComun, generarExcelGastoComun } from "../services/reportes.service";
 import { crearComunicado } from "../services/notificaciones.service";
 import {
@@ -783,6 +784,28 @@ adminRouter.patch("/privacidad/solicitudes/:id", async (req, res) => {
         estado,
         respuesta_admin,
         resueltoPorUsuarioId: req.guardia!.id_usuario,
+      })
+    );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 33, Ley 21.719: consulta del registro de auditoría — la evidencia
+// operativa que la ley exige poder mostrarle a la Agencia de Protección de
+// Datos ante una fiscalización. Filtros opcionales por usuario, acción
+// (GET/POST/PATCH/PUT/DELETE), rango de fechas, y texto libre.
+adminRouter.get("/auditoria", async (req, res) => {
+  try {
+    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const { usuario_id, accion, desde, hasta, q } = req.query;
+    res.json(
+      await listarAuditoria(condominioId, {
+        usuarioId: usuario_id ? Number(usuario_id) : undefined,
+        accion: accion ? String(accion) : undefined,
+        desde: desde ? String(desde) : undefined,
+        hasta: hasta ? String(hasta) : undefined,
+        q: q ? String(q) : undefined,
       })
     );
   } catch (err: any) {

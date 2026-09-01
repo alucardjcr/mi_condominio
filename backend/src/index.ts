@@ -27,6 +27,7 @@ import { superAdminRouter } from "./routes/super-admin";
 import { privacidadRouter } from "./routes/privacidad";
 import { requireAuth, requireAdmin, requireCondominioAccess, requireSuperAdmin, requireSuscripcionAlDia } from "./middleware/auth";
 import { obtenerArchivo } from "./utils/storage";
+import { registrarAuditoria } from "./services/auditoria.service";
 import { initSchema } from "./db/client";
 
 const app = express();
@@ -34,6 +35,35 @@ app.use(cors());
 // Límite subido de 100kb (default) a 8mb: las fotos y firmas de
 // paquetería llegan como data URL base64 dentro del JSON.
 app.use(express.json({ limit: "8mb" }));
+
+// Ronda 33, a pedido explícito del usuario (Ley 21.719): registra en
+// log_auditoria TODA request que modifica algo (POST/PATCH/PUT/DELETE) —
+// sin tener que instrumentar cada ruta una por una. Se registra en el
+// evento "finish" de la response (después de que ya se respondió, cero
+// impacto en el tiempo de respuesta real) para poder leer req.guardia, que
+// requireAuth recién deja seteado más abajo en la cadena de middlewares —
+// por eso este `app.use` va ANTES de los routers: el orden de ejecución
+// del callback de "finish" no depende de dónde esté este middleware, pero
+// si fuera DESPUÉS de un router que ya respondió, nunca llegaría a
+// engancharse a tiempo. No audita /auth/login (ahí no hay nada que
+// "modificar" todavía, y loguear intentos de login con la contraseña en
+// el body sería un riesgo en sí mismo) ni GET (las lecturas sensibles se
+// auditan puntualmente donde corresponde, ver /uploads/* más abajo y
+// vetados.service.ts).
+app.use((req, res, next) => {
+  res.on("finish", () => {
+    if (req.method === "GET" || req.path === "/auth/login") return;
+    registrarAuditoria({
+      usuarioId: req.guardia?.id_usuario ?? null,
+      rol: req.guardia?.rol ?? null,
+      condominioId: req.guardia?.condominio_id_condominio ?? null,
+      accion: req.method,
+      ruta: req.originalUrl.split("?")[0],
+      statusCode: res.statusCode,
+    });
+  });
+  next();
+});
 
 // Ronda 31, a pedido explícito del usuario (Ley 21.719 de Protección de
 // Datos Personales, vigente desde el 1 de diciembre de 2026): hasta esta
@@ -50,6 +80,15 @@ app.use(express.json({ limit: "8mb" }));
 app.get("/uploads/*", requireAuth, async (req, res) => {
   const rutaRelativa = (req.params as any)[0] as string;
   const archivo = await obtenerArchivo(rutaRelativa);
+  registrarAuditoria({
+    usuarioId: req.guardia?.id_usuario ?? null,
+    rol: req.guardia?.rol ?? null,
+    condominioId: req.guardia?.condominio_id_condominio ?? null,
+    accion: "GET",
+    ruta: "/uploads/*",
+    statusCode: archivo ? 200 : 404,
+    detalle: `archivo: ${rutaRelativa}`,
+  });
   if (!archivo) {
     return res.status(404).json({ error: "Archivo no encontrado." });
   }

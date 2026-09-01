@@ -411,6 +411,39 @@ CREATE TABLE IF NOT EXISTS solicitud_arco (
   INDEX idx_solicitudarco_condominio_estado (condominio_id_condominio, estado)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 33, a pedido explícito del usuario: logs de auditoría — Ley 21.719
+-- de Protección de Datos Personales exige poder demostrar, con evidencia
+-- operativa (no solo políticas), quién accedió o modificó qué dato y
+-- cuándo. Se registra de dos formas:
+--   1) TODA request que modifica algo (POST/PATCH/PUT/DELETE) — via un
+--      middleware genérico en index.ts, sin tocar cada ruta una por una
+--      (ver auditoria.service.ts -> registrarAuditoria, llamado desde un
+--      único `app.use` que escucha el evento "finish" de la response).
+--   2) Lecturas puntuales de datos especialmente sensibles: cada archivo
+--      servido por /uploads/* (fotos/firmas/comprobantes) y cada búsqueda
+--      de una persona en la lista VETADOS por RUT.
+-- BIGINT porque esta tabla puede crecer mucho más rápido que el resto del
+-- sistema (una fila por cada request que califique). Nunca debe frenar ni
+-- romper la request real que está auditando — registrarAuditoria() atrapa
+-- cualquier error de inserción y solo lo deja en el log del servidor.
+CREATE TABLE IF NOT EXISTS log_auditoria (
+  id_logauditoria      BIGINT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id_usuario   INT NULL, -- NULL si la request no llegó a autenticarse (ej. login fallido)
+  rol                  VARCHAR(20) NULL,
+  condominio_id_condominio INT NULL,
+  accion               VARCHAR(10) NOT NULL, -- 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
+  ruta                 VARCHAR(255) NOT NULL,
+  status_code          INT NULL,
+  detalle              VARCHAR(255) NULL, -- ej. "archivo: paquetes/xxx.jpg" o "RUT consultado: 12.345.678-9"
+  fecha                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_logauditoria_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario),
+  CONSTRAINT fk_logauditoria_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio),
+  INDEX idx_logauditoria_usuario_fecha (usuario_id_usuario, fecha),
+  INDEX idx_logauditoria_condominio_fecha (condominio_id_condominio, fecha)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Ronda 25: recuperación de contraseña ("olvidé mi contraseña" en Login).
 -- Flujo de 2 pasos: el usuario pide un código de 6 dígitos (identificándose
 -- por usuariocol o por correo_usuario, ver auth.service.ts) y luego lo

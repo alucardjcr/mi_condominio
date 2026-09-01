@@ -28,6 +28,7 @@ import EstacionamientosArriendoScreen from "../screens/EstacionamientosArriendoS
 import AdminVetadosScreen from "../screens/admin/AdminVetadosScreen";
 import AdminEstacionamientosScreen from "../screens/admin/AdminEstacionamientosScreen";
 import AdminPrivacidadScreen from "../screens/admin/AdminPrivacidadScreen";
+import AdminLogAuditoriaScreen from "../screens/admin/AdminLogAuditoriaScreen";
 import MisDatosScreen from "../screens/MisDatosScreen";
 import BitacoraScreen from "../screens/BitacoraScreen";
 import MascotasScreen from "../screens/MascotasScreen";
@@ -77,6 +78,7 @@ export default function AdminStackNavigator() {
       <Stack.Screen name="CambiarPassword" component={CambiarPasswordScreen} options={{ title: "Cambiar contraseña" }} />
       <Stack.Screen name="MisDatos" component={MisDatosScreen} options={{ title: "Mis datos" }} />
       <Stack.Screen name="AdminPrivacidad" component={AdminPrivacidadScreen} options={{ title: "Solicitudes de datos" }} />
+      <Stack.Screen name="AdminLogAuditoria" component={AdminLogAuditoriaScreen} options={{ title: "Registro de auditoría" }} />
       <Stack.Screen name="Disponibilidad" component={DisponibilidadScreen} options={{ title: "Disponibilidad" }} />
       <Stack.Screen name="PaqueteBusqueda" component={PaqueteBusquedaScreen} options={{ title: "Buscar paquetes" }} />
       <Stack.Screen name="AdminGuardias" component={AdminGuardiasScreen} options={{ title: "Guardias" }} />
