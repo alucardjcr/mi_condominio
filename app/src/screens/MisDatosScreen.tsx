@@ -27,7 +27,7 @@ const ESTADO_COLOR: Record<string, string> = {
 // instantáneo) y pedir que se corrija, elimine, o se oponga a algo
 // (Rectificación/Cancelación/Oposición — queda pendiente hasta que
 // Administrador/Comité la revise, ver AdminPrivacidadScreen).
-export default function MisDatosScreen() {
+export default function MisDatosScreen({ navigation }: any) {
   const { token } = useAuth();
   const [datos, setDatos] = useState<MisDatos | null>(null);
   const [solicitudes, setSolicitudes] = useState<SolicitudArco[]>([]);
@@ -107,6 +107,9 @@ export default function MisDatosScreen() {
         Acá puedes ver toda la información que Mi Condominio tiene sobre ti, descargarla, o pedir que se corrija,
         elimine, o te opongas a algún uso — según la Ley N° 21.719 de Protección de Datos Personales.
       </Text>
+      <TouchableOpacity onPress={() => navigation.navigate("AvisoPrivacidad")}>
+        <Text style={styles.linkAviso}>Ver el aviso de privacidad completo</Text>
+      </TouchableOpacity>
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -255,6 +258,7 @@ const styles = StyleSheet.create({
   container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.offWhite, gap: spacing.md },
   centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
   intro: { ...typography.small, color: colors.textMuted },
+  linkAviso: { color: colors.info, fontSize: 13, fontWeight: "700", marginTop: 4 },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600" },
   card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
   tituloCard: { ...typography.heading, color: colors.textDark, marginBottom: spacing.xs },

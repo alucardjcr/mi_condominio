@@ -13,6 +13,7 @@ import SuperAdminStackNavigator from "./src/navigation/SuperAdminStackNavigator"
 import PagoPendienteScreen from "./src/screens/PagoPendienteScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import RecuperarPasswordScreen from "./src/screens/RecuperarPasswordScreen";
+import AvisoPrivacidadScreen from "./src/screens/AvisoPrivacidadScreen";
 import SeleccionarCondominioScreen from "./src/screens/SeleccionarCondominioScreen";
 import CrearCondominioScreen from "./src/screens/CrearCondominioScreen";
 import CambiarCondominioScreen from "./src/screens/CambiarCondominioScreen";
@@ -110,6 +111,11 @@ function AppNavigator() {
             component={RecuperarPasswordScreen}
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="AvisoPrivacidad"
+            component={AvisoPrivacidadScreen}
+            options={{ title: "Aviso de privacidad" }}
+          />
         </>
       ) : esSuperAdmin ? (
         // Ronda 27: panel del dueño del sistema — nada que ver con ningún
@@ -140,6 +146,11 @@ function AppNavigator() {
             options={{ title: "Crear condominio" }}
           />
           <Stack.Screen name="MisDatos" component={MisDatosScreen} options={{ title: "Mis datos" }} />
+          <Stack.Screen
+            name="AvisoPrivacidad"
+            component={AvisoPrivacidadScreen}
+            options={{ title: "Aviso de privacidad" }}
+          />
           {esResidente ? (
             <>
               <Stack.Screen

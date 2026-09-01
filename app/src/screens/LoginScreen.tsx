@@ -80,6 +80,14 @@ export default function LoginScreen({ navigation }: any) {
         >
           <Text style={styles.olvideTexto}>¿Olvidaste tu contraseña?</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.privacidadWrap}
+          onPress={() => navigation.navigate("AvisoPrivacidad")}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.privacidadTexto}>Aviso de privacidad</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -124,4 +132,6 @@ const styles = StyleSheet.create({
   botonTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
   olvideWrap: { marginTop: spacing.md, alignItems: "center" },
   olvideTexto: { color: colors.info, fontSize: 14, fontWeight: "700" },
+  privacidadWrap: { marginTop: spacing.sm, alignItems: "center" },
+  privacidadTexto: { color: colors.textMutedOnNavy, fontSize: 12, fontWeight: "600" },
 });
