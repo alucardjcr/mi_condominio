@@ -386,9 +386,9 @@ export async function listarEstacionamientosAdmin(condominioId: number) {
   return db
     .prepare(
       `SELECT e.id_estacionamiento, e.numero_estacionamiento, e.ubicacion,
-              te.gls_tipoestacionamiento AS tipo,
+              te.id_tipoestacionamiento AS tipo_id, te.gls_tipoestacionamiento AS tipo,
               ee.id_estadoestacionamiento AS estado_id, ee.gls_estadoestacionamiento AS estado,
-              un.numero_unidad, tb.nombre_torre
+              e.unidad_id_unidad, un.numero_unidad, tb.nombre_torre
        FROM estacionamiento e
        JOIN tipo_estacionamiento te ON te.id_tipoestacionamiento = e.tipo_estacionamiento_id_tipoestacionamiento
        JOIN estado_estacionamiento ee ON ee.id_estadoestacionamiento = e.estado_estacionamiento_id_estadoestacionamiento
@@ -406,18 +406,88 @@ export async function listarEstadosEstacionamiento() {
     .all();
 }
 
-export async function actualizarEstadoEstacionamientoAdmin(id: number, estadoId: number) {
-  const cupo = await db.prepare(`SELECT id_estacionamiento FROM estacionamiento WHERE id_estacionamiento = ?`).get(id);
-  if (!cupo) throw new Error(`No existe el estacionamiento ${id}.`);
-  await db
-    .prepare(`UPDATE estacionamiento SET estado_estacionamiento_id_estadoestacionamiento = ? WHERE id_estacionamiento = ?`)
-    .run(estadoId, id);
+export async function listarTiposEstacionamiento() {
+  return db
+    .prepare(`SELECT id_tipoestacionamiento, gls_tipoestacionamiento FROM tipo_estacionamiento WHERE flg_vigencia = 1 ORDER BY id_tipoestacionamiento`)
+    .all();
+}
+
+const ESTADO_DISPONIBLE_ID = 1; // ver seed.ts / schema — coincide con lo sembrado en toda la app.
+
+// Ronda 29, a pedido explícito del usuario: no todos los deptos tienen un
+// estacionamiento propio (varios quedaron sin vender) — el comité es quien
+// arrienda esos cupos "sueltos" a residentes con más de un auto o
+// interesados. Por eso `unidad_id_unidad` es OPCIONAL acá: un cupo tipo
+// Residente puede crearse (o quedar) sin depto asignado, listo para que el
+// comité lo asigne después — y un mismo depto puede terminar con más de un
+// cupo (el propio + uno arrendado), la tabla ya lo permitía (sin UNIQUE en
+// unidad_id_unidad), solo faltaba esta pantalla para poder hacerlo desde
+// la app en vez de a mano por SQL.
+export async function crearEstacionamientoAdmin(
+  condominioId: number,
+  input: {
+    numero_estacionamiento: string;
+    ubicacion?: string;
+    tipo_estacionamiento_id_tipoestacionamiento: number;
+    unidad_id_unidad?: number | null;
+  }
+) {
+  if (!input.numero_estacionamiento?.trim()) {
+    throw new Error("Falta el número del estacionamiento.");
+  }
+  const insert = await db
+    .prepare(
+      `INSERT INTO estacionamiento
+         (numero_estacionamiento, ubicacion, tipo_estacionamiento_id_tipoestacionamiento, estado_estacionamiento_id_estadoestacionamiento, condominio_id_condominio, unidad_id_unidad)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.numero_estacionamiento.trim(),
+      input.ubicacion?.trim() || null,
+      input.tipo_estacionamiento_id_tipoestacionamiento,
+      ESTADO_DISPONIBLE_ID,
+      condominioId,
+      input.unidad_id_unidad ?? null
+    );
+  return obtenerEstacionamientoAdmin(Number(insert.lastInsertRowid));
+}
+
+async function obtenerEstacionamientoAdmin(id: number) {
   return db
     .prepare(
-      `SELECT e.id_estacionamiento, e.numero_estacionamiento, ee.gls_estadoestacionamiento AS estado
+      `SELECT e.id_estacionamiento, e.numero_estacionamiento, e.ubicacion,
+              te.id_tipoestacionamiento AS tipo_id, te.gls_tipoestacionamiento AS tipo,
+              ee.id_estadoestacionamiento AS estado_id, ee.gls_estadoestacionamiento AS estado,
+              e.unidad_id_unidad, un.numero_unidad, tb.nombre_torre
        FROM estacionamiento e
+       JOIN tipo_estacionamiento te ON te.id_tipoestacionamiento = e.tipo_estacionamiento_id_tipoestacionamiento
        JOIN estado_estacionamiento ee ON ee.id_estadoestacionamiento = e.estado_estacionamiento_id_estadoestacionamiento
+       LEFT JOIN unidad un ON un.id_unidad = e.unidad_id_unidad
+       LEFT JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
        WHERE e.id_estacionamiento = ?`
     )
     .get(id);
+}
+
+// Antes solo cambiaba el estado; ahora también permite asignar/reasignar/
+// desasignar el depto (unidad_id_unidad) — es la acción que usa el comité
+// para "arrendar" un cupo suelto a un residente, o para quitárselo si deja
+// de estar interesado (vuelve a quedar disponible para otro). Los dos
+// campos son independientes: se puede mandar solo uno de los dos.
+export async function actualizarEstacionamientoAdmin(
+  id: number,
+  input: { estado_id?: number; unidad_id_unidad?: number | null }
+) {
+  const cupo = await db.prepare(`SELECT id_estacionamiento FROM estacionamiento WHERE id_estacionamiento = ?`).get(id);
+  if (!cupo) throw new Error(`No existe el estacionamiento ${id}.`);
+
+  if (input.estado_id !== undefined) {
+    await db
+      .prepare(`UPDATE estacionamiento SET estado_estacionamiento_id_estadoestacionamiento = ? WHERE id_estacionamiento = ?`)
+      .run(input.estado_id, id);
+  }
+  if (input.unidad_id_unidad !== undefined) {
+    await db.prepare(`UPDATE estacionamiento SET unidad_id_unidad = ? WHERE id_estacionamiento = ?`).run(input.unidad_id_unidad, id);
+  }
+  return obtenerEstacionamientoAdmin(id);
 }

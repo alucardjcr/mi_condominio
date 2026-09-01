@@ -766,11 +766,21 @@ export interface EstacionamientoAdmin {
   id_estacionamiento: number;
   numero_estacionamiento: string;
   ubicacion: string | null;
+  tipo_id: number;
   tipo: string; // 'Visita' | 'Residente' | 'Discapacitado'
   estado_id: number;
   estado: string; // 'Disponible' | 'Ocupado' | 'Fuera de servicio' | 'Disponible para arriendo'
+  // Ronda 29: null = sin depto asignado — a propósito, no todos los deptos
+  // tienen estacionamiento propio (varios quedan sin vender); el comité
+  // puede arrendarlo después. Solo aplica de verdad a tipo 'Residente'.
+  unidad_id_unidad: number | null;
   numero_unidad: string | null;
   nombre_torre: string | null;
+}
+
+export interface TipoEstacionamiento {
+  id_tipoestacionamiento: number;
+  gls_tipoestacionamiento: string;
 }
 
 export interface EstadoEstacionamiento {

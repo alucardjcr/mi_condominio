@@ -18,7 +18,9 @@ import {
   actualizarGastoComunUnidad,
   listarEstacionamientosAdmin,
   listarEstadosEstacionamiento,
-  actualizarEstadoEstacionamientoAdmin,
+  listarTiposEstacionamiento,
+  crearEstacionamientoAdmin,
+  actualizarEstacionamientoAdmin,
 } from "../services/admin.service";
 import { reporteGastoComun, generarExcelGastoComun } from "../services/reportes.service";
 import { crearComunicado } from "../services/notificaciones.service";
@@ -476,13 +478,44 @@ adminRouter.get("/estacionamientos/estados", async (_req, res) => {
   res.json(await listarEstadosEstacionamiento());
 });
 
+adminRouter.get("/estacionamientos/tipos", async (_req, res) => {
+  res.json(await listarTiposEstacionamiento());
+});
+
+adminRouter.post("/estacionamientos", async (req, res) => {
+  try {
+    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const { numero_estacionamiento, ubicacion, tipo_estacionamiento_id_tipoestacionamiento, unidad_id_unidad } = req.body;
+    if (!numero_estacionamiento || !tipo_estacionamiento_id_tipoestacionamiento) {
+      return res.status(400).json({ error: "Faltan campos: numero_estacionamiento, tipo_estacionamiento_id_tipoestacionamiento." });
+    }
+    res.status(201).json(
+      await crearEstacionamientoAdmin(condominioId, {
+        numero_estacionamiento,
+        ubicacion,
+        tipo_estacionamiento_id_tipoestacionamiento: Number(tipo_estacionamiento_id_tipoestacionamiento),
+        // Ronda 29: opcional a propósito — un cupo puede crearse sin depto
+        // asignado (ver la nota completa en admin.service.ts).
+        unidad_id_unidad: unidad_id_unidad ? Number(unidad_id_unidad) : null,
+      })
+    );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 adminRouter.patch("/estacionamientos/:id", async (req, res) => {
   try {
-    const { estado_id } = req.body;
-    if (!estado_id) {
-      return res.status(400).json({ error: "Falta estado_id." });
+    const { estado_id, unidad_id_unidad } = req.body;
+    const input: { estado_id?: number; unidad_id_unidad?: number | null } = {};
+    if (estado_id !== undefined) input.estado_id = Number(estado_id);
+    // "unidad_id_unidad" en el body puede venir como null explícito
+    // (desasignar el cupo de su depto) — por eso se chequea con 'in' en vez
+    // de !== undefined, para no perder ese caso.
+    if ("unidad_id_unidad" in req.body) {
+      input.unidad_id_unidad = unidad_id_unidad === null || unidad_id_unidad === "" ? null : Number(unidad_id_unidad);
     }
-    res.json(await actualizarEstadoEstacionamientoAdmin(Number(req.params.id), Number(estado_id)));
+    res.json(await actualizarEstacionamientoAdmin(Number(req.params.id), input));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

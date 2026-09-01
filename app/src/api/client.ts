@@ -62,6 +62,7 @@ import {
   CrearAdministradorInput,
   CondominioConFacturacion,
   EstacionamientoAdmin,
+  TipoEstacionamiento,
   EstadoEstacionamiento,
 } from "./types";
 
@@ -725,12 +726,30 @@ export const superAdminConfigurarFacturacion = (
 export const superAdminMarcarPagado = (token: string, condominioId: number, input: { periodo?: string; monto: number }) =>
   send<{ ok: boolean }>(`/super-admin/facturacion/${condominioId}/marcar-pagado`, "POST", token, input);
 
-// --- Ronda 28: administración de estacionamientos ---------------------------
+// --- Ronda 28/29: administración de estacionamientos ------------------------
 
 export const getEstacionamientosAdmin = (token: string, condominioId: number) =>
   get<EstacionamientoAdmin[]>(`/admin/estacionamientos?condominio_id=${condominioId}`, token);
 
 export const getEstadosEstacionamiento = (token: string) => get<EstadoEstacionamiento[]>(`/admin/estacionamientos/estados`, token);
 
-export const actualizarEstadoEstacionamiento = (token: string, id: number, estadoId: number) =>
-  send<{ id_estacionamiento: number }>(`/admin/estacionamientos/${id}`, "PATCH", token, { estado_id: estadoId });
+export const getTiposEstacionamiento = (token: string) => get<TipoEstacionamiento[]>(`/admin/estacionamientos/tipos`, token);
+
+export const crearEstacionamiento = (
+  token: string,
+  input: {
+    numero_estacionamiento: string;
+    ubicacion?: string;
+    tipo_estacionamiento_id_tipoestacionamiento: number;
+    unidad_id_unidad?: number | null;
+    condominio_id_condominio: number;
+  }
+) => send<EstacionamientoAdmin>(`/admin/estacionamientos`, "POST", token, input);
+
+// Ronda 29: generalizada — puede cambiar el estado, la asignación de depto
+// (unidad_id_unidad, null para desasignar), o ambos a la vez.
+export const actualizarEstacionamiento = (
+  token: string,
+  id: number,
+  input: { estado_id?: number; unidad_id_unidad?: number | null }
+) => send<EstacionamientoAdmin>(`/admin/estacionamientos/${id}`, "PATCH", token, input);
