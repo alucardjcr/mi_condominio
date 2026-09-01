@@ -256,6 +256,9 @@ export default function HomeScreen({ navigation }: any) {
         </>
       )}
 
+      {!esAdmin && (
+        <EnlaceSecundario label="Cambiar de condominio" onPress={() => navigation.navigate("CambiarCondominio")} />
+      )}
       {!esAdmin && <EnlaceSecundario label="Cambiar contraseña" onPress={() => navigation.navigate("CambiarPassword")} />}
 
       {!esAdmin && (

@@ -5,13 +5,16 @@ import { CondominioOpcion } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
-// Ronda 26: para un Administrador ya logeado que quiere pasarse a OTRO de
-// sus condominios sin desloguearse — a diferencia de
-// SeleccionarCondominioScreen (que se ve solo en el login inicial, con la
-// lista que ya trajo el login), acá la lista se pide de nuevo porque puede
-// haber cambiado (ej. recién creó un condominio nuevo).
+// Ronda 26 (fase 2): para CUALQUIER usuario ya logeado (Guardia, Residente,
+// Personal, JefeGuardias o Administrador) que quiere pasarse a OTRO de sus
+// condominios sin desloguearse — a diferencia de SeleccionarCondominioScreen
+// (que se ve solo en el login inicial, con la lista que ya trajo el login),
+// acá la lista se pide de nuevo porque puede haber cambiado (ej. recién
+// creó un condominio nuevo). El botón "+ Crear nuevo condominio" solo se
+// muestra a un Administrador real (ver soloAdministradorReal en
+// routes/condominios.ts — los demás roles recibirían 403 si lo intentaran).
 export default function CambiarCondominioScreen({ navigation }: any) {
-  const { token, guardia, cambiarCondominio, nombreCondominioActual } = useAuth();
+  const { token, guardia, rol, cambiarCondominio, nombreCondominioActual } = useAuth();
   const [condominios, setCondominios] = useState<CondominioOpcion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [cambiandoId, setCambiandoId] = useState<number | null>(null);
@@ -30,6 +33,9 @@ export default function CambiarCondominioScreen({ navigation }: any) {
     setCambiandoId(id);
     try {
       await cambiarCondominio(id);
+      // Vuelve al Home: cualquier pantalla que hubiera quedado atrás en la
+      // pila de navegación tendría datos cargados del condominio anterior.
+      navigation.reset({ index: 0, routes: [{ name: "Home" }] });
     } catch (e: any) {
       setError(e.message);
       setCambiandoId(null);
@@ -73,14 +79,16 @@ export default function CambiarCondominioScreen({ navigation }: any) {
         );
       })}
 
-      <TouchableOpacity
-        style={styles.tarjetaNueva}
-        onPress={() => navigation.navigate("CrearCondominio")}
-        disabled={cambiandoId !== null}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.tarjetaNuevaTexto}>+ Crear nuevo condominio</Text>
-      </TouchableOpacity>
+      {rol === "Administrador" && (
+        <TouchableOpacity
+          style={styles.tarjetaNueva}
+          onPress={() => navigation.navigate("CrearCondominio")}
+          disabled={cambiandoId !== null}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.tarjetaNuevaTexto}>+ Crear nuevo condominio</Text>
+        </TouchableOpacity>
+      )}
 
       {error && <Text style={styles.error}>{error}</Text>}
     </View>
