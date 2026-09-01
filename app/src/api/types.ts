@@ -135,9 +135,8 @@ export interface LoginResponse {
   condominio_nombre?: string;
 }
 
-// Ronda 26: cuando un Administrador tiene más de un condominio, POST
-// /auth/login devuelve esto en vez de LoginResponse — ver
-// SeleccionarCondominioScreen.
+// Ronda 26 (fase 2): ya no es exclusivo de Administrador — cualquier rol
+// puede tener más de un condominio con la MISMA cuenta.
 export interface RequiereSeleccionCondominioResponse {
   requiereSeleccionCondominio: true;
   token: string; // token intermedio: solo sirve para POST /auth/seleccionar-condominio
@@ -147,6 +146,10 @@ export interface RequiereSeleccionCondominioResponse {
 export interface CondominioOpcion {
   id_condominio: number;
   nombre: string;
+  // Ronda 26 (fase 2): el rol puede ser distinto entre dos condominios de
+  // la misma persona (ej. Residente en uno, Guardia en otro) — se muestra
+  // junto al nombre en el selector para que quede claro con cuál entra.
+  rol?: string;
 }
 
 export interface CrearCondominioTorreInput {
@@ -155,11 +158,24 @@ export interface CrearCondominioTorreInput {
   numeros_unidad: string[];
 }
 
+export interface CrearCondominioEdificioInput {
+  cantidad_pisos?: number;
+  numeros_unidad: string[];
+}
+
+// Ronda 26 (fase 2, a pedido del usuario): 3 formas de estructura —
+// "torres" (varias con nombre propio, ej. su condominio de Talca),
+// "edificio" (un solo edificio, solo pisos y deptos por piso, sin nombres
+// de torre, ej. su edificio de Santiago), y "casas" (condominio cerrado de
+// casas, sin pisos ni torres).
+export type EstructuraCondominio = "torres" | "edificio" | "casas";
+
 export interface CrearCondominioInput {
   nombre_condominio: string;
-  tiene_torres: boolean;
-  torres?: CrearCondominioTorreInput[];
-  numeros_unidad_casas?: string[];
+  estructura: EstructuraCondominio;
+  torres?: CrearCondominioTorreInput[]; // solo si estructura = "torres"
+  edificio?: CrearCondominioEdificioInput; // solo si estructura = "edificio"
+  numeros_unidad_casas?: string[]; // solo si estructura = "casas"
 }
 
 export interface CrearCondominioResponse {

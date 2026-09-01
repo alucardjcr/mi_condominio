@@ -207,6 +207,12 @@ CREATE TABLE IF NOT EXISTS residente_discapacitado (
 -- Guardia/Residente/Personal siguen atados a un solo condominio vía
 -- usuario.condominio_id_condominio como hasta ahora (queda pendiente para
 -- una ronda futura extender el mismo mecanismo a esos roles).
+-- Ronda 26 (fase 1): tabla de la primera versión del multi-condominio,
+-- solo para Administrador. SUPERADA por `membresia` (ver abajo, ronda 26
+-- fase 2), que generaliza lo mismo a Guardia/Residente/Personal/
+-- JefeGuardias. Se deja tal cual (nadie la borra ni la usa más en el
+-- código desde la fase 2) en vez de un DROP TABLE, siguiendo el mismo
+-- criterio conservador de todo este archivo (solo agregar, nunca borrar).
 CREATE TABLE IF NOT EXISTS usuario_condominio (
   id_usuariocondominio   INT AUTO_INCREMENT PRIMARY KEY,
   usuario_id_usuario     INT NOT NULL,
@@ -219,17 +225,77 @@ CREATE TABLE IF NOT EXISTS usuario_condominio (
   UNIQUE KEY uq_usuariocondominio (usuario_id_usuario, condominio_id_condominio)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 26 (fase 2): "membresía" — CUALQUIER usuario (Guardia, Residente,
+-- Personal, JefeGuardias, Administrador) puede ahora pertenecer a más de
+-- un condominio con la MISMA cuenta (usuariocol/password/correo, que
+-- siguen viviendo en `usuario`), eligiendo a cuál entrar después de
+-- loguearse — igual que ya hacía Administrador desde la fase 1, pero
+-- generalizado. Ej: un residente con depto en Talca Y en Santiago, o un
+-- guardia que hace turnos en dos condominios distintos.
+--
+-- Cada fila es "esta persona, en este condominio, tiene este rol (y este
+-- depto/comité/tipo de personal si corresponde)". El rol e incluso el
+-- depto pueden ser DISTINTOS entre dos condominios de la misma persona
+-- (ej. Residente en uno, Guardia en otro) — por eso tipo_usuario_id_tipousuario
+-- vive acá y no solo en `usuario`.
+--
+-- Las columnas equivalentes que quedaron en `usuario` (tipo_usuario_id_tipousuario,
+-- condominio_id_condominio, unidad_id_unidad, flg_comite, flg_propietario,
+-- tipo_residente_id_tiporesidente, tipo_personal_id_tipopersonal) NO se
+-- borran (evitar tocar la única fuente de verdad del login sería más
+-- riesgoso que dejarlas): sirven como snapshot de compatibilidad y como
+-- valores por defecto al crear la membresía inicial de un usuario nuevo,
+-- pero login()/seleccionarCondominio() en auth.service.ts SIEMPRE leen de
+-- `membresia`, nunca directo de esas columnas de `usuario`.
+CREATE TABLE IF NOT EXISTS membresia (
+  id_membresia            INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id_usuario      INT NOT NULL,
+  condominio_id_condominio INT NOT NULL,
+  tipo_usuario_id_tipousuario INT NOT NULL,
+  -- Solo si el rol de ESTA membresía es 'Residente'.
+  unidad_id_unidad        INT NULL,
+  flg_comite              TINYINT NOT NULL DEFAULT 0,
+  flg_propietario         TINYINT NOT NULL DEFAULT 0,
+  tipo_residente_id_tiporesidente INT NULL,
+  -- Solo si el rol de ESTA membresía es 'Personal'.
+  tipo_personal_id_tipopersonal INT NULL,
+  flg_vigencia            TINYINT NOT NULL DEFAULT 1,
+  CONSTRAINT fk_membresia_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario),
+  CONSTRAINT fk_membresia_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio),
+  CONSTRAINT fk_membresia_tipousuario FOREIGN KEY (tipo_usuario_id_tipousuario)
+    REFERENCES tipo_usuario (id_tipousuario),
+  CONSTRAINT fk_membresia_unidad FOREIGN KEY (unidad_id_unidad)
+    REFERENCES unidad (id_unidad),
+  CONSTRAINT fk_membresia_tiporesidente FOREIGN KEY (tipo_residente_id_tiporesidente)
+    REFERENCES tipo_residente (id_tiporesidente),
+  CONSTRAINT fk_membresia_tipopersonal FOREIGN KEY (tipo_personal_id_tipopersonal)
+    REFERENCES tipo_personal (id_tipopersonal),
+  -- A lo más UNA membresía por (usuario, condominio): dentro de un mismo
+  -- condominio una persona tiene un solo rol/depto, no dos filas
+  -- compitiendo. Para cambiar de rol en ese condominio se EDITA la fila,
+  -- no se agrega otra.
+  UNIQUE KEY uq_membresia_usuario_condominio (usuario_id_usuario, condominio_id_condominio),
+  INDEX idx_membresia_usuario (usuario_id_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Backfill idempotente (INSERT IGNORE + UNIQUE KEY de arriba): cada
--- Administrador que ya existía antes de esta ronda queda automáticamente
--- vinculado a su condominio original la primera vez que arranca el
--- backend con este schema — así ningún admin actual pierde acceso a su
--- condominio de siempre. Se ejecuta en cada arranque (initSchema corre
--- todo este archivo siempre), pero no duplica filas gracias al UNIQUE KEY.
-INSERT IGNORE INTO usuario_condominio (usuario_id_usuario, condominio_id_condominio)
-SELECT u.id_usuario, u.condominio_id_condominio
-FROM usuario u
-JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
-WHERE tu.gls_tipousuario = 'Administrador' AND u.flg_vigencia = 1;
+-- usuario que ya existía antes de esta ronda queda automáticamente con UNA
+-- membresía que replica exactamente su fila de `usuario` — así nadie
+-- pierde acceso a su condominio de siempre, y el camino de "un solo
+-- condominio" sigue siendo idéntico a como era antes de esta ronda para
+-- todo el mundo hasta que alguien le agregue una segunda membresía.
+INSERT IGNORE INTO membresia (
+  usuario_id_usuario, condominio_id_condominio, tipo_usuario_id_tipousuario,
+  unidad_id_unidad, flg_comite, flg_propietario, tipo_residente_id_tiporesidente,
+  tipo_personal_id_tipopersonal
+)
+SELECT id_usuario, condominio_id_condominio, tipo_usuario_id_tipousuario,
+       unidad_id_unidad, flg_comite, flg_propietario, tipo_residente_id_tiporesidente,
+       tipo_personal_id_tipopersonal
+FROM usuario
+WHERE flg_vigencia = 1;
 -- Flujo de 2 pasos: el usuario pide un código de 6 dígitos (identificándose
 -- por usuariocol o por correo_usuario, ver auth.service.ts) y luego lo
 -- ingresa junto a la contraseña nueva. Se guarda solo el HASH del código

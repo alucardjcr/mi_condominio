@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { listarDisponibilidad } from "../services/estacionamientoVisita.service";
 import { listarPizarronArriendo, actualizarEstadoArriendo } from "../services/estacionamientosArriendo.service";
-import { requireAuth } from "../middleware/auth";
+import { requireAuth, requireCondominioAccess } from "../middleware/auth";
 import { CONDOMINIO_ID_DEFAULT } from "../config";
 
 export const estacionamientosRouter = Router();
@@ -31,7 +31,7 @@ estacionamientosRouter.get("/disponibilidad", async (req, res) => {
 // estacionamientosArriendo.service.ts.
 // ---------------------------------------------------------------------------
 
-estacionamientosRouter.get("/arriendo", requireAuth, async (req, res) => {
+estacionamientosRouter.get("/arriendo", requireAuth, requireCondominioAccess, async (req, res) => {
   try {
     const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
     res.json(await listarPizarronArriendo(condominioId));

@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { db } from "../db/client";
+import { sincronizarMembresiaPrincipal } from "./auth.service";
 
 async function getIdByGls(table: string, idColumn: string, glsColumn: string, valor: string): Promise<number> {
   const row = (await db
@@ -34,7 +35,11 @@ export async function crearGuardia(input: { nombre_usuario: string; usuariocol: 
        VALUES (?, ?, ?, ?, ?)`
     )
     .run(input.nombre_usuario, input.usuariocol, passwordHash, tipoGuardiaId, input.condominio_id_condominio);
-  return db.prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia FROM usuario WHERE id_usuario = ?`).get(Number(insert.lastInsertRowid));
+  const id = Number(insert.lastInsertRowid);
+  // Ronda 26 (fase 2): sin esto, un Guardia recién creado no tendría
+  // ninguna membresía y no podría loguearse (ver auth.service.ts -> login).
+  await sincronizarMembresiaPrincipal(id);
+  return db.prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia FROM usuario WHERE id_usuario = ?`).get(id);
 }
 
 export async function actualizarGuardia(id: number, input: { nombre_usuario?: string; password?: string; flg_vigencia?: number }) {
@@ -48,6 +53,7 @@ export async function actualizarGuardia(id: number, input: { nombre_usuario?: st
   if (input.flg_vigencia !== undefined) {
     await db.prepare(`UPDATE usuario SET flg_vigencia = ? WHERE id_usuario = ?`).run(input.flg_vigencia, id);
   }
+  await sincronizarMembresiaPrincipal(id);
   return db.prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia FROM usuario WHERE id_usuario = ?`).get(id);
 }
 
@@ -100,11 +106,16 @@ export async function crearResidente(input: {
       input.tipo_residente_id_tiporesidente ?? null,
       input.flg_propietario ?? 0
     );
+  const id = Number(insert.lastInsertRowid);
+  // Ronda 26 (fase 2): el residente todavía no puede loguearse (falta
+  // usuariocol/password, ver activarAccesoResidente) pero ya le dejamos
+  // lista su membresía a este condominio para cuando se active.
+  await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
       `SELECT id_usuario, nombre_usuario, unidad_id_unidad, flg_vigencia, tipo_residente_id_tiporesidente, flg_propietario FROM usuario WHERE id_usuario = ?`
     )
-    .get(Number(insert.lastInsertRowid));
+    .get(id);
 }
 
 // ¿Este residente pertenece a esta unidad? Usado por /mi-depto/* para
@@ -154,9 +165,18 @@ export async function actualizarResidente(
         | { unidad_id_unidad: number | null }
         | undefined;
       if (fila?.unidad_id_unidad) {
+        const otrosDuenos = (await db
+          .prepare(`SELECT id_usuario FROM usuario WHERE unidad_id_unidad = ? AND id_usuario != ? AND flg_propietario = 1`)
+          .all(fila.unidad_id_unidad, id)) as { id_usuario: number }[];
         await db
           .prepare(`UPDATE usuario SET flg_propietario = 0 WHERE unidad_id_unidad = ? AND id_usuario != ?`)
           .run(fila.unidad_id_unidad, id);
+        // A quien se le quitó el flag también hay que sincronizarle la
+        // membresía — si no, quedaría con flg_propietario desactualizado
+        // ahí (ver sincronizarMembresiaPrincipal más abajo).
+        for (const otro of otrosDuenos) {
+          await sincronizarMembresiaPrincipal(otro.id_usuario);
+        }
       }
     }
     await db.prepare(`UPDATE usuario SET flg_propietario = ? WHERE id_usuario = ?`).run(input.flg_propietario, id);
@@ -174,6 +194,7 @@ export async function actualizarResidente(
     const hash = bcrypt.hashSync(input.password, 10);
     await db.prepare(`UPDATE usuario SET password_usuario = ? WHERE id_usuario = ?`).run(hash, id);
   }
+  await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
       `SELECT id_usuario, nombre_usuario, unidad_id_unidad, flg_vigencia, usuariocol, flg_comite, tipo_residente_id_tiporesidente, flg_propietario FROM usuario WHERE id_usuario = ?`

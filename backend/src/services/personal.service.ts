@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { db } from "../db/client";
+import { sincronizarMembresiaPrincipal } from "./auth.service";
 import { crearNotificacionParaUsuario, enviarPushesDeNotificacion, GLS_TIPONOTIF_TAREA_PERSONAL } from "./notificaciones.service";
 
 // Ronda 18, a pedido del usuario: "el personal externo que trabaja en el
@@ -91,13 +92,15 @@ export async function crearPersonal(input: {
       input.condominio_id_condominio,
       input.tipo_personal_id_tipopersonal ?? null
     );
+  const id = Number(insert.lastInsertRowid);
+  await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
       `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal, 0 as turno_abierto
        FROM usuario u LEFT JOIN tipo_personal tp ON tp.id_tipopersonal = u.tipo_personal_id_tipopersonal
        WHERE u.id_usuario = ?`
     )
-    .get(Number(insert.lastInsertRowid));
+    .get(id);
 }
 
 export async function actualizarPersonal(
@@ -119,6 +122,7 @@ export async function actualizarPersonal(
       .prepare(`UPDATE usuario SET tipo_personal_id_tipopersonal = ? WHERE id_usuario = ?`)
       .run(input.tipo_personal_id_tipopersonal, id);
   }
+  await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
       `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal,

@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { crearCondominio } from "../api/client";
+import { EstructuraCondominio } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
@@ -48,10 +49,28 @@ function generarPorPatron(pisos: number, deptosPorPiso: number): string[] {
   return resultado;
 }
 
+const OPCIONES_ESTRUCTURA: { valor: EstructuraCondominio; titulo: string; ayuda: string }[] = [
+  {
+    valor: "torres",
+    titulo: "Varias torres o blocks",
+    ayuda: 'Cada una con su propio nombre (ej: "Torre A", "Block 1"). Ej: un condominio con varios edificios.',
+  },
+  {
+    valor: "edificio",
+    titulo: "Un solo edificio",
+    ayuda: "Sin nombres de torre — solo cuántos pisos tiene y los números de depto de cada uno.",
+  },
+  {
+    valor: "casas",
+    titulo: "Condominio de casas",
+    ayuda: "Sin pisos ni torres — solo el número o nombre de cada casa.",
+  },
+];
+
 // Ronda 26: asistente de creación de condominio. Se llega acá desde
 // SeleccionarCondominioScreen (todavía sin sesión completa, solo el token
-// intermedio) o desde el menú de un Administrador ya logeado que quiere
-// agregar OTRO condominio a su cuenta — en ambos casos usa el mismo token
+// intermedio) o desde el menú de alguien ya logeado que quiere agregar
+// OTRO condominio a su cuenta — en ambos casos usa el mismo token
 // disponible (ver useAuth().token / tokenIntermedio) porque el backend
 // acepta cualquiera de los dos para estas rutas (ver routes/condominios.ts).
 export default function CrearCondominioScreen({ navigation }: any) {
@@ -60,30 +79,35 @@ export default function CrearCondominioScreen({ navigation }: any) {
 
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [nombreCondominio, setNombreCondominio] = useState("");
-  const [tieneTorres, setTieneTorres] = useState<boolean | null>(null);
+  const [estructura, setEstructura] = useState<EstructuraCondominio | null>(null);
 
-  // Estructura ya confirmada (una o más torres) mientras se arma paso a
-  // paso, o la numeración directa si el condominio es de casas.
+  // --- estructura = "torres": una o más torres, se arman de a una ---
   const [torresAgregadas, setTorresAgregadas] = useState<TorreArmada[]>([]);
   const [nombreTorre, setNombreTorre] = useState("");
   const [pisosTorre, setPisosTorre] = useState("");
   const [deptosPorPisoTorre, setDeptosPorPisoTorre] = useState("");
   const [numerosTorreTexto, setNumerosTorreTexto] = useState("");
 
+  // --- estructura = "edificio": un solo bloque de pisos/deptos ---
+  const [pisosEdificio, setPisosEdificio] = useState("");
+  const [deptosPorPisoEdificio, setDeptosPorPisoEdificio] = useState("");
+  const [numerosEdificioTexto, setNumerosEdificioTexto] = useState("");
+
+  // --- estructura = "casas" ---
   const [casasTexto, setCasasTexto] = useState("");
 
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGenerarPatronTorre = () => {
-    const pisos = Number(pisosTorre);
-    const deptos = Number(deptosPorPisoTorre);
-    if (!pisos || !deptos) {
+  const handleGenerarPatron = (pisos: string, deptosPorPiso: string, setTexto: (t: string) => void) => {
+    const p = Number(pisos);
+    const d = Number(deptosPorPiso);
+    if (!p || !d) {
       setError("Ingresa cuántos pisos y cuántos deptos por piso para generar la lista.");
       return;
     }
     setError(null);
-    setNumerosTorreTexto(generarPorPatron(pisos, deptos).join(", "));
+    setTexto(generarPorPatron(p, d).join(", "));
   };
 
   const handleAgregarTorre = () => {
@@ -118,17 +142,8 @@ export default function CrearCondominioScreen({ navigation }: any) {
       setPaso(1);
       return;
     }
-    if (tieneTorres === null) {
-      setError("Indica si el condominio tiene torres o blocks.");
-      return;
-    }
-    if (tieneTorres && torresAgregadas.length === 0) {
-      setError("Agrega al menos una torre o block antes de continuar.");
-      return;
-    }
-    const numerosCasas = !tieneTorres ? parsearNumeros(casasTexto) : [];
-    if (!tieneTorres && numerosCasas.length === 0) {
-      setError("Agrega al menos un número o nombre de casa.");
+    if (!estructura) {
+      setError("Indica cómo está estructurado el condominio.");
       return;
     }
     if (!tokenApi) {
@@ -136,14 +151,36 @@ export default function CrearCondominioScreen({ navigation }: any) {
       return;
     }
 
+    let payload: Parameters<typeof crearCondominio>[1];
+    if (estructura === "torres") {
+      if (torresAgregadas.length === 0) {
+        setError("Agrega al menos una torre o block antes de continuar.");
+        return;
+      }
+      payload = { nombre_condominio: nombreCondominio.trim(), estructura, torres: torresAgregadas };
+    } else if (estructura === "edificio") {
+      const numeros = parsearNumeros(numerosEdificioTexto);
+      if (numeros.length === 0) {
+        setError("Agrega los números de depto del edificio.");
+        return;
+      }
+      payload = {
+        nombre_condominio: nombreCondominio.trim(),
+        estructura,
+        edificio: { cantidad_pisos: Number(pisosEdificio) || undefined, numeros_unidad: numeros },
+      };
+    } else {
+      const numeros = parsearNumeros(casasTexto);
+      if (numeros.length === 0) {
+        setError("Agrega al menos un número o nombre de casa.");
+        return;
+      }
+      payload = { nombre_condominio: nombreCondominio.trim(), estructura, numeros_unidad_casas: numeros };
+    }
+
     setEnviando(true);
     try {
-      const resultado = await crearCondominio(tokenApi, {
-        nombre_condominio: nombreCondominio.trim(),
-        tiene_torres: tieneTorres,
-        torres: tieneTorres ? torresAgregadas : undefined,
-        numeros_unidad_casas: !tieneTorres ? numerosCasas : undefined,
-      });
+      const resultado = await crearCondominio(tokenApi, payload);
 
       if (!token) {
         // Todavía no había sesión completa (venimos del selector) — entra
@@ -203,34 +240,26 @@ export default function CrearCondominioScreen({ navigation }: any) {
 
         {paso === 2 && (
           <View style={styles.card}>
-            <Text style={styles.label}>¿Este condominio tiene torres o blocks?</Text>
-            <Text style={styles.ayuda}>
-              Si es un condominio de casas, elige "No" — vas a poder cargar los números de las casas directamente.
-            </Text>
-            <View style={styles.filaOpciones}>
-              <TouchableOpacity
-                style={[styles.opcion, tieneTorres === true && styles.opcionActiva]}
-                onPress={() => setTieneTorres(true)}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.opcionTexto, tieneTorres === true && styles.opcionTextoActivo]}>
-                  Sí, tiene torres/blocks
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.opcion, tieneTorres === false && styles.opcionActiva]}
-                onPress={() => setTieneTorres(false)}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.opcionTexto, tieneTorres === false && styles.opcionTextoActivo]}>
-                  No, es de casas
-                </Text>
-              </TouchableOpacity>
+            <Text style={styles.label}>¿Cómo está estructurado este condominio?</Text>
+            <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+              {OPCIONES_ESTRUCTURA.map((op) => (
+                <TouchableOpacity
+                  key={op.valor}
+                  style={[styles.opcionLarga, estructura === op.valor && styles.opcionActiva]}
+                  onPress={() => setEstructura(op.valor)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.opcionLargaTitulo, estructura === op.valor && styles.opcionTextoActivo]}>
+                    {op.titulo}
+                  </Text>
+                  <Text style={styles.opcionLargaAyuda}>{op.ayuda}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
             <TouchableOpacity
-              style={[styles.boton, tieneTorres === null && styles.botonDeshabilitado]}
-              onPress={() => tieneTorres !== null && setPaso(3)}
-              disabled={tieneTorres === null}
+              style={[styles.boton, estructura === null && styles.botonDeshabilitado]}
+              onPress={() => estructura !== null && setPaso(3)}
+              disabled={estructura === null}
               activeOpacity={0.85}
             >
               <Text style={styles.botonTexto}>Continuar</Text>
@@ -238,7 +267,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
           </View>
         )}
 
-        {paso === 3 && tieneTorres && (
+        {paso === 3 && estructura === "torres" && (
           <View style={styles.card}>
             {torresAgregadas.map((t, i) => (
               <View key={i} style={styles.torreResumen}>
@@ -283,7 +312,11 @@ export default function CrearCondominioScreen({ navigation }: any) {
                 placeholderTextColor={colors.textMuted}
                 keyboardType="number-pad"
               />
-              <TouchableOpacity style={styles.botonGenerar} onPress={handleGenerarPatronTorre} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.botonGenerar}
+                onPress={() => handleGenerarPatron(pisosTorre, deptosPorPisoTorre, setNumerosTorreTexto)}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.botonGenerarTexto}>Generar</Text>
               </TouchableOpacity>
             </View>
@@ -322,7 +355,66 @@ export default function CrearCondominioScreen({ navigation }: any) {
           </View>
         )}
 
-        {paso === 3 && tieneTorres === false && (
+        {paso === 3 && estructura === "edificio" && (
+          <View style={styles.card}>
+            <Text style={styles.label}>Generar números automáticamente (opcional)</Text>
+            <View style={styles.filaPatron}>
+              <TextInput
+                style={[styles.input, styles.inputChico]}
+                value={pisosEdificio}
+                onChangeText={setPisosEdificio}
+                placeholder="Pisos"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="number-pad"
+              />
+              <TextInput
+                style={[styles.input, styles.inputChico]}
+                value={deptosPorPisoEdificio}
+                onChangeText={setDeptosPorPisoEdificio}
+                placeholder="Deptos/piso"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="number-pad"
+              />
+              <TouchableOpacity
+                style={styles.botonGenerar}
+                onPress={() => handleGenerarPatron(pisosEdificio, deptosPorPisoEdificio, setNumerosEdificioTexto)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.botonGenerarTexto}>Generar</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.label}>Números de depto</Text>
+            <Text style={styles.ayuda}>
+              Separados por coma o uno por línea (puedes pegar una lista, ej. desde Excel) — o usa "Generar" arriba.
+            </Text>
+            <TextInput
+              style={[styles.input, styles.inputMultilinea]}
+              value={numerosEdificioTexto}
+              onChangeText={setNumerosEdificioTexto}
+              placeholder={"101, 102, 103...\no uno por línea"}
+              placeholderTextColor={colors.textMuted}
+              multiline
+            />
+
+            {error && <Text style={styles.error}>{error}</Text>}
+
+            <TouchableOpacity
+              style={[styles.boton, enviando && styles.botonDeshabilitado]}
+              onPress={handleEnviar}
+              disabled={enviando}
+              activeOpacity={0.85}
+            >
+              {enviando ? (
+                <ActivityIndicator color={colors.navy900} />
+              ) : (
+                <Text style={styles.botonTexto}>Crear condominio</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {paso === 3 && estructura === "casas" && (
           <View style={styles.card}>
             <Text style={styles.label}>Números o nombres de las casas</Text>
             <Text style={styles.ayuda}>
@@ -395,17 +487,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   botonGenerarTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 13 },
-  filaOpciones: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
-  opcion: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    padding: spacing.md,
-    alignItems: "center",
-  },
+  opcionLarga: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, padding: spacing.md },
   opcionActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
-  opcionTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 13, textAlign: "center" },
+  opcionLargaTitulo: { color: colors.textDark, fontWeight: "800", fontSize: 15 },
+  opcionLargaAyuda: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   opcionTextoActivo: { color: colors.navy900 },
   torreResumen: {
     flexDirection: "row",

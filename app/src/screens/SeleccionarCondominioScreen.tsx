@@ -39,7 +39,10 @@ export default function SeleccionarCondominioScreen({ navigation }: any) {
             disabled={cargandoId !== null}
             activeOpacity={0.8}
           >
-            <Text style={styles.tarjetaTexto}>{c.nombre}</Text>
+            <View style={{ flexShrink: 1 }}>
+              <Text style={styles.tarjetaTexto}>{c.nombre}</Text>
+              {c.rol && <Text style={styles.tarjetaRol}>{c.rol}</Text>}
+            </View>
             {cargandoId === c.id_condominio ? (
               <ActivityIndicator color={colors.navy900} />
             ) : (
@@ -87,6 +90,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   tarjetaTexto: { ...typography.heading, color: colors.textDark, flexShrink: 1 },
+  tarjetaRol: { color: colors.textMuted, fontSize: 12, fontWeight: "600", marginTop: 2 },
   tarjetaFlecha: { fontSize: 24, color: colors.textMuted, fontWeight: "700" },
   tarjetaNueva: {
     borderWidth: 1.5,

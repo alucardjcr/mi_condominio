@@ -24,7 +24,7 @@ import { bitacoraRouter } from "./routes/bitacora";
 import { jefeGuardiasRouter } from "./routes/jefe-guardias";
 import { mascotasRouter } from "./routes/mascotas";
 import { condominiosRouter } from "./routes/condominios";
-import { requireAuth, requireAdmin, requireAdminCondominioAccess } from "./middleware/auth";
+import { requireAuth, requireAdmin, requireCondominioAccess } from "./middleware/auth";
 import { initSchema } from "./db/client";
 
 const app = express();
@@ -41,22 +41,22 @@ app.use("/uploads", express.static(process.env.UPLOADS_DIR || path.join(__dirnam
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/auth", authRouter);
-app.use("/visitas", visitasRouter); // requiere login (ver middleware dentro del router)
+app.use("/visitas", visitasRouter); // requiere login (ver middleware dentro del router) — ronda 26: requireCondominioAccess también dentro del router, después de su propio requireAuth
 app.use("/estacionamientos", estacionamientosRouter);
-app.use("/", requireAuth, catalogosRouter); // /torres, /torres/:id/unidades, /unidades/:id/residentes, /tipos-permiso, /tipos-paquete, ...
+app.use("/", requireAuth, requireCondominioAccess, catalogosRouter); // /torres, /torres/:id/unidades, /unidades/:id/residentes, /tipos-permiso, /tipos-paquete, ...
 app.use("/patentes", requireAuth, patentesRouter);
-app.use("/paquetes", requireAuth, paquetesRouter); // Guardia y Administrador (no es exclusivo de admin)
-app.use("/reservas", requireAuth, reservasRouter); // Residente reserva, Guardia opera "Reserva Área Común" (ver requireRol dentro del router)
-app.use("/admin", requireAuth, requireAdmin, requireAdminCondominioAccess, adminRouter); // solo perfil Administrador (config de espacios y aprobación de reservas incluida); ronda 26: valida que el condominio pedido sea uno de los del admin logeado
-app.use("/admin-condominios", requireAuth, requireAdmin, condominiosRouter); // ronda 26: crear un condominio nuevo y listar los del admin logeado — sin requireAdminCondominioAccess a propósito, ver routes/condominios.ts
-app.use("/mi-depto", requireAuth, miDeptoRouter); // solo el dueño del depto, autoadministra el listado de residentes de SU unidad (ver requireRol dentro del router)
+app.use("/paquetes", requireAuth, requireCondominioAccess, paquetesRouter); // Guardia y Administrador (no es exclusivo de admin)
+app.use("/reservas", requireAuth, requireCondominioAccess, reservasRouter); // Residente reserva, Guardia opera "Reserva Área Común" (ver requireRol dentro del router)
+app.use("/admin", requireAuth, requireAdmin, requireCondominioAccess, adminRouter); // solo perfil Administrador (config de espacios y aprobación de reservas incluida); ronda 26: valida que el condominio pedido sea el de la sesión
+app.use("/admin-condominios", requireAuth, requireAdmin, condominiosRouter); // ronda 26: crear un condominio nuevo y listar los del admin logeado — sin requireCondominioAccess a propósito, ver routes/condominios.ts
+app.use("/mi-depto", requireAuth, requireCondominioAccess, miDeptoRouter); // solo el dueño del depto, autoadministra el listado de residentes de SU unidad (ver requireRol dentro del router)
 app.use("/notificaciones", requireAuth, notificacionesRouter); // bandeja propia de notificaciones (paquetes/visitas/comunicados)
-app.use("/personal", requireAuth, personalRouter); // autoservicio del propio Personal externo: turno + mis tareas (ver requireRol dentro del router)
-app.use("/mantenciones", requireAuth, mantencionesRouter); // Guardia: marcar ingreso/salida de la empresa externa (ver requireRol dentro del router); programación en /admin/mantenciones
-app.use("/vetados", requireAuth, vetadosRouter); // ronda 20: listado VETADOS — CRUD solo Administrador/Comité, búsqueda por RUT también Guardia (ver requireRol dentro del router)
-app.use("/bitacora", requireAuth, bitacoraRouter); // ronda 20: bitácora de novedades del turno — escribe Guardia, lee Guardia y Administrador/Comité (ver requireRol dentro del router)
-app.use("/jefe-guardias", requireAuth, jefeGuardiasRouter); // ronda 20: rol JEFE_GUARDIAS — calendario de turnos + CRUD de guardias, y SOLO eso (ver requireRol dentro del router)
-app.use("/mascotas", requireAuth, mascotasRouter); // ronda 20: mascotas por depto — autoservicio del residente de esa unidad, o Administrador/Comité (ver requireAuth dentro del router)
+app.use("/personal", requireAuth, requireCondominioAccess, personalRouter); // autoservicio del propio Personal externo: turno + mis tareas (ver requireRol dentro del router)
+app.use("/mantenciones", requireAuth, requireCondominioAccess, mantencionesRouter); // Guardia: marcar ingreso/salida de la empresa externa (ver requireRol dentro del router); programación en /admin/mantenciones
+app.use("/vetados", requireAuth, requireCondominioAccess, vetadosRouter); // ronda 20: listado VETADOS — CRUD solo Administrador/Comité, búsqueda por RUT también Guardia (ver requireRol dentro del router)
+app.use("/bitacora", requireAuth, requireCondominioAccess, bitacoraRouter); // ronda 20: bitácora de novedades del turno — escribe Guardia, lee Guardia y Administrador/Comité (ver requireRol dentro del router)
+app.use("/jefe-guardias", requireAuth, requireCondominioAccess, jefeGuardiasRouter); // ronda 20: rol JEFE_GUARDIAS — calendario de turnos + CRUD de guardias, y SOLO eso (ver requireRol dentro del router)
+app.use("/mascotas", requireAuth, requireCondominioAccess, mascotasRouter); // ronda 20: mascotas por depto — autoservicio del residente de esa unidad, o Administrador/Comité (ver requireAuth dentro del router)
 
 // Manejador de errores genérico: cualquier excepción no capturada por un
 // try/catch específico (sea síncrona o, gracias a express-async-errors, una

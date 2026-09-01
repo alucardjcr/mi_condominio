@@ -29,17 +29,13 @@ export interface GuardiaAutenticado {
   id_usuario: number;
   nombre_usuario: string;
   rol: string; // 'Guardia' | 'Administrador' | 'Residente' | 'Personal' (ronda 18) | 'JefeGuardias' (ronda 20)
-  // Ronda 26: condominio con el que está trabajando esta sesión.
-  // - Para Guardia/Residente/Personal/JefeGuardias: siempre su único
-  //   condominio (usuario.condominio_id_condominio) — sin cambios de
-  //   comportamiento, se agrega solo para dejar la base lista para cuando
-  //   esos roles también tengan multi-condominio (fase futura).
-  // - Para Administrador: el condominio que ELIGIÓ en el selector
-  //   post-login (ver seleccionarCondominio más abajo) — puede ser
-  //   distinto entre dos sesiones del mismo admin si administra más de
-  //   uno. Ausente únicamente en el token "intermedio" que se entrega
-  //   cuando un admin con más de un condominio todavía no elige (ver
-  //   login() -> requiereSeleccionCondominio).
+  // Ronda 26: condominio con el que está trabajando esta sesión — el que
+  // el usuario ELIGIÓ en el selector post-login si tiene más de uno (ver
+  // seleccionarCondominio), o el único que tiene si solo administra/vive/
+  // trabaja en uno. Aplica a TODOS los roles desde la fase 2 (antes solo
+  // Administrador podía tener más de un condominio). Ausente únicamente en
+  // el token "intermedio" que se entrega cuando alguien con más de un
+  // condominio todavía no elige.
   condominio_id_condominio?: number;
   // Solo presente cuando rol = 'Residente': su depto, para poder acotar
   // server-side qué puede ver (sus propios paquetes/reservas, nunca los de
@@ -79,154 +75,225 @@ async function nombreDeCondominio(condominioId: number): Promise<string | undefi
 }
 
 export async function login(usuariocol: string, password: string) {
+  // Ronda 26 (fase 2): esta consulta ya NO trae rol/condominio/unidad — eso
+  // ahora vive en `membresia`, porque puede haber más de uno por persona
+  // (y hasta ser distinto entre condominios). Acá solo se resuelve la
+  // identidad (existe la cuenta, la contraseña es correcta).
   const usuario = (await db
-    .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.password_usuario, tu.gls_tipousuario,
-              u.unidad_id_unidad, un.numero_unidad, tb.nombre_torre, u.flg_comite, u.flg_propietario,
-              u.condominio_id_condominio
-       FROM usuario u
-       JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
-       LEFT JOIN unidad un ON un.id_unidad = u.unidad_id_unidad
-       LEFT JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
-       WHERE u.usuariocol = ? AND u.flg_vigencia = 1`
-    )
-    .get(usuariocol)) as
-    | {
-        id_usuario: number;
-        nombre_usuario: string;
-        password_usuario: string | null;
-        gls_tipousuario: string;
-        unidad_id_unidad: number | null;
-        numero_unidad: string | null;
-        nombre_torre: string | null;
-        flg_comite: number;
-        flg_propietario: number;
-        condominio_id_condominio: number;
-      }
-    | undefined;
+    .prepare(`SELECT id_usuario, nombre_usuario, password_usuario FROM usuario WHERE usuariocol = ? AND flg_vigencia = 1`)
+    .get(usuariocol)) as { id_usuario: number; nombre_usuario: string; password_usuario: string | null } | undefined;
 
   if (!usuario || !usuario.password_usuario) {
     throw new Error("Usuario o contraseña incorrectos.");
   }
-
-  const passwordOk = bcrypt.compareSync(password, usuario.password_usuario);
-  if (!passwordOk) {
+  if (!bcrypt.compareSync(password, usuario.password_usuario)) {
     throw new Error("Usuario o contraseña incorrectos.");
   }
 
-  // Ronda 20: JEFE_GUARDIAS gestiona un calendario semanal de turnos que,
-  // a pedido explícito del usuario, restringe cuándo puede loguearse un
-  // Guardia (ver verificarTurnoParaLogin — nunca aplica a otros roles).
-  if (usuario.gls_tipousuario === "Guardia") {
-    const { permitido, motivo } = await verificarTurnoParaLogin(usuario.id_usuario, usuario.condominio_id_condominio);
+  const membresias = await obtenerMembresiasDeUsuario(usuario.id_usuario);
+
+  if (membresias.length === 0) {
+    // No debería pasar (el backfill del schema le da una membresía a todo
+    // usuario que ya existía) — solo podría darse en un usuario creado a
+    // mano sin pasar por los flujos normales de creación.
+    throw new Error("Tu cuenta no tiene ningún condominio asignado. Contacta al administrador.");
+  }
+
+  if (membresias.length > 1) {
+    // Ronda 26 (fase 2): más de un condominio (con cualquier rol,
+    // incluso distinto entre ellos) — la sesión queda "a medio
+    // autenticar": un token intermedio que solo sirve para
+    // POST /auth/seleccionar-condominio, junto con la lista para que la
+    // app muestre el selector (con el rol de cada una, ya que puede
+    // variar: ej. "Residente en Talca" / "Guardia en Santiago").
+    const tokenIntermedio = jwt.sign(
+      { id_usuario: usuario.id_usuario, nombre_usuario: usuario.nombre_usuario },
+      JWT_SECRET,
+      { expiresIn: "10m" }
+    );
+    return {
+      requiereSeleccionCondominio: true as const,
+      token: tokenIntermedio,
+      condominios: membresias.map((m) => ({ id_condominio: m.condominio_id_condominio, nombre: m.gls_condominio, rol: m.gls_tipousuario })),
+    };
+  }
+
+  // Una sola membresía: se salta el selector y se entra directo, como
+  // siempre — sin cambio de comportamiento para el caso más común hoy.
+  return await construirSesionDesdeMembresia(usuario.id_usuario, usuario.nombre_usuario, membresias[0]);
+}
+
+interface MembresiaFila {
+  id_membresia: number;
+  condominio_id_condominio: number;
+  gls_condominio: string;
+  gls_tipousuario: string;
+  unidad_id_unidad: number | null;
+  numero_unidad: string | null;
+  nombre_torre: string | null;
+  flg_comite: number;
+  flg_propietario: number;
+}
+
+async function obtenerMembresiasDeUsuario(idUsuario: number): Promise<MembresiaFila[]> {
+  return (await db
+    .prepare(
+      `SELECT m.id_membresia, m.condominio_id_condominio, c.gls_condominio, tu.gls_tipousuario,
+              m.unidad_id_unidad, un.numero_unidad, tb.nombre_torre, m.flg_comite, m.flg_propietario
+       FROM membresia m
+       JOIN condominio c ON c.id_condominio = m.condominio_id_condominio
+       JOIN tipo_usuario tu ON tu.id_tipousuario = m.tipo_usuario_id_tipousuario
+       LEFT JOIN unidad un ON un.id_unidad = m.unidad_id_unidad
+       LEFT JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
+       WHERE m.usuario_id_usuario = ? AND m.flg_vigencia = 1 AND c.flg_vigencia = 1
+       ORDER BY c.gls_condominio`
+    )
+    .all(idUsuario)) as MembresiaFila[];
+}
+
+// Arma el payload final + corre las validaciones que dependen de CUÁL
+// condominio quedó elegido (hoy: el chequeo de turno de Guardia, ronda 20
+// — antes se hacía con el condominio "de siempre" del usuario; ahora tiene
+// que ser el de la membresía elegida, porque un mismo guardia puede tener
+// turnos distintos en cada condominio donde trabaja).
+async function construirSesionDesdeMembresia(idUsuario: number, nombreUsuario: string, m: MembresiaFila) {
+  if (m.gls_tipousuario === "Guardia") {
+    const { permitido, motivo } = await verificarTurnoParaLogin(idUsuario, m.condominio_id_condominio);
     if (!permitido) {
       throw new Error(motivo || "No puedes iniciar sesión fuera de tu turno asignado.");
     }
   }
 
-  const payloadBase: GuardiaAutenticado = {
-    id_usuario: usuario.id_usuario,
-    nombre_usuario: usuario.nombre_usuario,
-    rol: usuario.gls_tipousuario,
-    ...(usuario.unidad_id_unidad
+  const payload: GuardiaAutenticado = {
+    id_usuario: idUsuario,
+    nombre_usuario: nombreUsuario,
+    rol: m.gls_tipousuario,
+    condominio_id_condominio: m.condominio_id_condominio,
+    ...(m.unidad_id_unidad
       ? {
-          unidad_id_unidad: usuario.unidad_id_unidad,
-          numero_unidad: usuario.numero_unidad ?? undefined,
-          nombre_torre: usuario.nombre_torre ?? undefined,
+          unidad_id_unidad: m.unidad_id_unidad,
+          numero_unidad: m.numero_unidad ?? undefined,
+          nombre_torre: m.nombre_torre ?? undefined,
         }
       : {}),
-    ...(usuario.flg_comite ? { esComite: true } : {}),
-    ...(usuario.flg_propietario ? { esPropietario: true } : {}),
+    ...(m.flg_comite ? { esComite: true } : {}),
+    ...(m.flg_propietario ? { esPropietario: true } : {}),
   };
-
-  // Ronda 26: solo Administrador (y nunca un Residente-comité, que sigue
-  // atado a un único condominio vía su unidad) puede tener más de un
-  // condominio. Si tiene más de uno, la sesión queda "a medio autenticar"
-  // — se entrega un token SIN condominio_id_condominio (no sirve para
-  // /admin/* ni /condominios, solo para POST /auth/seleccionar-condominio)
-  // junto con la lista para que la app muestre el selector.
-  if (usuario.gls_tipousuario === "Administrador") {
-    const condominios = (await db
-      .prepare(
-        `SELECT c.id_condominio, c.gls_condominio
-         FROM usuario_condominio uc
-         JOIN condominio c ON c.id_condominio = uc.condominio_id_condominio
-         WHERE uc.usuario_id_usuario = ? AND uc.flg_vigencia = 1 AND c.flg_vigencia = 1
-         ORDER BY c.gls_condominio`
-      )
-      .all(usuario.id_usuario)) as { id_condominio: number; gls_condominio: string }[];
-
-    if (condominios.length === 0) {
-      // No debería pasar (el backfill del schema vincula a todo admin
-      // existente con su condominio original) — pero si de algún modo
-      // ocurre, se autorepara vinculándolo a ese condominio en vez de
-      // dejarlo sin poder entrar.
-      await db
-        .prepare(
-          `INSERT IGNORE INTO usuario_condominio (usuario_id_usuario, condominio_id_condominio) VALUES (?, ?)`
-        )
-        .run(usuario.id_usuario, usuario.condominio_id_condominio);
-      condominios.push({ id_condominio: usuario.condominio_id_condominio, gls_condominio: "" });
-    }
-
-    if (condominios.length > 1) {
-      const tokenIntermedio = jwt.sign(payloadBase, JWT_SECRET, { expiresIn: "10m" });
-      return {
-        requiereSeleccionCondominio: true as const,
-        token: tokenIntermedio,
-        condominios: condominios.map((c) => ({ id_condominio: c.id_condominio, nombre: c.gls_condominio })),
-      };
-    }
-
-    // Un solo condominio: se salta el selector y se entra directo, como
-    // siempre — sin cambio de comportamiento para el caso más común hoy.
-    return await emitirTokenFinal({ ...payloadBase, condominio_id_condominio: condominios[0].id_condominio });
-  }
-
-  return await emitirTokenFinal({ ...payloadBase, condominio_id_condominio: usuario.condominio_id_condominio });
+  return emitirTokenFinal(payload);
 }
 
 /**
- * Paso 2 del login de un Administrador con más de un condominio: recibe el
- * token intermedio (sin condominio_id_condominio) que devolvió login() y el
- * id del condominio elegido, valida que el admin realmente tenga acceso a
- * ese condominio (nunca confía en el id que mande el cliente sin
- * verificarlo contra usuario_condominio) y entrega el token final.
+ * Paso 2 del login cuando el usuario tiene más de una membresía: recibe el
+ * token intermedio que devolvió login() (identidad únicamente, sin rol ni
+ * condominio) y el condominio elegido, busca SU membresía para ese
+ * condominio (nunca confía en un rol/depto que mande el cliente) y entrega
+ * el token final. También sirve para que alguien YA logeado se pase a otro
+ * de sus condominios sin desloguearse (ver AuthContext.cambiarCondominio en
+ * la app): en ese caso el "token intermedio" es directamente el token de
+ * la sesión activa — igual de válido acá, porque esta función solo lee
+ * id_usuario del token, ignora cualquier otro campo que pueda traer.
  */
-export async function seleccionarCondominio(tokenIntermedio: string, condominioId: number) {
-  let payload: GuardiaAutenticado;
+export async function seleccionarCondominio(token: string, condominioId: number) {
+  let payload: { id_usuario: number; nombre_usuario: string };
   try {
-    payload = jwt.verify(tokenIntermedio, JWT_SECRET) as GuardiaAutenticado;
+    payload = jwt.verify(token, JWT_SECRET) as { id_usuario: number; nombre_usuario: string };
   } catch {
     throw new Error("Sesión inválida o expirada. Vuelve a iniciar sesión.");
   }
-  if (payload.rol !== "Administrador") {
-    throw new Error("Esta acción es solo para el perfil Administrador.");
-  }
 
-  const acceso = (await db
-    .prepare(
-      `SELECT 1 FROM usuario_condominio WHERE usuario_id_usuario = ? AND condominio_id_condominio = ? AND flg_vigencia = 1`
-    )
-    .get(payload.id_usuario, condominioId)) as unknown;
-  if (!acceso) {
+  const membresias = await obtenerMembresiasDeUsuario(payload.id_usuario);
+  const elegida = membresias.find((m) => m.condominio_id_condominio === condominioId);
+  if (!elegida) {
     throw new Error("No tienes acceso a ese condominio.");
   }
 
-  return await emitirTokenFinal({ ...payload, condominio_id_condominio: condominioId });
+  return construirSesionDesdeMembresia(payload.id_usuario, payload.nombre_usuario, elegida);
 }
 
-/** Lista los condominios de un Administrador — usada por la pantalla de selección para poder refrescarla (ej. recién creó uno nuevo). */
-export async function listarCondominiosDeAdmin(idUsuario: number) {
-  return db
+/** Lista los condominios de un usuario — usada por la pantalla de selección/cambio para poder refrescarla (ej. recién creó un condominio nuevo). */
+export async function listarCondominiosDeUsuario(idUsuario: number) {
+  const membresias = await obtenerMembresiasDeUsuario(idUsuario);
+  return membresias.map((m) => ({ id_condominio: m.condominio_id_condominio, nombre: m.gls_condominio, rol: m.gls_tipousuario }));
+}
+
+/**
+ * Ronda 26 (fase 2): mantiene sincronizada la membresía "principal" de un
+ * usuario (la del condominio guardado en usuario.condominio_id_condominio,
+ * su condominio "de siempre") con lo que diga la fila `usuario` en este
+ * momento. Se llama al final de cada función que crea o edita un Guardia/
+ * Residente/Personal (ver admin.service.ts / personal.service.ts) — así
+ * evitamos duplicar cada UPDATE de `usuario` en `membresia` por separado
+ * (fácil de olvidar alguno) y centralizamos la sincronización acá.
+ *
+ * Solo toca la membresía de SU condominio de siempre — si ese usuario
+ * además tiene membresías en OTROS condominios (agregado ahí por el
+ * administrador de ese otro condominio), esta función nunca las toca: las
+ * pantallas de admin.service.ts siempre operan sobre el condominio de la
+ * sesión actual, nunca sobre condominios ajenos a ella.
+ */
+export async function sincronizarMembresiaPrincipal(idUsuario: number) {
+  const u = (await db
     .prepare(
-      `SELECT c.id_condominio, c.gls_condominio AS nombre
-       FROM usuario_condominio uc
-       JOIN condominio c ON c.id_condominio = uc.condominio_id_condominio
-       WHERE uc.usuario_id_usuario = ? AND uc.flg_vigencia = 1 AND c.flg_vigencia = 1
-       ORDER BY c.gls_condominio`
+      `SELECT tipo_usuario_id_tipousuario, condominio_id_condominio, unidad_id_unidad, flg_comite,
+              flg_propietario, tipo_residente_id_tiporesidente, tipo_personal_id_tipopersonal, flg_vigencia
+       FROM usuario WHERE id_usuario = ?`
     )
-    .all(idUsuario);
+    .get(idUsuario)) as
+    | {
+        tipo_usuario_id_tipousuario: number;
+        condominio_id_condominio: number;
+        unidad_id_unidad: number | null;
+        flg_comite: number;
+        flg_propietario: number;
+        tipo_residente_id_tiporesidente: number | null;
+        tipo_personal_id_tipopersonal: number | null;
+        flg_vigencia: number;
+      }
+    | undefined;
+  if (!u) return;
+
+  const existente = (await db
+    .prepare(`SELECT id_membresia FROM membresia WHERE usuario_id_usuario = ? AND condominio_id_condominio = ?`)
+    .get(idUsuario, u.condominio_id_condominio)) as { id_membresia: number } | undefined;
+
+  if (existente) {
+    await db
+      .prepare(
+        `UPDATE membresia SET tipo_usuario_id_tipousuario = ?, unidad_id_unidad = ?, flg_comite = ?,
+                flg_propietario = ?, tipo_residente_id_tiporesidente = ?, tipo_personal_id_tipopersonal = ?,
+                flg_vigencia = ?
+         WHERE id_membresia = ?`
+      )
+      .run(
+        u.tipo_usuario_id_tipousuario,
+        u.unidad_id_unidad,
+        u.flg_comite,
+        u.flg_propietario,
+        u.tipo_residente_id_tiporesidente,
+        u.tipo_personal_id_tipopersonal,
+        u.flg_vigencia,
+        existente.id_membresia
+      );
+  } else {
+    await db
+      .prepare(
+        `INSERT INTO membresia (usuario_id_usuario, condominio_id_condominio, tipo_usuario_id_tipousuario,
+                unidad_id_unidad, flg_comite, flg_propietario, tipo_residente_id_tiporesidente,
+                tipo_personal_id_tipopersonal, flg_vigencia)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        idUsuario,
+        u.condominio_id_condominio,
+        u.tipo_usuario_id_tipousuario,
+        u.unidad_id_unidad,
+        u.flg_comite,
+        u.flg_propietario,
+        u.tipo_residente_id_tiporesidente,
+        u.tipo_personal_id_tipopersonal,
+        u.flg_vigencia
+      );
+  }
 }
 
 export function verificarToken(token: string): GuardiaAutenticado {

@@ -11,7 +11,7 @@ import { colors, radius, spacing, typography } from "../theme/theme";
 // lista que ya trajo el login), acá la lista se pide de nuevo porque puede
 // haber cambiado (ej. recién creó un condominio nuevo).
 export default function CambiarCondominioScreen({ navigation }: any) {
-  const { token, cambiarCondominio, nombreCondominioActual } = useAuth();
+  const { token, guardia, cambiarCondominio, nombreCondominioActual } = useAuth();
   const [condominios, setCondominios] = useState<CondominioOpcion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [cambiandoId, setCambiandoId] = useState<number | null>(null);
@@ -48,24 +48,30 @@ export default function CambiarCondominioScreen({ navigation }: any) {
     <View style={styles.container}>
       <Text style={styles.subtitulo}>Condominio actual: {nombreCondominioActual ?? "—"}</Text>
 
-      {condominios.map((c) => (
-        <TouchableOpacity
-          key={c.id_condominio}
-          style={[styles.tarjeta, c.nombre === nombreCondominioActual && styles.tarjetaActiva]}
-          onPress={() => handleElegir(c.id_condominio)}
-          disabled={cambiandoId !== null || c.nombre === nombreCondominioActual}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.tarjetaTexto}>{c.nombre}</Text>
-          {cambiandoId === c.id_condominio ? (
-            <ActivityIndicator color={colors.navy900} />
-          ) : c.nombre === nombreCondominioActual ? (
-            <Text style={styles.actualEtiqueta}>Actual</Text>
-          ) : (
-            <Text style={styles.tarjetaFlecha}>›</Text>
-          )}
-        </TouchableOpacity>
-      ))}
+      {condominios.map((c) => {
+        const esActual = c.id_condominio === guardia?.condominio_id_condominio;
+        return (
+          <TouchableOpacity
+            key={c.id_condominio}
+            style={[styles.tarjeta, esActual && styles.tarjetaActiva]}
+            onPress={() => handleElegir(c.id_condominio)}
+            disabled={cambiandoId !== null || esActual}
+            activeOpacity={0.8}
+          >
+            <View style={{ flexShrink: 1 }}>
+              <Text style={styles.tarjetaTexto}>{c.nombre}</Text>
+              {c.rol && <Text style={styles.tarjetaRol}>{c.rol}</Text>}
+            </View>
+            {cambiandoId === c.id_condominio ? (
+              <ActivityIndicator color={colors.navy900} />
+            ) : esActual ? (
+              <Text style={styles.actualEtiqueta}>Actual</Text>
+            ) : (
+              <Text style={styles.tarjetaFlecha}>›</Text>
+            )}
+          </TouchableOpacity>
+        );
+      })}
 
       <TouchableOpacity
         style={styles.tarjetaNueva}
@@ -97,6 +103,7 @@ const styles = StyleSheet.create({
   },
   tarjetaActiva: { borderColor: colors.navy900 },
   tarjetaTexto: { ...typography.heading, color: colors.textDark, flexShrink: 1 },
+  tarjetaRol: { color: colors.textMuted, fontSize: 12, fontWeight: "600", marginTop: 2 },
   tarjetaFlecha: { fontSize: 24, color: colors.textMuted, fontWeight: "700" },
   actualEtiqueta: { color: colors.navy900, fontWeight: "700", fontSize: 12 },
   tarjetaNueva: {
