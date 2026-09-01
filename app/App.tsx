@@ -19,6 +19,9 @@ import CambiarCondominioScreen from "./src/screens/CambiarCondominioScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import EntradaScreen from "./src/screens/EntradaScreen";
 import SalidaScreen from "./src/screens/SalidaScreen";
+import VisitasMenuScreen from "./src/screens/VisitasMenuScreen";
+import EntradaTipoScreen from "./src/screens/EntradaTipoScreen";
+import SalidaTipoScreen from "./src/screens/SalidaTipoScreen";
 import ConsultaPatenteScreen from "./src/screens/ConsultaPatenteScreen";
 import DisponibilidadScreen from "./src/screens/DisponibilidadScreen";
 import PaqueteRegistrarScreen from "./src/screens/PaqueteRegistrarScreen";
@@ -215,6 +218,21 @@ function AppNavigator() {
                 name="PaqueteBusqueda"
                 component={PaqueteBusquedaScreen}
                 options={{ title: "Buscar paquetes" }}
+              />
+              <Stack.Screen
+                name="VisitasMenu"
+                component={VisitasMenuScreen}
+                options={{ title: "Visitas" }}
+              />
+              <Stack.Screen
+                name="EntradaTipo"
+                component={EntradaTipoScreen}
+                options={{ title: "Registrar entrada" }}
+              />
+              <Stack.Screen
+                name="SalidaTipo"
+                component={SalidaTipoScreen}
+                options={{ title: "Registrar salida" }}
               />
               <Stack.Screen name="Entrada" component={EntradaScreen} options={{ title: "Registrar entrada" }} />
               <Stack.Screen name="Salida" component={SalidaScreen} options={{ title: "Registrar salida" }} />

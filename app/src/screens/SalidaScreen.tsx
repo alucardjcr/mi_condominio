@@ -20,8 +20,12 @@ function formatearHora(iso: string) {
   return new Date(iso).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function SalidaScreen() {
+export default function SalidaScreen({ route }: any) {
   const { token } = useAuth();
+  // Ronda 28: se elige vehicular/peatonal ANTES, en SalidaTipoScreen — solo
+  // se muestran las visitas activas de ese tipo (antes esta pantalla
+  // mostraba todas mezcladas).
+  const esPeatonal: boolean = route?.params?.peatonal ?? false;
   const [visitas, setVisitas] = useState<Visita[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(true);
@@ -49,15 +53,16 @@ export default function SalidaScreen() {
   );
 
   const visitasFiltradas = useMemo(() => {
-    if (!busqueda.trim()) return visitas;
+    const porTipo = visitas.filter((v) => (v.gls_tipovisita === "Peatonal") === esPeatonal);
+    if (!busqueda.trim()) return porTipo;
     const q = busqueda.trim().toLowerCase();
-    return visitas.filter(
+    return porTipo.filter(
       (v) =>
         v.patente?.toLowerCase().includes(q) ||
         v.nombre_visita.toLowerCase().includes(q) ||
         v.numero_unidad.toLowerCase().includes(q)
     );
-  }, [visitas, busqueda]);
+  }, [visitas, busqueda, esPeatonal]);
 
   const handleSalida = async (idVisita: number) => {
     if (!token) return;
@@ -92,6 +97,9 @@ export default function SalidaScreen() {
 
   return (
     <View style={{ flex: 1 }}>
+      <Text style={styles.encabezadoModo}>
+        {esPeatonal ? "🚶 Salidas peatonales" : "🚗 Salidas vehiculares"}
+      </Text>
       <TextInput
         style={styles.buscador}
         placeholder="Buscar por patente, nombre o depto..."
@@ -113,7 +121,9 @@ export default function SalidaScreen() {
         }
         contentContainerStyle={{ padding: 16, gap: 10 }}
         ListEmptyComponent={
-          <Text style={styles.vacio}>No hay visitas dentro del condominio en este momento.</Text>
+          <Text style={styles.vacio}>
+            No hay visitas {esPeatonal ? "peatonales" : "vehiculares"} dentro del condominio en este momento.
+          </Text>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
@@ -168,6 +178,17 @@ export default function SalidaScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f6f8" },
+  encabezadoModo: {
+    textAlign: "center",
+    fontWeight: "700",
+    fontSize: 14,
+    color: "#014BD2",
+    backgroundColor: "#eef6ff",
+    borderRadius: 10,
+    padding: 12,
+    margin: 16,
+    marginBottom: 0,
+  },
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   buscador: {
     borderWidth: 1,

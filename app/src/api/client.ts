@@ -61,6 +61,8 @@ import {
   AdministradorCuenta,
   CrearAdministradorInput,
   CondominioConFacturacion,
+  EstacionamientoAdmin,
+  EstadoEstacionamiento,
 } from "./types";
 
 // Ronda 17: con la sesión persistida (expo-secure-store), un token puede
@@ -722,3 +724,13 @@ export const superAdminConfigurarFacturacion = (
 
 export const superAdminMarcarPagado = (token: string, condominioId: number, input: { periodo?: string; monto: number }) =>
   send<{ ok: boolean }>(`/super-admin/facturacion/${condominioId}/marcar-pagado`, "POST", token, input);
+
+// --- Ronda 28: administración de estacionamientos ---------------------------
+
+export const getEstacionamientosAdmin = (token: string, condominioId: number) =>
+  get<EstacionamientoAdmin[]>(`/admin/estacionamientos?condominio_id=${condominioId}`, token);
+
+export const getEstadosEstacionamiento = (token: string) => get<EstadoEstacionamiento[]>(`/admin/estacionamientos/estados`, token);
+
+export const actualizarEstadoEstacionamiento = (token: string, id: number, estadoId: number) =>
+  send<{ id_estacionamiento: number }>(`/admin/estacionamientos/${id}`, "PATCH", token, { estado_id: estadoId });

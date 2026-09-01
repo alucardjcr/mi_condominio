@@ -220,8 +220,7 @@ export default function HomeScreen({ navigation }: any) {
         </>
       ) : (
         <>
-          <BotonAccion label="ENTRADA" color={colors.success} onPress={() => navigation.navigate("Entrada")} />
-          <BotonAccion label="SALIDA" color={colors.danger} onPress={() => navigation.navigate("Salida")} />
+          <BotonAccion label="VISITAS" color={colors.success} onPress={() => navigation.navigate("VisitasMenu")} />
           <BotonAccion
             label="CONSULTA PATENTE"
             color={colors.info}

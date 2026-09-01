@@ -16,6 +16,9 @@ import {
   auditarPatente,
   listarUnidadesGastoComun,
   actualizarGastoComunUnidad,
+  listarEstacionamientosAdmin,
+  listarEstadosEstacionamiento,
+  actualizarEstadoEstacionamientoAdmin,
 } from "../services/admin.service";
 import { reporteGastoComun, generarExcelGastoComun } from "../services/reportes.service";
 import { crearComunicado } from "../services/notificaciones.service";
@@ -455,6 +458,31 @@ adminRouter.patch("/unidades/:id/gasto-comun", async (req, res) => {
       return res.status(400).json({ error: "flg_gastocomun debe ser 0 o 1." });
     }
     res.json(await actualizarGastoComunUnidad(Number(req.params.id), flg_gastocomun));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 28, a pedido explícito del usuario: administrar el estado de cada
+// estacionamiento (ej. marcar el cupo 84 como "Fuera de servicio" porque
+// quedó mal hecho y nadie lo puede usar). Ver la nota completa en
+// admin.service.ts -> listarEstacionamientosAdmin.
+adminRouter.get("/estacionamientos", async (req, res) => {
+  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  res.json(await listarEstacionamientosAdmin(condominioId));
+});
+
+adminRouter.get("/estacionamientos/estados", async (_req, res) => {
+  res.json(await listarEstadosEstacionamiento());
+});
+
+adminRouter.patch("/estacionamientos/:id", async (req, res) => {
+  try {
+    const { estado_id } = req.body;
+    if (!estado_id) {
+      return res.status(400).json({ error: "Falta estado_id." });
+    }
+    res.json(await actualizarEstadoEstacionamientoAdmin(Number(req.params.id), Number(estado_id)));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

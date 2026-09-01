@@ -34,11 +34,13 @@ function describirPermiso(p: TipoPermiso): string {
   return `${p.gls_tipopermiso} — ${p.tiempo_gratis_minutos / 60} hrs gratis, luego $${p.tarifa_por_minuto_extra}/min`;
 }
 
-export default function EntradaScreen({ navigation }: any) {
+export default function EntradaScreen({ navigation, route }: any) {
   const { token } = useAuth();
 
-  // Vehicular o peatonal (una peatonal no ocupa cupo de estacionamiento).
-  const [esPeatonal, setEsPeatonal] = useState(false);
+  // Ronda 28: ahora se elige vehicular/peatonal ANTES, en EntradaTipoScreen
+  // — llega acá como route.params.peatonal en vez de decidirse dentro de
+  // este formulario (por eso ya no hay selector abajo).
+  const [esPeatonal] = useState<boolean>(route?.params?.peatonal ?? false);
 
   // Solo relevante si es vehicular: cupo de visita normal, o uno de los 3 discapacitados.
   const [esDiscapacitado, setEsDiscapacitado] = useState(false);
@@ -115,15 +117,6 @@ export default function EntradaScreen({ navigation }: any) {
     setCarnetConfirmado(false);
     setEsDiscapacitado(false);
     setOcupanteResidente(false);
-    setEsPeatonal(false);
-  };
-
-  const handleCambiarModoVisita = (peatonal: boolean) => {
-    setEsPeatonal(peatonal);
-    setEsDiscapacitado(false);
-    setOcupanteResidente(false);
-    setPermisoSel(null);
-    setCarnetConfirmado(false);
   };
 
   const nombreResidenteFinal = usandoResidenteLibre ? residenteLibre : residenteSel?.label ?? "";
@@ -284,24 +277,9 @@ export default function EntradaScreen({ navigation }: any) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.tipoCupoSelector}>
-          <TouchableOpacity
-            style={[styles.tipoCupoBoton, !esPeatonal && styles.tipoCupoBotonActivo]}
-            onPress={() => handleCambiarModoVisita(false)}
-          >
-            <Text style={[styles.tipoCupoTexto, !esPeatonal && styles.tipoCupoTextoActivo]}>
-              🚗 Visita vehicular
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tipoCupoBoton, esPeatonal && styles.tipoCupoBotonActivo]}
-            onPress={() => handleCambiarModoVisita(true)}
-          >
-            <Text style={[styles.tipoCupoTexto, esPeatonal && styles.tipoCupoTextoActivo]}>
-              🚶 Visita peatonal
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.encabezadoModo}>
+          {esPeatonal ? "🚶 Registrando entrada peatonal" : "🚗 Registrando entrada vehicular"}
+        </Text>
 
         {!esPeatonal && (
           <View style={styles.tipoCupoSelector}>
@@ -554,6 +532,16 @@ export default function EntradaScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { padding: 20, paddingBottom: 60 },
+  encabezadoModo: {
+    textAlign: "center",
+    fontWeight: "700",
+    fontSize: 14,
+    color: "#014BD2",
+    backgroundColor: "#eef6ff",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
   tipoCupoSelector: { flexDirection: "row", gap: 10, marginBottom: 4 },
   tipoCupoBoton: {
     flex: 1,

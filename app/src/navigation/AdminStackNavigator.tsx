@@ -26,6 +26,7 @@ import AdminElementosMantencionScreen from "../screens/admin/AdminElementosMante
 import AdminMantencionDetalleScreen from "../screens/admin/AdminMantencionDetalleScreen";
 import EstacionamientosArriendoScreen from "../screens/EstacionamientosArriendoScreen";
 import AdminVetadosScreen from "../screens/admin/AdminVetadosScreen";
+import AdminEstacionamientosScreen from "../screens/admin/AdminEstacionamientosScreen";
 import BitacoraScreen from "../screens/BitacoraScreen";
 import MascotasScreen from "../screens/MascotasScreen";
 import CrearCondominioScreen from "../screens/CrearCondominioScreen";
@@ -109,6 +110,11 @@ export default function AdminStackNavigator() {
         options={{ title: "Estacionamientos en arriendo" }}
       />
       <Stack.Screen name="AdminVetados" component={AdminVetadosScreen} options={{ title: "Vetados" }} />
+      <Stack.Screen
+        name="AdminEstacionamientos"
+        component={AdminEstacionamientosScreen}
+        options={{ title: "Estacionamientos" }}
+      />
       <Stack.Screen name="CambiarCondominio" component={CambiarCondominioScreen} options={{ title: "Cambiar de condominio" }} />
       <Stack.Screen name="CrearCondominio" component={CrearCondominioScreen} options={{ title: "Crear condominio" }} />
       <Stack.Screen name="Bitacora" component={BitacoraScreen} options={{ title: "Bitácora de guardias" }} />

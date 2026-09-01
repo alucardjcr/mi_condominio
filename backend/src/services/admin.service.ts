@@ -369,3 +369,55 @@ export async function actualizarGastoComunUnidad(unidadId: number, flgGastocomun
     .prepare(`SELECT id_unidad, numero_unidad, flg_gastocomun FROM unidad WHERE id_unidad = ?`)
     .get(unidadId);
 }
+
+// ---------------------------------------------------------------------------
+// Ronda 28, a pedido explícito del usuario: administrar el estado de CADA
+// estacionamiento (Visita, Discapacitado y Residente) — hasta ahora no
+// existía ninguna pantalla para esto, solo se sembraban por seed.ts. El
+// caso concreto que lo motivó: en Valles de Varoli el cupo de residente 84
+// "quedó mal hecho" y no se puede usar — se marca "Fuera de servicio" acá
+// y automáticamente deja de ofrecerse (ver estacionamientoVisita.service.ts:
+// la asignación automática de cupo al registrar una entrada YA filtraba
+// por estado = 'Disponible', así que un cupo Fuera de servicio nunca se
+// asigna solo con este cambio, sin tocar esa lógica).
+// ---------------------------------------------------------------------------
+
+export async function listarEstacionamientosAdmin(condominioId: number) {
+  return db
+    .prepare(
+      `SELECT e.id_estacionamiento, e.numero_estacionamiento, e.ubicacion,
+              te.gls_tipoestacionamiento AS tipo,
+              ee.id_estadoestacionamiento AS estado_id, ee.gls_estadoestacionamiento AS estado,
+              un.numero_unidad, tb.nombre_torre
+       FROM estacionamiento e
+       JOIN tipo_estacionamiento te ON te.id_tipoestacionamiento = e.tipo_estacionamiento_id_tipoestacionamiento
+       JOIN estado_estacionamiento ee ON ee.id_estadoestacionamiento = e.estado_estacionamiento_id_estadoestacionamiento
+       LEFT JOIN unidad un ON un.id_unidad = e.unidad_id_unidad
+       LEFT JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
+       WHERE e.condominio_id_condominio = ?
+       ORDER BY te.gls_tipoestacionamiento, e.numero_estacionamiento`
+    )
+    .all(condominioId);
+}
+
+export async function listarEstadosEstacionamiento() {
+  return db
+    .prepare(`SELECT id_estadoestacionamiento, gls_estadoestacionamiento FROM estado_estacionamiento WHERE flg_vigencia = 1 ORDER BY id_estadoestacionamiento`)
+    .all();
+}
+
+export async function actualizarEstadoEstacionamientoAdmin(id: number, estadoId: number) {
+  const cupo = await db.prepare(`SELECT id_estacionamiento FROM estacionamiento WHERE id_estacionamiento = ?`).get(id);
+  if (!cupo) throw new Error(`No existe el estacionamiento ${id}.`);
+  await db
+    .prepare(`UPDATE estacionamiento SET estado_estacionamiento_id_estadoestacionamiento = ? WHERE id_estacionamiento = ?`)
+    .run(estadoId, id);
+  return db
+    .prepare(
+      `SELECT e.id_estacionamiento, e.numero_estacionamiento, ee.gls_estadoestacionamiento AS estado
+       FROM estacionamiento e
+       JOIN estado_estacionamiento ee ON ee.id_estadoestacionamiento = e.estado_estacionamiento_id_estadoestacionamiento
+       WHERE e.id_estacionamiento = ?`
+    )
+    .get(id);
+}

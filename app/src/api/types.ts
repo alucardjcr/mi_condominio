@@ -760,6 +760,25 @@ export interface Mascota {
   nombre_torre?: string;
 }
 
+// --- Ronda 28: administración de estacionamientos ---------------------------
+
+export interface EstacionamientoAdmin {
+  id_estacionamiento: number;
+  numero_estacionamiento: string;
+  ubicacion: string | null;
+  tipo: string; // 'Visita' | 'Residente' | 'Discapacitado'
+  estado_id: number;
+  estado: string; // 'Disponible' | 'Ocupado' | 'Fuera de servicio' | 'Disponible para arriendo'
+  numero_unidad: string | null;
+  nombre_torre: string | null;
+}
+
+export interface EstadoEstacionamiento {
+  id_estadoestacionamiento: number;
+  gls_estadoestacionamiento: string;
+}
+
+
 // --- Ronda 27: SuperAdmin — crear Administradores + facturación -------------
 
 export interface CondominioSimple {
