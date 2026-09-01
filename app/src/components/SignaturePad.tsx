@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   botonSecundarioTexto: { color: "#555", fontWeight: "600" },
-  botonPrimario: { flex: 1, backgroundColor: "#1a6fc4", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  botonPrimario: { flex: 1, backgroundColor: "#014BD2", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
   botonPrimarioTexto: { color: "#fff", fontWeight: "700" },
   botonDeshabilitado: { opacity: 0.5 },
   previewWrap: {

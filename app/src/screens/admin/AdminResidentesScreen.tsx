@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: "row", alignItems: "center" },
   nombreItem: { fontSize: 16, fontWeight: "700" },
   detalle: { color: "#666", marginTop: 2, fontSize: 13 },
-  carnetTexto: { color: "#1a6fc4", marginTop: 4, fontSize: 12, fontWeight: "600" },
+  carnetTexto: { color: "#014BD2", marginTop: 4, fontSize: 12, fontWeight: "600" },
   accesoActivo: { color: "#1a9d5c", marginTop: 4, fontSize: 12, fontWeight: "600" },
   comiteTexto: { color: "#8e44ad", marginTop: 4, fontSize: 12, fontWeight: "600" },
   propietarioTexto: { color: "#0f766e", marginTop: 4, fontSize: 12, fontWeight: "600" },
@@ -566,6 +566,6 @@ const styles = StyleSheet.create({
   botonDesactivar: { backgroundColor: "#c0392b" },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12, textAlign: "center" },
   enlaceCarnet: { marginTop: 10 },
-  enlaceCarnetTexto: { color: "#1a6fc4", fontSize: 12, fontWeight: "600" },
+  enlaceCarnetTexto: { color: "#014BD2", fontSize: 12, fontWeight: "600" },
   carnetForm: { marginTop: 10 },
 });

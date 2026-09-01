@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   container: { padding: 20, paddingBottom: 60 },
   label: { fontSize: 14, fontWeight: "600", color: "#333" },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 16, backgroundColor: "#fff", marginTop: 4 },
-  boton: { backgroundColor: "#1a6fc4", borderRadius: 10, padding: 16, alignItems: "center", marginTop: 16 },
+  boton: { backgroundColor: "#014BD2", borderRadius: 10, padding: 16, alignItems: "center", marginTop: 16 },
   botonTexto: { color: "#fff", fontSize: 16, fontWeight: "700" },
   cardOk: { backgroundColor: "#e6f7ee", borderRadius: 12, padding: 16, marginTop: 24 },
   cardOkTexto: { color: "#1a9d5c", fontWeight: "700", fontSize: 15 },

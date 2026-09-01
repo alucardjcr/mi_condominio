@@ -124,10 +124,10 @@ const styles = StyleSheet.create({
   subtitulo: { color: "#888", fontSize: 13, marginBottom: 6 },
   vacio: { textAlign: "center", color: "#888", marginTop: 30 },
   card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
-  cardNoLeida: { borderColor: "#1a6fc4", borderWidth: 1.5, backgroundColor: "#f3f8ff" },
+  cardNoLeida: { borderColor: "#014BD2", borderWidth: 1.5, backgroundColor: "#f3f8ff" },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   titulo: { fontSize: 15, fontWeight: "700", color: "#222", flex: 1 },
-  puntoNoLeido: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#1a6fc4", marginLeft: 8 },
+  puntoNoLeido: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#014BD2", marginLeft: 8 },
   cuerpo: { color: "#555", marginTop: 4, fontSize: 13, lineHeight: 18 },
   fecha: { color: "#999", marginTop: 6, fontSize: 11 },
 });

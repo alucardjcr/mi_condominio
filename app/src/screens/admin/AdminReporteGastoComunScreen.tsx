@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   botonTexto: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  totalGeneral: { marginTop: 12, fontSize: 15, fontWeight: "700", color: "#1a6fc4" },
+  totalGeneral: { marginTop: 12, fontSize: 15, fontWeight: "700", color: "#014BD2" },
   botonExportar: {
     backgroundColor: "#0f766e",
     borderRadius: 10,

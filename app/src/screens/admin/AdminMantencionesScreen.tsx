@@ -26,7 +26,7 @@ function colorEstado(estado: EstadoMantencionGls) {
     case "Programada":
       return "#b0730a";
     case "En curso":
-      return "#1a6fc4";
+      return "#014BD2";
     case "Realizada":
       return "#1a9d5c";
     case "Cancelada":

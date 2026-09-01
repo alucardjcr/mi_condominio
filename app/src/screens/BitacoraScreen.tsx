@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
   label: { fontSize: 14, fontWeight: "600", color: "#333" },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: "#fff", marginTop: 4 },
-  boton: { backgroundColor: "#1a6fc4", borderRadius: 10, padding: 12, alignItems: "center", marginTop: 10 },
+  boton: { backgroundColor: "#014BD2", borderRadius: 10, padding: 12, alignItems: "center", marginTop: 10 },
   botonTexto: { color: "#fff", fontWeight: "700" },
   card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
   texto: { fontSize: 14, color: "#333", lineHeight: 20 },

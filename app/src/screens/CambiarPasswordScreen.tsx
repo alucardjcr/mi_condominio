@@ -59,6 +59,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, backgroundColor: "#fff" },
   label: { fontSize: 14, fontWeight: "600", color: "#333", marginTop: 16 },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 14, fontSize: 16, marginTop: 4 },
-  boton: { backgroundColor: "#1a6fc4", borderRadius: 10, padding: 16, alignItems: "center", marginTop: 28 },
+  boton: { backgroundColor: "#014BD2", borderRadius: 10, padding: 16, alignItems: "center", marginTop: 28 },
   botonTexto: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });

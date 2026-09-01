@@ -27,7 +27,7 @@ function colorEstado(estado: string) {
     case "Pendiente":
       return "#b0730a";
     case "Aprobado":
-      return "#1a6fc4";
+      return "#014BD2";
     case "Reservado":
     case "En uso":
       return "#1a9d5c";
@@ -209,9 +209,9 @@ const styles = StyleSheet.create({
   estado: { fontSize: 12, fontWeight: "800" },
   detalleTexto: { color: "#555", marginTop: 4, fontSize: 13 },
   motivoRechazo: { color: "#c0392b", marginTop: 4, fontSize: 12, fontWeight: "600" },
-  esperandoValidacion: { color: "#1a6fc4", marginTop: 8, fontSize: 12, fontWeight: "600" },
+  esperandoValidacion: { color: "#014BD2", marginTop: 8, fontSize: 12, fontWeight: "600" },
   botonAccion: { borderRadius: 8, paddingVertical: 10, alignItems: "center" },
-  botonPrimario: { backgroundColor: "#1a6fc4" },
+  botonPrimario: { backgroundColor: "#014BD2" },
   botonCancelar: { backgroundColor: "#c0392b", marginTop: 10 },
   botonAccionTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },
 });

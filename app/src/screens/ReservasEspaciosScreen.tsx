@@ -106,6 +106,6 @@ const styles = StyleSheet.create({
   },
   nombre: { fontSize: 16, fontWeight: "700" },
   detalleTexto: { color: "#666", marginTop: 2, fontSize: 13 },
-  precio: { fontSize: 14, fontWeight: "800", color: "#1a6fc4", marginLeft: 8, textAlign: "right" },
+  precio: { fontSize: 14, fontWeight: "800", color: "#014BD2", marginLeft: 8, textAlign: "right" },
   precioGratis: { fontSize: 14, fontWeight: "800", color: "#1a9d5c", marginLeft: 8, textAlign: "right" },
 });

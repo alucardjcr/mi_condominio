@@ -3,15 +3,24 @@
 // por botón, sin ningún criterio en común). La idea es que toda pantalla
 // nueva (o que se vaya retocando) importe esto en vez de inventar colores.
 //
-// Fondo azul marino + acento dorado — combinación clásica de "panel
-// administrativo/institucional" (a pedido del usuario: fondos azul marino).
+// Ronda 26: color institucional — el ramp "navy" ahora se genera a partir
+// del azul EXACTO del logo oficial "Mi Condominio" (#014BD2, extraído
+// directamente del archivo del logo), no de un navy genérico. Es un azul
+// franco/rey, bastante más saturado que el navy casi-negro que había antes.
+// Fijo siempre igual, independiente de si el celular está en modo oscuro o
+// claro: la app nunca sigue el tema del sistema (no hay useColorScheme en
+// ningún lado — todos los colores están hardcodeados vía este archivo), y
+// app.json fija "userInterfaceStyle": "light" para que tampoco cambien los
+// controles nativos (teclado, etc.).
 export const colors = {
-  // Azules marinos — fondo de pantalla, header, drawer, tarjetas oscuras.
-  navy900: "#0A1330",
-  navy800: "#101B3D",
-  navy700: "#182652",
-  navy600: "#233568",
-  navy500: "#33478A",
+  // Azules institucionales — fondo de pantalla, header, drawer, tarjetas
+  // oscuras. navy900 es el azul exacto del logo; el resto del ramp son
+  // variaciones más oscuras/claras del mismo tono (no colores distintos).
+  navy900: "#014BD2",
+  navy800: "#0140B3",
+  navy700: "#013593",
+  navy600: "#2766D9",
+  navy500: "#4D81E0",
 
   // Acento — para botones primarios, elementos activos, foco.
   gold: "#D4AF37",
@@ -31,10 +40,13 @@ export const colors = {
 
   // Semánticos — se mantienen consistentes con lo que ya existía
   // (entrada = verde, salida = rojo, etc.) para no romper la asociación
-  // que los guardias ya tienen con estos colores.
+  // que los guardias ya tienen con estos colores. "info" ahora es el mismo
+  // azul institucional (antes era un azul suelto #1A6FC4 que además estaba
+  // hardcodeado en ~35 pantallas de antes de la ronda 24 — se unificó todo
+  // a este mismo valor).
   success: "#1A9D5C",
   danger: "#C0392B",
-  info: "#1A6FC4",
+  info: "#014BD2",
   warning: "#D97706",
 } as const;
 

@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: "#fff", borderRadius: 12, padding: 16, borderWidth: 1, borderColor: "#eee" },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardTitulo: { fontSize: 16, fontWeight: "700", flex: 1 },
-  estado: { fontSize: 12, fontWeight: "800", color: "#1a6fc4" },
+  estado: { fontSize: 12, fontWeight: "800", color: "#014BD2" },
   detalle: { color: "#555", marginTop: 6, fontSize: 13 },
   label: { fontSize: 13, fontWeight: "600", color: "#333", marginTop: 10 },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, marginTop: 4 },

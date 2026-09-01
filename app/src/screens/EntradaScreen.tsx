@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
   },
-  tipoCupoBotonActivo: { backgroundColor: "#1a6fc4", borderColor: "#1a6fc4" },
+  tipoCupoBotonActivo: { backgroundColor: "#014BD2", borderColor: "#014BD2" },
   tipoCupoTexto: { fontWeight: "600", color: "#333" },
   tipoCupoTextoActivo: { color: "#fff" },
   label: { fontSize: 14, fontWeight: "600", color: "#333", marginTop: 12 },
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
   alerta: { color: "#c0392b", fontSize: 12, marginTop: 8 },
   notaPeatonal: {
     backgroundColor: "#eef6ff",
-    color: "#1a6fc4",
+    color: "#014BD2",
     fontSize: 13,
     padding: 12,
     borderRadius: 10,

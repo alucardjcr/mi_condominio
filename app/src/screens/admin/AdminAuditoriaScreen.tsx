@@ -109,5 +109,5 @@ const styles = StyleSheet.create({
   card: { backgroundColor: "#f5f6f8", borderRadius: 12, padding: 14 },
   nombreItem: { fontSize: 16, fontWeight: "700" },
   detalle: { color: "#555", marginTop: 2 },
-  guardia: { color: "#1a6fc4", marginTop: 6, fontSize: 12, fontWeight: "600" },
+  guardia: { color: "#014BD2", marginTop: 6, fontSize: 12, fontWeight: "600" },
 });

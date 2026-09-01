@@ -42,7 +42,7 @@ export default function PaqueteEntregaScreen({ navigation, route }: any) {
   if (cargando || !paquete) {
     return (
       <View style={styles.centro}>
-        <ActivityIndicator size="large" color="#1a6fc4" />
+        <ActivityIndicator size="large" color="#014BD2" />
       </View>
     );
   }
@@ -146,12 +146,12 @@ const styles = StyleSheet.create({
   centro: { flex: 1, alignItems: "center", justifyContent: "center" },
   container: { padding: 20, paddingBottom: 60 },
   resumen: { backgroundColor: "#eef6ff", borderRadius: 10, padding: 14, marginBottom: 8 },
-  resumenTipo: { fontSize: 12, color: "#1a6fc4", fontWeight: "700" },
+  resumenTipo: { fontSize: 12, color: "#014BD2", fontWeight: "700" },
   resumenReceptor: { fontSize: 18, fontWeight: "700", color: "#222", marginTop: 2 },
   resumenDetalle: { fontSize: 13, color: "#555", marginTop: 2 },
   tipoCupoSelector: { flexDirection: "row", gap: 10, marginTop: 12 },
   tipoCupoBoton: { flex: 1, borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
-  tipoCupoBotonActivo: { backgroundColor: "#1a6fc4", borderColor: "#1a6fc4" },
+  tipoCupoBotonActivo: { backgroundColor: "#014BD2", borderColor: "#014BD2" },
   tipoCupoTexto: { fontWeight: "600", color: "#333", textAlign: "center" },
   tipoCupoTextoActivo: { color: "#fff" },
   label: { fontSize: 14, fontWeight: "600", color: "#333", marginTop: 12 },

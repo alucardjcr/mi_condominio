@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   nombre: { fontSize: 16, fontWeight: "700" },
-  estado: { fontSize: 12, fontWeight: "800", color: "#1a6fc4" },
+  estado: { fontSize: 12, fontWeight: "800", color: "#014BD2" },
   detalleTexto: { color: "#555", marginTop: 4, fontSize: 13 },
   motivoTexto: { color: "#c0392b", marginTop: 6, fontSize: 12, fontWeight: "600" },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: "#fff" },

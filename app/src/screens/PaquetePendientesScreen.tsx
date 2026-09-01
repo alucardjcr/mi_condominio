@@ -35,7 +35,7 @@ function colorEstado(gls: string) {
     case "Notificado":
       return "#c98a1a";
     case "En portería":
-      return "#1a6fc4";
+      return "#014BD2";
     default:
       return "#8a8a8a";
   }
@@ -105,7 +105,7 @@ export default function PaquetePendientesScreen({ navigation }: any) {
   if (cargando) {
     return (
       <View style={styles.centro}>
-        <ActivityIndicator size="large" color="#1a6fc4" />
+        <ActivityIndicator size="large" color="#014BD2" />
       </View>
     );
   }
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   botonTop: { backgroundColor: "#1a9d5c", borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14 },
   botonTopTexto: { color: "#fff", fontWeight: "700" },
   enlace: { paddingVertical: 10 },
-  enlaceTexto: { color: "#1a6fc4", fontWeight: "600" },
+  enlaceTexto: { color: "#014BD2", fontWeight: "600" },
   lista: { padding: 16, paddingTop: 4, paddingBottom: 40 },
   vacio: { textAlign: "center", color: "#888", marginTop: 40 },
   card: {
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     minHeight: 70,
     textAlignVertical: "top",
   },
-  confirmar: { backgroundColor: "#1a6fc4", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 14 },
+  confirmar: { backgroundColor: "#014BD2", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 14 },
   confirmarTexto: { color: "#fff", fontWeight: "700" },
   botonDeshabilitado: { opacity: 0.6 },
   cancelar: { alignItems: "center", marginTop: 10 },

@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 4 },
   previewWrap: { height: 160, borderRadius: 10, overflow: "hidden", backgroundColor: "#fafafa" },
   preview: { flex: 1 },
-  botonPrimario: { backgroundColor: "#1a6fc4", borderRadius: 10, paddingVertical: 14, alignItems: "center" },
+  botonPrimario: { backgroundColor: "#014BD2", borderRadius: 10, paddingVertical: 14, alignItems: "center" },
   botonPrimarioTexto: { color: "#fff", fontWeight: "700", fontSize: 16 },
   botonSecundario: {
     marginTop: 8,

@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   opcion: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#eee" },
   opcionTexto: { fontSize: 16 },
   opcionExtra: { backgroundColor: "#fafafa" },
-  opcionExtraTexto: { fontSize: 16, color: "#1a6fc4", fontWeight: "600" },
+  opcionExtraTexto: { fontSize: 16, color: "#014BD2", fontWeight: "600" },
   vacio: { textAlign: "center", color: "#888", marginTop: 20 },
   cerrar: { padding: 16, alignItems: "center" },
   cerrarTexto: { color: "#c0392b", fontWeight: "700", fontSize: 16 },

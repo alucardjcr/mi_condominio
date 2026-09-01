@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   },
   tipoCupoSelector: { flexDirection: "row", gap: 10, marginTop: 12 },
   tipoCupoBoton: { flex: 1, borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingVertical: 10, alignItems: "center" },
-  tipoCupoBotonActivo: { backgroundColor: "#1a6fc4", borderColor: "#1a6fc4" },
+  tipoCupoBotonActivo: { backgroundColor: "#014BD2", borderColor: "#014BD2" },
   tipoCupoTexto: { fontWeight: "600", color: "#333", fontSize: 13 },
   tipoCupoTextoActivo: { color: "#fff" },
   botonCrear: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
@@ -424,6 +424,6 @@ const styles = StyleSheet.create({
   botonActivar: { backgroundColor: "#1a9d5c" },
   botonDesactivar: { backgroundColor: "#c0392b" },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  enlaceEditar: { color: "#1a6fc4", fontSize: 12, fontWeight: "600" },
+  enlaceEditar: { color: "#014BD2", fontSize: 12, fontWeight: "600" },
   vacio: { textAlign: "center", color: "#888", marginTop: 30 },
 });
