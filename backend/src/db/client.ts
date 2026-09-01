@@ -100,7 +100,19 @@ export async function withTransaction<T>(fn: (tx: DbLike) => Promise<T>): Promis
   }
 }
 
-const schemaPath = path.join(__dirname, "../../../docs/schema-mysql.sql");
+// Se prueban dos ubicaciones posibles del schema, en orden: (1)
+// backend/docs/schema-mysql.sql — copia local pensada para despliegues
+// donde el build solo incluye la carpeta backend/ (ej. Railway con "Root
+// Directory" = backend, ronda 22), y (2) docs/schema-mysql.sql en la raíz
+// del repo — usada cuando el build incluye el repo completo (ej. correr
+// localmente). Evita que el arranque dependa de cuál de las dos formas de
+// desplegar se esté usando.
+const SCHEMA_CANDIDATES = [
+  path.join(__dirname, "../../docs/schema-mysql.sql"),
+  path.join(__dirname, "../../../docs/schema-mysql.sql"),
+];
+const schemaPath =
+  SCHEMA_CANDIDATES.find((p) => fs.existsSync(p)) ?? SCHEMA_CANDIDATES[0];
 
 // Aplica el schema (CREATE TABLE IF NOT EXISTS...) contra la base indicada
 // en las variables de entorno. Se llama una vez al arrancar el backend (ver
