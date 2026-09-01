@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { colors, radius, spacing, typography } from "../theme/theme";
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -36,58 +37,93 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Image source={require("../../assets/icon.png")} style={styles.logo} resizeMode="contain" />
+      <View style={styles.logoWrap}>
+        <Image source={require("../../assets/icon.png")} style={styles.logo} resizeMode="contain" />
+      </View>
       <Text style={styles.titulo}>Valles de Varoli</Text>
       <Text style={styles.subtitulo}>Control de estacionamientos de visita</Text>
 
-      <Text style={styles.label}>Usuario</Text>
-      <TextInput
-        style={styles.input}
-        value={usuariocol}
-        onChangeText={setUsuariocol}
-        placeholder="ej: guardia1"
-        autoCapitalize="none"
-      />
+      <View style={styles.card}>
+        <Text style={styles.label}>Usuario</Text>
+        <TextInput
+          style={styles.input}
+          value={usuariocol}
+          onChangeText={setUsuariocol}
+          placeholder="ej: guardia1"
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="none"
+        />
 
-      <Text style={styles.label}>Contraseña</Text>
-      <TextInput
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        placeholder="••••••"
-        secureTextEntry
-      />
+        <Text style={styles.label}>Contraseña</Text>
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="••••••"
+          placeholderTextColor={colors.textMuted}
+          secureTextEntry
+        />
 
-      {error && <Text style={styles.error}>{error}</Text>}
+        {error && <Text style={styles.error}>{error}</Text>}
 
-      <TouchableOpacity style={styles.boton} onPress={handleLogin} disabled={cargando}>
-        {cargando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botonTexto}>Ingresar</Text>}
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.boton, cargando && styles.botonDeshabilitado]}
+          onPress={handleLogin}
+          disabled={cargando}
+          activeOpacity={0.85}
+        >
+          {cargando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Ingresar</Text>}
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#fff" },
-  logo: { width: 140, height: 140, alignSelf: "center", marginBottom: 8 },
-  titulo: { fontSize: 26, fontWeight: "800", textAlign: "center", color: "#1a1a1a" },
-  subtitulo: { fontSize: 14, color: "#666", textAlign: "center", marginTop: 4, marginBottom: 32 },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginTop: 12 },
+  container: { flex: 1, justifyContent: "center", padding: spacing.lg, backgroundColor: colors.navy900 },
+  logoWrap: {
+    alignSelf: "center",
+    width: 108,
+    height: 108,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
+  logo: { width: 78, height: 78 },
+  titulo: { ...typography.title, textAlign: "center", color: colors.textOnNavy },
+  subtitulo: {
+    ...typography.body,
+    color: colors.textMutedOnNavy,
+    textAlign: "center",
+    marginTop: 4,
+    marginBottom: spacing.xl,
+  },
+  card: {
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+  },
+  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
-    marginTop: 4,
+    marginTop: 6,
+    color: colors.textDark,
+    backgroundColor: colors.offWhite,
   },
-  error: { color: "#c0392b", marginTop: 12, textAlign: "center" },
+  error: { color: colors.danger, marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
   boton: {
-    backgroundColor: "#1a6fc4",
-    borderRadius: 10,
+    backgroundColor: colors.gold,
+    borderRadius: radius.sm,
     padding: 16,
     alignItems: "center",
-    marginTop: 28,
+    marginTop: spacing.lg,
   },
-  botonTexto: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  botonDeshabilitado: { opacity: 0.7 },
+  botonTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
 });
