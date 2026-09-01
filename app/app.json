@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Valles de Varoli",
+    "slug": "valles-de-varoli-estacionamientos",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#ffffff",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Se usa la cámara para fotografiar los paquetes que llegan a conserjería y a quien los retira."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Se usa la cámara para fotografiar los paquetes que llegan a conserjería y a quien los retira."
+        }
+      ],
+      ["expo-notifications", {}]
+    ]
+  }
+}

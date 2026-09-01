@@ -1,0 +1,83 @@
+import { Router } from "express";
+import { listarVetados, crearVetado, actualizarVetado, buscarVetadoPorRut } from "../services/vetados.service";
+import { requireRol } from "../middleware/auth";
+import { guardarImagenBase64 } from "../utils/imagenes";
+import { CONDOMINIO_ID_DEFAULT } from "../config";
+
+// Ronda 20: listado VETADOS. Información sensible (puede involucrar
+// órdenes de alejamiento) — solo Administrador/Comité administra la lista
+// completa; el guardia solo puede BUSCAR por RUT desde su propia pantalla
+// (ver /buscar), nunca listar ni editar. La revisión automática al
+// registrar una visita vive en estacionamientoVisita.service.ts.
+export const vetadosRouter = Router();
+
+vetadosRouter.get("/buscar", requireRol("Guardia", "Administrador"), async (req, res) => {
+  try {
+    const rut = String(req.query.rut || "").trim();
+    if (!rut) {
+      return res.status(400).json({ error: "Falta el parámetro rut." });
+    }
+    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const resultado = await buscarVetadoPorRut(condominioId, rut);
+    res.json({ vetado: resultado ?? null });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+vetadosRouter.get("/", requireRol("Administrador"), async (req, res) => {
+  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  res.json(await listarVetados(condominioId));
+});
+
+vetadosRouter.post("/", requireRol("Administrador"), async (req, res) => {
+  try {
+    const { nombre_completo, rut, patente, parentesco, fecha_ingreso, foto_persona, foto_vehiculo, observaciones } = req.body;
+    if (!nombre_completo || !rut || !fecha_ingreso) {
+      return res.status(400).json({ error: "Faltan campos: nombre_completo, rut, fecha_ingreso." });
+    }
+    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const fotoPersonaUrl = foto_persona ? await guardarImagenBase64(foto_persona, "persona", "vetados") : undefined;
+    const fotoVehiculoUrl = foto_vehiculo ? await guardarImagenBase64(foto_vehiculo, "vehiculo", "vetados") : undefined;
+    const vetado = await crearVetado(
+      {
+        nombreCompleto: nombre_completo,
+        rut,
+        patente,
+        parentesco,
+        fechaIngreso: fecha_ingreso,
+        fotoPersonaUrl,
+        fotoVehiculoUrl,
+        observaciones,
+        condominioId,
+      },
+      req.guardia!.id_usuario
+    );
+    res.status(201).json(vetado);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+vetadosRouter.patch("/:id", requireRol("Administrador"), async (req, res) => {
+  try {
+    const { nombre_completo, rut, patente, parentesco, fecha_ingreso, foto_persona, foto_vehiculo, observaciones, flg_vigencia } = req.body;
+    const fotoPersonaUrl = foto_persona ? await guardarImagenBase64(foto_persona, "persona", "vetados") : undefined;
+    const fotoVehiculoUrl = foto_vehiculo ? await guardarImagenBase64(foto_vehiculo, "vehiculo", "vetados") : undefined;
+    res.json(
+      await actualizarVetado(Number(req.params.id), {
+        nombreCompleto: nombre_completo,
+        rut,
+        patente,
+        parentesco,
+        fechaIngreso: fecha_ingreso,
+        fotoPersonaUrl,
+        fotoVehiculoUrl,
+        observaciones,
+        flgVigencia: flg_vigencia !== undefined ? Number(flg_vigencia) : undefined,
+      })
+    );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});

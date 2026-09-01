@@ -1,0 +1,628 @@
+import { API_BASE_URL } from "../config/api";
+import {
+  AuditoriaPatenteItem,
+  BuscarPaquetesFiltro,
+  ConsultaPatenteResponse,
+  CrearComunicadoResponse,
+  CrearMantencionPayload,
+  CrearReservaPayload,
+  CrearVetadoPayload,
+  CupoArriendo,
+  Estacionamiento,
+  EntradaBitacora,
+  EspacioComun,
+  EspacioComunInput,
+  Guardia,
+  HorarioOcupado,
+  ListarMantencionesFiltro,
+  ListarReservasFiltro,
+  LoginResponse,
+  Mantencion,
+  Mascota,
+  Notificacion,
+  Paquete,
+  PaquetePendiente,
+  PatenteAdmin,
+  PersonalAdmin,
+  RegistrarEntradaPayload,
+  RegistrarEntradaResponse,
+  RegistrarEntregaPaquetePayload,
+  RegistrarIngresoMantencionPayload,
+  RegistrarLlegadaPaquetePayload,
+  RegistrarLlegadaPaqueteResponse,
+  RegistrarSalidaResponse,
+  ReporteGastoComunResponse,
+  Reserva,
+  Residente,
+  ResidenteAdmin,
+  ResidenteConCarnet,
+  TipoElementoMantencion,
+  TipoEspacioComun,
+  TipoPaquete,
+  TipoPermiso,
+  TipoPersonal,
+  TipoResidente,
+  TipoTenenciaPatente,
+  Torre,
+  TareaPersonal,
+  TurnoAsignado,
+  TurnoBloque,
+  TurnoPersonal,
+  Unidad,
+  UnidadGastoComun,
+  Vetado,
+  Visita,
+} from "./types";
+
+// Ronda 17: con la sesión persistida (expo-secure-store), un token puede
+// quedar guardado más allá de su vigencia (expiró, o el administrador
+// revocó el acceso del residente) — sin este aviso, la app se quedaría
+// mostrando pantallas con errores 401 sueltos en vez de volver al login.
+// AuthContext se suscribe acá una sola vez y llama a logout() cuando
+// cualquier request devuelve 401.
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(fn: (() => void) | null) {
+  onUnauthorized = fn;
+}
+
+async function handleResponse<T>(res: Response): Promise<T> {
+  if (res.status === 204) return undefined as T;
+  if (res.status === 401) {
+    onUnauthorized?.();
+  }
+  const body = await res.json();
+  if (!res.ok) {
+    throw new Error(body.error || "Ocurrió un error inesperado.");
+  }
+  return body as T;
+}
+
+function authHeaders(token: string) {
+  return { Authorization: `Bearer ${token}` };
+}
+
+async function get<T>(path: string, token: string): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, { headers: authHeaders(token) });
+  return handleResponse<T>(res);
+}
+
+async function send<T>(path: string, method: string, token: string, body?: object): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return handleResponse<T>(res);
+}
+
+export async function login(usuariocol: string, password: string): Promise<LoginResponse> {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ usuariocol, password }),
+  });
+  return handleResponse<LoginResponse>(res);
+}
+
+export const cambiarPassword = (token: string, passwordActual: string, passwordNueva: string) =>
+  send<{ ok: boolean }>(`/auth/cambiar-password`, "POST", token, {
+    password_actual: passwordActual,
+    password_nueva: passwordNueva,
+  });
+
+// Registra el push token de Expo del teléfono (ronda 16) — best-effort,
+// ver src/utils/notificaciones.ts. Nunca debería frenar el login si falla.
+export const registrarPushToken = (token: string, pushToken: string) =>
+  send<{ ok: boolean }>(`/auth/push-token`, "POST", token, { push_token: pushToken });
+
+export const getTorres = (token: string, condominioId: number) =>
+  get<Torre[]>(`/torres?condominio_id=${condominioId}`, token);
+
+export const getUnidadesPorTorre = (token: string, torreId: number) =>
+  get<Unidad[]>(`/torres/${torreId}/unidades`, token);
+
+export const getResidentesPorUnidad = (token: string, unidadId: number) =>
+  get<Residente[]>(`/unidades/${unidadId}/residentes`, token);
+
+export const getTiposPermiso = (token: string) => get<TipoPermiso[]>(`/tipos-permiso`, token);
+
+export const getTiposTenenciaPatente = (token: string) =>
+  get<TipoTenenciaPatente[]>(`/tipos-tenencia-patente`, token);
+
+export const getResidentesConCarnetDiscapacidad = (token: string) =>
+  get<ResidenteConCarnet[]>(`/residentes-discapacitados`, token);
+
+export const getTiposResidente = (token: string) => get<TipoResidente[]>(`/tipos-residente`, token);
+
+export const getDisponibilidad = (token: string, condominioId: number) =>
+  get<Estacionamiento[]>(`/estacionamientos/disponibilidad?condominio_id=${condominioId}`, token);
+
+export const getVisitasActivas = (token: string, condominioId: number) =>
+  get<Visita[]>(`/visitas/activas?condominio_id=${condominioId}`, token);
+
+export const registrarEntrada = (token: string, payload: RegistrarEntradaPayload) =>
+  send<RegistrarEntradaResponse>(`/visitas`, "POST", token, payload);
+
+export const registrarSalida = (token: string, idVisita: number) =>
+  send<RegistrarSalidaResponse>(`/visitas/${idVisita}/salida`, "PATCH", token);
+
+export const consultarPatente = (token: string, patente: string) =>
+  get<ConsultaPatenteResponse>(`/patentes/${encodeURIComponent(patente)}`, token);
+
+// --- Administrador -------------------------------------------------------
+
+export const adminGetGuardias = (token: string) => get<Guardia[]>(`/admin/guardias`, token);
+
+export const adminCrearGuardia = (
+  token: string,
+  input: { nombre_usuario: string; usuariocol: string; password: string }
+) => send<Guardia>(`/admin/guardias`, "POST", token, input);
+
+export const adminActualizarGuardia = (
+  token: string,
+  id: number,
+  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number }
+) => send<Guardia>(`/admin/guardias/${id}`, "PATCH", token, input);
+
+export const adminGetResidentes = (token: string) => get<ResidenteAdmin[]>(`/admin/residentes`, token);
+
+export const adminCrearResidente = (
+  token: string,
+  input: {
+    nombre_usuario: string;
+    unidad_id_unidad: number;
+    tipo_residente_id_tiporesidente?: number;
+    flg_propietario?: number;
+  }
+) => send<ResidenteAdmin>(`/admin/residentes`, "POST", token, input);
+
+export const adminActualizarResidente = (
+  token: string,
+  id: number,
+  input: {
+    nombre_usuario?: string;
+    unidad_id_unidad?: number;
+    flg_vigencia?: number;
+    password?: string;
+    flg_comite?: number;
+    tipo_residente_id_tiporesidente?: number | null;
+    flg_propietario?: number;
+  }
+) => send<ResidenteAdmin>(`/admin/residentes/${id}`, "PATCH", token, input);
+
+// --- Acceso a la app (login) del residente --------------------------------
+
+export const adminActivarAccesoResidente = (
+  token: string,
+  id: number,
+  input: { usuariocol: string; password: string }
+) => send<ResidenteAdmin>(`/admin/residentes/${id}/acceso`, "POST", token, input);
+
+export const adminQuitarAccesoResidente = (token: string, id: number) =>
+  send<void>(`/admin/residentes/${id}/acceso`, "DELETE", token);
+
+export const adminRegistrarCarnetDiscapacidad = (
+  token: string,
+  idUsuario: number,
+  numero_carnet?: string
+) => send<{ id_residentediscapacitado: number }>(`/admin/residentes/${idUsuario}/discapacidad`, "POST", token, { numero_carnet });
+
+export const adminQuitarCarnetDiscapacidad = (token: string, idUsuario: number) =>
+  send<void>(`/admin/residentes/${idUsuario}/discapacidad`, "DELETE", token);
+
+export const adminGetPatentes = (token: string) => get<PatenteAdmin[]>(`/admin/patentes`, token);
+
+export const adminCrearPatente = (
+  token: string,
+  input: { patente: string; tipo_tenencia_id_tipotenencia: number; unidad_id_unidad: number }
+) => send<PatenteAdmin>(`/admin/patentes`, "POST", token, input);
+
+export const adminActualizarPatente = (
+  token: string,
+  id: number,
+  input: { patente?: string; tipo_tenencia_id_tipotenencia?: number; flg_vigencia?: number }
+) => send<PatenteAdmin>(`/admin/patentes/${id}`, "PATCH", token, input);
+
+export const adminAuditarPatente = (token: string, patente: string) =>
+  get<AuditoriaPatenteItem[]>(`/admin/auditoria/patente/${encodeURIComponent(patente)}`, token);
+
+export const adminReporteGastoComun = (
+  token: string,
+  fechaInicio: string,
+  fechaTermino: string,
+  condominioId: number
+) =>
+  get<ReporteGastoComunResponse>(
+    `/admin/reportes/gasto-comun?fecha_inicio=${fechaInicio}&fecha_termino=${fechaTermino}&condominio_id=${condominioId}`,
+    token
+  );
+
+// Ronda 20: URL del Excel del reporte de gasto común (pensado para subir a
+// ComunidadFeliz — ver reportes.service.ts). No usa `get()` porque la
+// respuesta es binaria, no JSON — la descarga real la hace
+// descargarYCompartirArchivo() en utils/descargas.ts.
+export const urlReporteGastoComunExcel = (fechaInicio: string, fechaTermino: string, condominioId: number) =>
+  `${API_BASE_URL}/admin/reportes/gasto-comun/excel?fecha_inicio=${fechaInicio}&fecha_termino=${fechaTermino}&condominio_id=${condominioId}`;
+
+// --- Paquetería ------------------------------------------------------------
+
+export const getTiposPaquete = (token: string, condominioId: number) =>
+  get<TipoPaquete[]>(`/tipos-paquete?condominio_id=${condominioId}`, token);
+
+export const registrarLlegadaPaquete = (token: string, payload: RegistrarLlegadaPaquetePayload) =>
+  send<RegistrarLlegadaPaqueteResponse>(`/paquetes`, "POST", token, payload);
+
+export const paqueteCambiarEstado = (
+  token: string,
+  idPaquete: number,
+  nuevoEstado: string,
+  observacion: string | undefined,
+  condominioId: number
+) =>
+  send<Paquete>(`/paquetes/${idPaquete}/estado`, "PATCH", token, {
+    nuevo_estado: nuevoEstado,
+    observacion,
+    condominio_id_condominio: condominioId,
+  });
+
+export const paqueteRegistrarEntrega = (token: string, idPaquete: number, payload: RegistrarEntregaPaquetePayload) =>
+  send<Paquete>(`/paquetes/${idPaquete}/entrega`, "PATCH", token, payload);
+
+export const getPaquetesPendientes = (token: string, condominioId: number) =>
+  get<PaquetePendiente[]>(`/paquetes/pendientes?condominio_id=${condominioId}`, token);
+
+export const buscarPaquetes = (token: string, filtro: BuscarPaquetesFiltro) => {
+  const params = new URLSearchParams();
+  params.set("condominio_id", String(filtro.condominio_id));
+  if (filtro.fecha_inicio) params.set("fecha_inicio", filtro.fecha_inicio);
+  if (filtro.fecha_termino) params.set("fecha_termino", filtro.fecha_termino);
+  if (filtro.q) params.set("q", filtro.q);
+  if (filtro.unidad_id) params.set("unidad_id", String(filtro.unidad_id));
+  if (filtro.estado) params.set("estado", filtro.estado);
+  return get<Paquete[]>(`/paquetes?${params.toString()}`, token);
+};
+
+export const getPaquete = (token: string, idPaquete: number) => get<Paquete>(`/paquetes/${idPaquete}`, token);
+
+// --- Reservas de Espacios Comunes ------------------------------------------
+
+export const getTiposEspacioComun = (token: string, condominioId: number) =>
+  get<TipoEspacioComun[]>(`/reservas/espacios/tipos?condominio_id=${condominioId}`, token);
+
+export const getEspaciosComunes = (token: string, condominioId: number) =>
+  get<EspacioComun[]>(`/reservas/espacios?condominio_id=${condominioId}`, token);
+
+export const getDisponibilidadEspacio = (token: string, idEspacio: number, fecha: string) =>
+  get<HorarioOcupado[]>(`/reservas/espacios/${idEspacio}/disponibilidad?fecha=${fecha}`, token);
+
+export const crearReserva = (token: string, payload: CrearReservaPayload) => send<Reserva>(`/reservas`, "POST", token, payload);
+
+export const getMisReservas = (token: string, condominioId: number) =>
+  get<Reserva[]>(`/reservas/mias?condominio_id=${condominioId}`, token);
+
+export const getReserva = (token: string, id: number) => get<Reserva>(`/reservas/${id}`, token);
+
+export const cancelarReserva = (token: string, id: number) => send<Reserva>(`/reservas/${id}/cancelar`, "PATCH", token);
+
+export const subirComprobanteReserva = (token: string, id: number, comprobante: string) =>
+  send<Reserva>(`/reservas/${id}/comprobante`, "POST", token, { comprobante });
+
+export const getReservasDelDia = (token: string, condominioId: number, fecha: string) =>
+  get<Reserva[]>(`/reservas/dia?condominio_id=${condominioId}&fecha=${fecha}`, token);
+
+export const marcarLlegadaReserva = (token: string, id: number) => send<Reserva>(`/reservas/${id}/llegada`, "PATCH", token);
+
+export const marcarSalidaReserva = (token: string, id: number) => send<Reserva>(`/reservas/${id}/salida`, "PATCH", token);
+
+// --- Administrador: configuración de espacios y gestión de reservas -------
+
+export const adminGetEspacios = (token: string, condominioId: number) =>
+  get<EspacioComun[]>(`/admin/espacios?condominio_id=${condominioId}`, token);
+
+export const adminCrearEspacio = (token: string, input: EspacioComunInput) =>
+  send<EspacioComun>(`/admin/espacios`, "POST", token, input);
+
+export const adminActualizarEspacio = (token: string, id: number, input: Partial<EspacioComunInput> & { flg_vigencia?: number }) =>
+  send<EspacioComun>(`/admin/espacios/${id}`, "PATCH", token, input);
+
+export const adminGetReservas = (token: string, filtro: ListarReservasFiltro) => {
+  const params = new URLSearchParams();
+  params.set("condominio_id", String(filtro.condominio_id));
+  if (filtro.estado) params.set("estado", filtro.estado);
+  if (filtro.espacio_id) params.set("espacio_id", String(filtro.espacio_id));
+  if (filtro.fecha_inicio) params.set("fecha_inicio", filtro.fecha_inicio);
+  if (filtro.fecha_termino) params.set("fecha_termino", filtro.fecha_termino);
+  return get<Reserva[]>(`/admin/reservas?${params.toString()}`, token);
+};
+
+export const adminAprobarReserva = (token: string, id: number) => send<Reserva>(`/admin/reservas/${id}/aprobar`, "PATCH", token);
+
+export const adminRechazarReserva = (token: string, id: number, motivo: string) =>
+  send<Reserva>(`/admin/reservas/${id}/rechazar`, "PATCH", token, { motivo });
+
+export const adminValidarPagoReserva = (token: string, id: number) =>
+  send<Reserva>(`/admin/reservas/${id}/validar-pago`, "PATCH", token);
+
+export const adminResolverGarantia = (
+  token: string,
+  id: number,
+  decision: "Devuelta" | "Retenida",
+  monto_retenido?: number,
+  observacion?: string
+) => send<Reserva>(`/admin/reservas/${id}/garantia`, "PATCH", token, { decision, monto_retenido, observacion });
+
+// --- Mi depto: autoadministración del hogar por el dueño (ronda 15) -------
+// Solo funciona si el residente logeado es el propietario de su unidad
+// (guardia.esPropietario) — el backend además valida esto por su cuenta.
+
+export const getMisResidentesDelHogar = (token: string) => get<ResidenteAdmin[]>(`/mi-depto/residentes`, token);
+
+export const crearResidenteDelHogar = (
+  token: string,
+  input: { nombre_usuario: string; tipo_residente_id_tiporesidente?: number }
+) => send<ResidenteAdmin>(`/mi-depto/residentes`, "POST", token, input);
+
+export const actualizarResidenteDelHogar = (
+  token: string,
+  id: number,
+  input: { nombre_usuario?: string; flg_vigencia?: number; tipo_residente_id_tiporesidente?: number | null }
+) => send<ResidenteAdmin>(`/mi-depto/residentes/${id}`, "PATCH", token, input);
+
+// --- Notificaciones (ronda 16) ---------------------------------------------
+// Bandeja propia: paquetes/visitas/comunicados que le llegaron a este
+// usuario. Cualquier rol logeado puede consultarla (en la práctica hoy solo
+// Residente recibe algo).
+
+export const getNotificaciones = (token: string) => get<Notificacion[]>(`/notificaciones`, token);
+
+export const marcarNotificacionLeida = (token: string, idNotificacionUsuario: number) =>
+  send<{ ok: boolean }>(`/notificaciones/${idNotificacionUsuario}/leido`, "PATCH", token);
+
+// --- Comunicados (ronda 16, Administrador/Comité) --------------------------
+// Le llega como notificación a TODOS los residentes activos con acceso del
+// condominio (regla del usuario: "debería llegarles a todos").
+
+export const adminCrearComunicado = (token: string, input: { titulo: string; cuerpo: string; condominio_id_condominio: number }) =>
+  send<CrearComunicadoResponse>(`/admin/comunicados`, "POST", token, input);
+
+// --- Gasto común por depto (ronda 17, Administrador/Comité) ----------------
+
+export const adminGetUnidadesGastoComun = (token: string, condominioId: number) =>
+  get<UnidadGastoComun[]>(`/admin/unidades/gasto-comun?condominio_id=${condominioId}`, token);
+
+export const adminActualizarGastoComunUnidad = (token: string, idUnidad: number, flgGastocomun: number) =>
+  send<UnidadGastoComun>(`/admin/unidades/${idUnidad}/gasto-comun`, "PATCH", token, { flg_gastocomun: flgGastocomun });
+
+// --- Personal externo (ronda 18, Administrador/Comité) ---------------------
+// Aseo, jardinería, mantención, etc. — ficha + especialidad, tareas puntuales
+// (le llegan como notificación) e historial de turno/cumplimiento.
+
+export const adminGetTiposPersonal = (token: string, condominioId: number) =>
+  get<TipoPersonal[]>(`/admin/personal/tipos?condominio_id=${condominioId}`, token);
+
+export const adminGetPersonal = (token: string) => get<PersonalAdmin[]>(`/admin/personal`, token);
+
+export const adminCrearPersonal = (
+  token: string,
+  input: { nombre_usuario: string; usuariocol: string; password: string; tipo_personal_id_tipopersonal?: number; condominio_id_condominio: number }
+) => send<PersonalAdmin>(`/admin/personal`, "POST", token, input);
+
+export const adminActualizarPersonal = (
+  token: string,
+  id: number,
+  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; tipo_personal_id_tipopersonal?: number | null }
+) => send<PersonalAdmin>(`/admin/personal/${id}`, "PATCH", token, input);
+
+// Tarea puntual (texto libre, no una plantilla) que le llega al trabajador
+// como notificación — bandeja + push best-effort, igual que un comunicado.
+export const adminAsignarTareaPersonal = (token: string, idUsuario: number, descripcion: string, condominioId: number) =>
+  send<TareaPersonal>(`/admin/personal/${idUsuario}/tarea`, "POST", token, {
+    descripcion,
+    condominio_id_condominio: condominioId,
+  });
+
+// Historial de cumplimiento — solo Administrador/Comité (decisión explícita
+// del usuario). Sin idUsuario trae el historial de TODO el personal.
+export const adminGetTareasPersonal = (token: string, condominioId: number, idUsuario?: number) =>
+  get<TareaPersonal[]>(
+    `/admin/personal/tareas?condominio_id=${condominioId}${idUsuario ? `&usuario_id=${idUsuario}` : ""}`,
+    token
+  );
+
+export const adminGetTurnosPersonal = (token: string, idUsuario: number) =>
+  get<TurnoPersonal[]>(`/admin/personal/${idUsuario}/turnos`, token);
+
+// --- Personal externo (ronda 18, autoservicio del propio trabajador) ------
+// "Empezar turno"/"Marcar salida" y la bandeja de "mis tareas" — el
+// trabajador las marca como completadas él mismo.
+
+export const personalIniciarTurno = (token: string, condominioId: number) =>
+  send<TurnoPersonal>(`/personal/turno/iniciar`, "POST", token, { condominio_id_condominio: condominioId });
+
+export const personalFinalizarTurno = (token: string) => send<TurnoPersonal>(`/personal/turno/finalizar`, "POST", token);
+
+export const personalGetTurnoActual = (token: string) => get<TurnoPersonal | null>(`/personal/turno/actual`, token);
+
+export const personalGetTareas = (token: string) => get<TareaPersonal[]>(`/personal/tareas`, token);
+
+export const personalCompletarTarea = (token: string, idTarea: number) =>
+  send<TareaPersonal>(`/personal/tareas/${idTarea}/completar`, "PATCH", token);
+
+// --- Mantenciones (ronda 19, Guardia + Administrador) ----------------------
+// Limpieza de techo, piscina, ascensores, etc. — trabajo de una empresa
+// externa sin cuenta en el sistema. El guardia solo opera el día a día
+// (elegir de la lista + marcar ingreso/salida); la programación completa
+// (crear/editar/cancelar/comprobantes) es de Administrador/Comité, ver más
+// abajo.
+
+export const getElementosMantencion = (token: string, condominioId: number) =>
+  get<TipoElementoMantencion[]>(`/mantenciones/elementos?condominio_id=${condominioId}`, token);
+
+export const getMantencionesProgramadas = (token: string, condominioId: number) =>
+  get<Mantencion[]>(`/mantenciones/programadas?condominio_id=${condominioId}`, token);
+
+export const getMantencionesEnCurso = (token: string, condominioId: number) =>
+  get<Mantencion[]>(`/mantenciones/en-curso?condominio_id=${condominioId}`, token);
+
+export const getMantencion = (token: string, id: number) => get<Mantencion>(`/mantenciones/${id}`, token);
+
+export const registrarIngresoMantencion = (token: string, id: number, payload: RegistrarIngresoMantencionPayload) =>
+  send<Mantencion>(`/mantenciones/${id}/ingreso`, "PATCH", token, payload);
+
+export const registrarSalidaMantencion = (token: string, id: number) =>
+  send<Mantencion>(`/mantenciones/${id}/salida`, "PATCH", token);
+
+// --- Mantenciones (ronda 19, Administrador/Comité) --------------------------
+// Catálogo de infraestructura (propio de cada condominio, editable) +
+// programación/cancelación + comprobantes/foto/costo real después.
+
+export const adminGetElementosMantencion = (token: string, condominioId: number, incluirInactivos = false) =>
+  get<TipoElementoMantencion[]>(
+    `/admin/elementos-mantencion?condominio_id=${condominioId}${incluirInactivos ? "&incluir_inactivos=1" : ""}`,
+    token
+  );
+
+export const adminCrearElementoMantencion = (token: string, condominioId: number, gls_tipoelementomantencion: string) =>
+  send<TipoElementoMantencion>(`/admin/elementos-mantencion`, "POST", token, {
+    gls_tipoelementomantencion,
+    condominio_id_condominio: condominioId,
+  });
+
+export const adminActualizarElementoMantencion = (
+  token: string,
+  id: number,
+  input: { gls_tipoelementomantencion?: string; flg_vigencia?: number }
+) => send<TipoElementoMantencion>(`/admin/elementos-mantencion/${id}`, "PATCH", token, input);
+
+export const adminGetMantenciones = (token: string, filtro: ListarMantencionesFiltro) => {
+  const params = new URLSearchParams();
+  params.set("condominio_id", String(filtro.condominio_id));
+  if (filtro.estado) params.set("estado", filtro.estado);
+  if (filtro.tipo_elemento_id) params.set("tipo_elemento_id", String(filtro.tipo_elemento_id));
+  if (filtro.fecha_inicio) params.set("fecha_inicio", filtro.fecha_inicio);
+  if (filtro.fecha_termino) params.set("fecha_termino", filtro.fecha_termino);
+  return get<Mantencion[]>(`/admin/mantenciones?${params.toString()}`, token);
+};
+
+export const adminGetMantencion = (token: string, id: number) => get<Mantencion>(`/admin/mantenciones/${id}`, token);
+
+export const adminCrearMantencion = (token: string, payload: CrearMantencionPayload) =>
+  send<Mantencion>(`/admin/mantenciones`, "POST", token, payload);
+
+export const adminActualizarMantencion = (
+  token: string,
+  id: number,
+  input: Partial<Omit<CrearMantencionPayload, "condominio_id_condominio">>
+) => send<Mantencion>(`/admin/mantenciones/${id}`, "PATCH", token, input);
+
+export const adminCancelarMantencion = (token: string, id: number, motivo: string) =>
+  send<Mantencion>(`/admin/mantenciones/${id}/cancelar`, "PATCH", token, { motivo });
+
+export const adminSubirDatosFinalesMantencion = (
+  token: string,
+  id: number,
+  input: { comprobante?: string; foto?: string; costo_real?: number }
+) => send<Mantencion>(`/admin/mantenciones/${id}/comprobante`, "POST", token, input);
+
+// --- Ronda 20: Estacionamientos para arriendo entre residentes -------------
+// Pizarrón informativo (Guardia/Residente/Administrador/Comité pueden
+// verlo); solo el dueño del cupo o Administrador/Comité pueden cambiarlo.
+
+export const getPizarronArriendo = (token: string, condominioId: number) =>
+  get<CupoArriendo[]>(`/estacionamientos/arriendo?condominio_id=${condominioId}`, token);
+
+export const actualizarEstadoArriendo = (
+  token: string,
+  id: number,
+  input: { disponible: boolean; precio_arriendo?: number | null }
+) => send<CupoArriendo>(`/estacionamientos/arriendo/${id}`, "PATCH", token, input);
+
+// --- Ronda 20: VETADOS -------------------------------------------------------
+
+// Búsqueda proactiva del guardia por RUT — no requiere Administrador.
+export const buscarVetadoPorRut = (token: string, rut: string, condominioId: number) =>
+  get<{ vetado: Vetado | null }>(`/vetados/buscar?rut=${encodeURIComponent(rut)}&condominio_id=${condominioId}`, token);
+
+// Listado completo + CRUD — solo Administrador/Comité.
+export const adminGetVetados = (token: string, condominioId: number) =>
+  get<Vetado[]>(`/vetados?condominio_id=${condominioId}`, token);
+
+export const adminCrearVetado = (token: string, payload: CrearVetadoPayload) =>
+  send<Vetado>(`/vetados`, "POST", token, payload);
+
+export const adminActualizarVetado = (
+  token: string,
+  id: number,
+  input: Partial<Omit<CrearVetadoPayload, "condominio_id_condominio">> & { flg_vigencia?: number }
+) => send<Vetado>(`/vetados/${id}`, "PATCH", token, input);
+
+// --- Ronda 20: Bitácora de guardias -----------------------------------------
+// Lectura compartida entre Guardia y Administrador/Comité; escritura
+// exclusiva de Guardia.
+
+export const getBitacora = (token: string, condominioId: number, fechaInicio?: string, fechaTermino?: string) => {
+  const params = new URLSearchParams();
+  params.set("condominio_id", String(condominioId));
+  if (fechaInicio) params.set("fecha_inicio", fechaInicio);
+  if (fechaTermino) params.set("fecha_termino", fechaTermino);
+  return get<EntradaBitacora[]>(`/bitacora?${params.toString()}`, token);
+};
+
+export const crearEntradaBitacora = (token: string, texto: string, condominioId: number) =>
+  send<EntradaBitacora>(`/bitacora`, "POST", token, { texto, condominio_id_condominio: condominioId });
+
+// --- Ronda 20: JEFE_GUARDIAS -------------------------------------------------
+// Este rol SOLO tiene acceso a estas dos cosas: calendario de turnos y CRUD
+// de guardias (que reutiliza tal cual los mismos datos que adminGetGuardias/
+// adminCrearGuardia/adminActualizarGuardia, pero por rutas propias).
+
+export const jefeGetBloques = (token: string, condominioId: number) =>
+  get<TurnoBloque[]>(`/jefe-guardias/bloques?condominio_id=${condominioId}`, token);
+
+export const jefeGetTurnosSemana = (token: string, condominioId: number, fechaInicio?: string, fechaTermino?: string) => {
+  const params = new URLSearchParams();
+  params.set("condominio_id", String(condominioId));
+  if (fechaInicio) params.set("fecha_inicio", fechaInicio);
+  if (fechaTermino) params.set("fecha_termino", fechaTermino);
+  return get<TurnoAsignado[]>(`/jefe-guardias/turnos?${params.toString()}`, token);
+};
+
+export const jefeAsignarTurno = (
+  token: string,
+  input: { guardia_usuario_id: number; turno_bloque_id_turnobloque: number; fecha: string; condominio_id_condominio: number }
+) => send<TurnoAsignado>(`/jefe-guardias/turnos`, "POST", token, input);
+
+export const jefeQuitarTurno = (token: string, id: number) => send<void>(`/jefe-guardias/turnos/${id}`, "DELETE", token);
+
+export const jefeGetGuardias = (token: string) => get<Guardia[]>(`/jefe-guardias/guardias`, token);
+
+export const jefeCrearGuardia = (
+  token: string,
+  input: { nombre_usuario: string; usuariocol: string; password: string }
+) => send<Guardia>(`/jefe-guardias/guardias`, "POST", token, input);
+
+export const jefeActualizarGuardia = (
+  token: string,
+  id: number,
+  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number }
+) => send<Guardia>(`/jefe-guardias/guardias/${id}`, "PATCH", token, input);
+
+// --- Ronda 20: Mascotas ------------------------------------------------------
+// Sin argumentos trae las de mi propia unidad (Residente); con condominioId
+// trae todas (Administrador/Comité) — ver mascotasRouter en el backend.
+
+export const getMascotas = (token: string, condominioId?: number) =>
+  get<Mascota[]>(`/mascotas${condominioId ? `?condominio_id=${condominioId}` : ""}`, token);
+
+export const crearMascota = (
+  token: string,
+  input: { nombre: string; especie?: string; raza?: string; numero_chip?: string; foto?: string; unidad_id_unidad?: number; condominio_id_condominio?: number }
+) => send<Mascota>(`/mascotas`, "POST", token, input);
+
+export const actualizarMascota = (
+  token: string,
+  id: number,
+  input: { nombre?: string; especie?: string; raza?: string; numero_chip?: string; foto?: string; flg_vigencia?: number }
+) => send<Mascota>(`/mascotas/${id}`, "PATCH", token, input);
+
+export const eliminarMascota = (token: string, id: number) => send<void>(`/mascotas/${id}`, "DELETE", token);

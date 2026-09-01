@@ -1,0 +1,27 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (NUNCA subir a GitHub)
+.env
+.env.local
+.env.*.local
+
+# Backend
+backend/dist/
+backend/uploads/
+
+# App / Expo
+app/.expo/
+app/dist/
+app/web-build/
+app/*.jks
+app/*.p8
+app/*.p12
+app/*.key
+app/*.mobileprovision
+
+# Sistema operativo / editores
+.DS_Store
+*.log
+.vscode/
+.idea/
