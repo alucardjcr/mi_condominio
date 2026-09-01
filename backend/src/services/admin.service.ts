@@ -388,12 +388,14 @@ export async function listarEstacionamientosAdmin(condominioId: number) {
       `SELECT e.id_estacionamiento, e.numero_estacionamiento, e.ubicacion,
               te.id_tipoestacionamiento AS tipo_id, te.gls_tipoestacionamiento AS tipo,
               ee.id_estadoestacionamiento AS estado_id, ee.gls_estadoestacionamiento AS estado,
-              e.unidad_id_unidad, un.numero_unidad, tb.nombre_torre
+              e.unidad_id_unidad, un.numero_unidad, tb.nombre_torre,
+              eo.patente, eo.flg_arrendado, eo.tipo_ocupante
        FROM estacionamiento e
        JOIN tipo_estacionamiento te ON te.id_tipoestacionamiento = e.tipo_estacionamiento_id_tipoestacionamiento
        JOIN estado_estacionamiento ee ON ee.id_estadoestacionamiento = e.estado_estacionamiento_id_estadoestacionamiento
        LEFT JOIN unidad un ON un.id_unidad = e.unidad_id_unidad
        LEFT JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
+       LEFT JOIN estacionamiento_ocupacion eo ON eo.estacionamiento_id_estacionamiento = e.id_estacionamiento
        WHERE e.condominio_id_condominio = ?
        ORDER BY te.gls_tipoestacionamiento, e.numero_estacionamiento`
     )
@@ -458,25 +460,34 @@ async function obtenerEstacionamientoAdmin(id: number) {
       `SELECT e.id_estacionamiento, e.numero_estacionamiento, e.ubicacion,
               te.id_tipoestacionamiento AS tipo_id, te.gls_tipoestacionamiento AS tipo,
               ee.id_estadoestacionamiento AS estado_id, ee.gls_estadoestacionamiento AS estado,
-              e.unidad_id_unidad, un.numero_unidad, tb.nombre_torre
+              e.unidad_id_unidad, un.numero_unidad, tb.nombre_torre,
+              eo.patente, eo.flg_arrendado, eo.tipo_ocupante
        FROM estacionamiento e
        JOIN tipo_estacionamiento te ON te.id_tipoestacionamiento = e.tipo_estacionamiento_id_tipoestacionamiento
        JOIN estado_estacionamiento ee ON ee.id_estadoestacionamiento = e.estado_estacionamiento_id_estadoestacionamiento
        LEFT JOIN unidad un ON un.id_unidad = e.unidad_id_unidad
        LEFT JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
+       LEFT JOIN estacionamiento_ocupacion eo ON eo.estacionamiento_id_estacionamiento = e.id_estacionamiento
        WHERE e.id_estacionamiento = ?`
     )
     .get(id);
 }
 
 // Antes solo cambiaba el estado; ahora también permite asignar/reasignar/
-// desasignar el depto (unidad_id_unidad) — es la acción que usa el comité
-// para "arrendar" un cupo suelto a un residente, o para quitárselo si deja
-// de estar interesado (vuelve a quedar disponible para otro). Los dos
-// campos son independientes: se puede mandar solo uno de los dos.
+// desasignar el depto (unidad_id_unidad) y — ronda 30, a pedido explícito
+// del usuario — el registro formal de ocupación (patente, si está
+// arrendado, propietario/arrendatario) que lleva el comité de cada cupo
+// de residente. Todos los campos son independientes: se puede mandar solo
+// alguno de ellos.
 export async function actualizarEstacionamientoAdmin(
   id: number,
-  input: { estado_id?: number; unidad_id_unidad?: number | null }
+  input: {
+    estado_id?: number;
+    unidad_id_unidad?: number | null;
+    patente?: string | null;
+    flg_arrendado?: number;
+    tipo_ocupante?: string | null;
+  }
 ) {
   const cupo = await db.prepare(`SELECT id_estacionamiento FROM estacionamiento WHERE id_estacionamiento = ?`).get(id);
   if (!cupo) throw new Error(`No existe el estacionamiento ${id}.`);
@@ -489,5 +500,27 @@ export async function actualizarEstacionamientoAdmin(
   if (input.unidad_id_unidad !== undefined) {
     await db.prepare(`UPDATE estacionamiento SET unidad_id_unidad = ? WHERE id_estacionamiento = ?`).run(input.unidad_id_unidad, id);
   }
+
+  const tocaOcupacion = input.patente !== undefined || input.flg_arrendado !== undefined || input.tipo_ocupante !== undefined;
+  if (tocaOcupacion) {
+    const existente = (await db
+      .prepare(`SELECT id_estacionamientoocupacion, patente, flg_arrendado, tipo_ocupante FROM estacionamiento_ocupacion WHERE estacionamiento_id_estacionamiento = ?`)
+      .get(id)) as { id_estacionamientoocupacion: number; patente: string | null; flg_arrendado: number; tipo_ocupante: string | null } | undefined;
+
+    const patente = input.patente !== undefined ? input.patente : existente?.patente ?? null;
+    const flgArrendado = input.flg_arrendado !== undefined ? input.flg_arrendado : existente?.flg_arrendado ?? 0;
+    const tipoOcupante = input.tipo_ocupante !== undefined ? input.tipo_ocupante : existente?.tipo_ocupante ?? null;
+
+    if (existente) {
+      await db
+        .prepare(`UPDATE estacionamiento_ocupacion SET patente = ?, flg_arrendado = ?, tipo_ocupante = ? WHERE id_estacionamientoocupacion = ?`)
+        .run(patente, flgArrendado, tipoOcupante, existente.id_estacionamientoocupacion);
+    } else {
+      await db
+        .prepare(`INSERT INTO estacionamiento_ocupacion (estacionamiento_id_estacionamiento, patente, flg_arrendado, tipo_ocupante) VALUES (?, ?, ?, ?)`)
+        .run(id, patente, flgArrendado, tipoOcupante);
+    }
+  }
+
   return obtenerEstacionamientoAdmin(id);
 }

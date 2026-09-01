@@ -746,10 +746,17 @@ export const crearEstacionamiento = (
   }
 ) => send<EstacionamientoAdmin>(`/admin/estacionamientos`, "POST", token, input);
 
-// Ronda 29: generalizada — puede cambiar el estado, la asignación de depto
-// (unidad_id_unidad, null para desasignar), o ambos a la vez.
+// Ronda 29/30: generalizada — puede cambiar el estado, la asignación de
+// depto (unidad_id_unidad, null para desasignar), el registro formal de
+// ocupación (patente/flg_arrendado/tipo_ocupante), o cualquier combinación.
 export const actualizarEstacionamiento = (
   token: string,
   id: number,
-  input: { estado_id?: number; unidad_id_unidad?: number | null }
+  input: {
+    estado_id?: number;
+    unidad_id_unidad?: number | null;
+    patente?: string | null;
+    flg_arrendado?: number;
+    tipo_ocupante?: "Propietario" | "Arrendatario" | null;
+  }
 ) => send<EstacionamientoAdmin>(`/admin/estacionamientos/${id}`, "PATCH", token, input);

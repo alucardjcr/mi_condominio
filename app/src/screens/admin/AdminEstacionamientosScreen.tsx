@@ -67,6 +67,9 @@ export default function AdminEstacionamientosScreen() {
   const [torreAsignar, setTorreAsignar] = useState<OpcionSelect | null>(null);
   const [unidadAsignar, setUnidadAsignar] = useState<OpcionSelect | null>(null);
   const [unidadesAsignar, setUnidadesAsignar] = useState<Unidad[]>([]);
+  const [patenteDetalle, setPatenteDetalle] = useState("");
+  const [arrendadoDetalle, setArrendadoDetalle] = useState(false);
+  const [tipoOcupanteDetalle, setTipoOcupanteDetalle] = useState<"Propietario" | "Arrendatario" | null>(null);
   const [asignando, setAsignando] = useState(false);
 
   const cargar = useCallback(() => {
@@ -173,6 +176,9 @@ export default function AdminEstacionamientosScreen() {
     setTorreAsignar(null);
     setUnidadAsignar(null);
     setUnidadesAsignar([]);
+    setPatenteDetalle(cupo.patente ?? "");
+    setArrendadoDetalle(!!cupo.flg_arrendado);
+    setTipoOcupanteDetalle(cupo.tipo_ocupante ?? null);
   };
 
   const handleSeleccionarTorreAsignar = async (opcion: OpcionSelect) => {
@@ -182,11 +188,20 @@ export default function AdminEstacionamientosScreen() {
     setUnidadesAsignar(await getUnidadesPorTorre(token, opcion.id));
   };
 
-  const handleConfirmarAsignacion = async () => {
-    if (!token || !cupoAsignando || !unidadAsignar) return;
+  // Ronda 30: un solo "Guardar" para todo el detalle del cupo — el depto
+  // (si se eligió uno nuevo), la patente, si está arrendado, y quién lo
+  // ocupa. Si no se tocó el selector de torre/depto, la asignación de
+  // depto queda como estaba (no se manda unidad_id_unidad).
+  const handleGuardarDetalle = async () => {
+    if (!token || !cupoAsignando) return;
     setAsignando(true);
     try {
-      await actualizarEstacionamiento(token, cupoAsignando.id_estacionamiento, { unidad_id_unidad: unidadAsignar.id });
+      await actualizarEstacionamiento(token, cupoAsignando.id_estacionamiento, {
+        ...(unidadAsignar ? { unidad_id_unidad: unidadAsignar.id } : {}),
+        patente: patenteDetalle.trim() || null,
+        flg_arrendado: arrendadoDetalle ? 1 : 0,
+        tipo_ocupante: tipoOcupanteDetalle,
+      });
       setCupoAsignando(null);
       cargar();
     } catch (e: any) {
@@ -275,6 +290,13 @@ export default function AdminEstacionamientosScreen() {
               ) : e.tipo === "Residente" ? (
                 <Text style={styles.detalleSinAsignar}>Sin depto asignado</Text>
               ) : null}
+              {e.tipo === "Residente" && (e.patente || e.tipo_ocupante) && (
+                <Text style={styles.detalle}>
+                  {e.patente ? e.patente : "Sin patente"}
+                  {e.tipo_ocupante ? ` · ${e.tipo_ocupante}` : ""}
+                  {e.flg_arrendado ? " · Arrendado" : ""}
+                </Text>
+              )}
               {e.ubicacion && <Text style={styles.detalle}>{e.ubicacion}</Text>}
             </TouchableOpacity>
 
@@ -290,7 +312,7 @@ export default function AdminEstacionamientosScreen() {
               )}
               {e.tipo === "Residente" && (
                 <TouchableOpacity onPress={() => handleAbrirAsignar(e)}>
-                  <Text style={styles.linkAsignar}>{e.numero_unidad ? "Cambiar depto" : "Asignar depto"}</Text>
+                  <Text style={styles.linkAsignar}>Editar detalle</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -349,47 +371,84 @@ export default function AdminEstacionamientosScreen() {
       <Modal visible={!!cupoAsignando} animationType="slide" transparent onRequestClose={() => setCupoAsignando(null)}>
         <View style={styles.overlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitulo}>Cupo {cupoAsignando?.numero_estacionamiento}</Text>
-            <Text style={styles.modalSubtitulo}>
-              {cupoAsignando?.numero_unidad
-                ? `Asignado a ${cupoAsignando.nombre_torre} ${cupoAsignando.numero_unidad}`
-                : "Sin depto asignado"}
-            </Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalTitulo}>Cupo {cupoAsignando?.numero_estacionamiento}</Text>
+              <Text style={styles.modalSubtitulo}>
+                {cupoAsignando?.numero_unidad
+                  ? `Asignado a ${cupoAsignando.nombre_torre} ${cupoAsignando.numero_unidad}`
+                  : "Sin depto asignado"}
+              </Text>
 
-            <Text style={styles.label}>Nuevo depto</Text>
-            <SelectModal
-              label="Torre"
-              placeholder="Selecciona una torre"
-              opciones={torres.map((t) => ({ id: t.id_torreblock, label: t.nombre_torre }))}
-              valorSeleccionado={torreAsignar}
-              onSeleccionar={handleSeleccionarTorreAsignar}
-            />
-            <SelectModal
-              label="Depto"
-              placeholder={torreAsignar ? "Selecciona un depto" : "Primero elige la torre"}
-              opciones={unidadesAsignar.map((u) => ({ id: u.id_unidad, label: u.numero_unidad }))}
-              valorSeleccionado={unidadAsignar}
-              onSeleccionar={setUnidadAsignar}
-              disabled={!torreAsignar}
-            />
+              <Text style={styles.label}>Cambiar depto (opcional)</Text>
+              <SelectModal
+                label="Torre"
+                placeholder="Selecciona una torre"
+                opciones={torres.map((t) => ({ id: t.id_torreblock, label: t.nombre_torre }))}
+                valorSeleccionado={torreAsignar}
+                onSeleccionar={handleSeleccionarTorreAsignar}
+              />
+              <SelectModal
+                label="Depto"
+                placeholder={torreAsignar ? "Selecciona un depto" : "Primero elige la torre"}
+                opciones={unidadesAsignar.map((u) => ({ id: u.id_unidad, label: u.numero_unidad }))}
+                valorSeleccionado={unidadAsignar}
+                onSeleccionar={setUnidadAsignar}
+                disabled={!torreAsignar}
+              />
+              {cupoAsignando?.numero_unidad && (
+                <TouchableOpacity style={styles.botonQuitar} onPress={handleQuitarAsignacion} disabled={asignando}>
+                  <Text style={styles.botonQuitarTexto}>Quitar asignación (dejar sin depto)</Text>
+                </TouchableOpacity>
+              )}
 
-            <TouchableOpacity
-              style={[styles.boton, (!unidadAsignar || asignando) && styles.botonDeshabilitado]}
-              onPress={handleConfirmarAsignacion}
-              disabled={!unidadAsignar || asignando}
-            >
-              {asignando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Asignar</Text>}
-            </TouchableOpacity>
+              <Text style={styles.label}>Patente del vehículo que lo usa</Text>
+              <TextInput
+                style={styles.input}
+                value={patenteDetalle}
+                onChangeText={setPatenteDetalle}
+                placeholder="ej: AB-CD-12"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="characters"
+              />
 
-            {cupoAsignando?.numero_unidad && (
-              <TouchableOpacity style={styles.botonQuitar} onPress={handleQuitarAsignacion} disabled={asignando}>
-                <Text style={styles.botonQuitarTexto}>Quitar asignación (dejar sin depto)</Text>
+              <Text style={styles.label}>¿Quién lo ocupa?</Text>
+              <View style={styles.filaOpciones}>
+                <TouchableOpacity
+                  style={[styles.opcionChica, tipoOcupanteDetalle === "Propietario" && styles.opcionChicaActiva]}
+                  onPress={() => {
+                    setTipoOcupanteDetalle("Propietario");
+                    setArrendadoDetalle(false);
+                  }}
+                >
+                  <Text style={[styles.opcionChicaTexto, tipoOcupanteDetalle === "Propietario" && styles.opcionChicaTextoActivo]}>
+                    Propietario
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.opcionChica, tipoOcupanteDetalle === "Arrendatario" && styles.opcionChicaActiva]}
+                  onPress={() => {
+                    setTipoOcupanteDetalle("Arrendatario");
+                    setArrendadoDetalle(true);
+                  }}
+                >
+                  <Text style={[styles.opcionChicaTexto, tipoOcupanteDetalle === "Arrendatario" && styles.opcionChicaTextoActivo]}>
+                    Arrendatario
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.boton, asignando && styles.botonDeshabilitado]}
+                onPress={handleGuardarDetalle}
+                disabled={asignando}
+              >
+                {asignando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Guardar</Text>}
               </TouchableOpacity>
-            )}
 
-            <TouchableOpacity style={styles.botonCancelar} onPress={() => setCupoAsignando(null)}>
-              <Text style={styles.botonCancelarTexto}>Cancelar</Text>
-            </TouchableOpacity>
+              <TouchableOpacity style={styles.botonCancelar} onPress={() => setCupoAsignando(null)}>
+                <Text style={styles.botonCancelarTexto}>Cancelar</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -457,6 +516,11 @@ const styles = StyleSheet.create({
   botonDeshabilitado: { opacity: 0.5 },
   botonQuitar: { borderWidth: 1.5, borderColor: colors.danger, borderRadius: radius.sm, padding: 12, alignItems: "center", marginTop: spacing.sm },
   botonQuitarTexto: { color: colors.danger, fontWeight: "700", fontSize: 13 },
+  filaOpciones: { flexDirection: "row", gap: spacing.sm, marginTop: 6 },
+  opcionChica: { flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: 12, alignItems: "center" },
+  opcionChicaActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
+  opcionChicaTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 13 },
+  opcionChicaTextoActivo: { color: colors.navy900 },
   botonCancelar: { alignItems: "center", marginTop: spacing.md, paddingBottom: spacing.sm },
   botonCancelarTexto: { color: colors.textMuted, fontWeight: "600" },
 });

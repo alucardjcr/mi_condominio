@@ -506,14 +506,27 @@ adminRouter.post("/estacionamientos", async (req, res) => {
 
 adminRouter.patch("/estacionamientos/:id", async (req, res) => {
   try {
-    const { estado_id, unidad_id_unidad } = req.body;
-    const input: { estado_id?: number; unidad_id_unidad?: number | null } = {};
+    const { estado_id, unidad_id_unidad, patente, flg_arrendado, tipo_ocupante } = req.body;
+    const input: {
+      estado_id?: number;
+      unidad_id_unidad?: number | null;
+      patente?: string | null;
+      flg_arrendado?: number;
+      tipo_ocupante?: string | null;
+    } = {};
     if (estado_id !== undefined) input.estado_id = Number(estado_id);
-    // "unidad_id_unidad" en el body puede venir como null explícito
-    // (desasignar el cupo de su depto) — por eso se chequea con 'in' en vez
-    // de !== undefined, para no perder ese caso.
+    // "unidad_id_unidad"/"patente"/"tipo_ocupante" pueden venir como null
+    // explícito (desasignar depto / borrar patente / borrar tipo de
+    // ocupante) — por eso se chequea con 'in' en vez de !== undefined.
     if ("unidad_id_unidad" in req.body) {
       input.unidad_id_unidad = unidad_id_unidad === null || unidad_id_unidad === "" ? null : Number(unidad_id_unidad);
+    }
+    if ("patente" in req.body) {
+      input.patente = patente === null || patente === "" ? null : String(patente).trim();
+    }
+    if (flg_arrendado !== undefined) input.flg_arrendado = flg_arrendado ? 1 : 0;
+    if ("tipo_ocupante" in req.body) {
+      input.tipo_ocupante = tipo_ocupante === null || tipo_ocupante === "" ? null : String(tipo_ocupante);
     }
     res.json(await actualizarEstacionamientoAdmin(Number(req.params.id), input));
   } catch (err: any) {

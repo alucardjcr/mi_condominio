@@ -776,6 +776,13 @@ export interface EstacionamientoAdmin {
   unidad_id_unidad: number | null;
   numero_unidad: string | null;
   nombre_torre: string | null;
+  // Ronda 30, a pedido explícito del usuario: control formal que lleva el
+  // comité — a qué patente pertenece, si está arrendado, y si quien lo
+  // ocupa es el propietario del cupo o un arrendatario. Solo se cargan de
+  // verdad para tipo 'Residente'.
+  patente: string | null;
+  flg_arrendado: number;
+  tipo_ocupante: "Propietario" | "Arrendatario" | null;
 }
 
 export interface TipoEstacionamiento {

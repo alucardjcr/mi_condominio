@@ -352,6 +352,33 @@ CREATE TABLE IF NOT EXISTS pago_condominio (
   UNIQUE KEY uq_pagocondominio_periodo (condominio_id_condominio, periodo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 30, a pedido explícito del usuario: control formal que lleva el
+-- comité/administrador sobre cada cupo de RESIDENTE — a quién patente
+-- pertenece el auto que normalmente lo usa, si está arrendado, y si quien
+-- lo ocupa es el propietario del cupo o un arrendatario. Distinto del
+-- "pizarrón de arriendo entre vecinos" (precio_arriendo en `estacionamiento`,
+-- ronda 20, informal, lo puede tocar el propio residente dueño) — esto es
+-- el registro formal, EXCLUSIVO de Administrador/Comité (ver requireAdmin
+-- en middleware/auth.ts, ya aplicado a /admin/estacionamientos).
+--
+-- Se modela como tabla aparte (no columnas nuevas en `estacionamiento`)
+-- siguiendo el mismo criterio conservador de siempre en este archivo: solo
+-- agregar tablas, nunca ALTER TABLE sobre una existente. Relación 1 a 1: si
+-- un cupo no tiene fila acá, simplemente no se le ha cargado esta info
+-- todavía (no significa nada por omisión).
+CREATE TABLE IF NOT EXISTS estacionamiento_ocupacion (
+  id_estacionamientoocupacion INT AUTO_INCREMENT PRIMARY KEY,
+  estacionamiento_id_estacionamiento INT NOT NULL UNIQUE,
+  patente        VARCHAR(10) NULL,
+  flg_arrendado  TINYINT NOT NULL DEFAULT 0,
+  -- 'Propietario' | 'Arrendatario' — quién ocupa el cupo. Texto libre (no
+  -- catálogo aparte) por simplicidad, mismo criterio que tipo_ocupante en
+  -- la tabla `visita`.
+  tipo_ocupante  VARCHAR(20) NULL,
+  CONSTRAINT fk_estacionamientoocupacion_estacionamiento FOREIGN KEY (estacionamiento_id_estacionamiento)
+    REFERENCES estacionamiento (id_estacionamiento)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Ronda 25: recuperación de contraseña ("olvidé mi contraseña" en Login).
 -- Flujo de 2 pasos: el usuario pide un código de 6 dígitos (identificándose
 -- por usuariocol o por correo_usuario, ver auth.service.ts) y luego lo
