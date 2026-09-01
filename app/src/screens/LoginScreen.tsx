@@ -13,7 +13,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
   const [usuariocol, setUsuariocol] = useState("");
   const [password, setPassword] = useState("");
@@ -37,9 +37,7 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.logoWrap}>
-        <Image source={require("../../assets/icon.png")} style={styles.logo} resizeMode="contain" />
-      </View>
+      <Image source={require("../../assets/logo-login.png")} style={styles.logo} resizeMode="contain" />
       <Text style={styles.titulo}>Valles de Varoli</Text>
       <Text style={styles.subtitulo}>Control de estacionamientos de visita</Text>
 
@@ -74,6 +72,14 @@ export default function LoginScreen() {
         >
           {cargando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Ingresar</Text>}
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.olvideWrap}
+          onPress={() => navigation.navigate("RecuperarPassword")}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.olvideTexto}>¿Olvidaste tu contraseña?</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -81,17 +87,7 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: spacing.lg, backgroundColor: colors.navy900 },
-  logoWrap: {
-    alignSelf: "center",
-    width: 108,
-    height: 108,
-    borderRadius: radius.lg,
-    backgroundColor: colors.white,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.md,
-  },
-  logo: { width: 78, height: 78 },
+  logo: { alignSelf: "center", width: 140, height: 140, marginBottom: spacing.md },
   titulo: { ...typography.title, textAlign: "center", color: colors.textOnNavy },
   subtitulo: {
     ...typography.body,
@@ -126,4 +122,6 @@ const styles = StyleSheet.create({
   },
   botonDeshabilitado: { opacity: 0.7 },
   botonTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
+  olvideWrap: { marginTop: spacing.md, alignItems: "center" },
+  olvideTexto: { color: colors.info, fontSize: 14, fontWeight: "700" },
 });

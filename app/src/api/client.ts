@@ -115,6 +115,30 @@ export const cambiarPassword = (token: string, passwordActual: string, passwordN
 export const registrarPushToken = (token: string, pushToken: string) =>
   send<{ ok: boolean }>(`/auth/push-token`, "POST", token, { push_token: pushToken });
 
+// Flujo "olvidé mi contraseña" (ronda 25) — sin token, el usuario todavía
+// no puede loguearse. `identificador` acepta usuariocol o correo_usuario.
+export async function solicitarRecuperacion(identificador: string): Promise<{ ok: boolean; mensaje: string }> {
+  const res = await fetch(`${API_BASE_URL}/auth/solicitar-recuperacion`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identificador }),
+  });
+  return handleResponse(res);
+}
+
+export async function resetearPassword(
+  identificador: string,
+  codigo: string,
+  passwordNueva: string
+): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_BASE_URL}/auth/resetear-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identificador, codigo, password_nueva: passwordNueva }),
+  });
+  return handleResponse(res);
+}
+
 export const getTorres = (token: string, condominioId: number) =>
   get<Torre[]>(`/torres?condominio_id=${condominioId}`, token);
 

@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { colors, navHeaderOptions } from "./src/theme/theme";
 import AdminDrawerNavigator from "./src/navigation/AdminDrawerNavigator";
 import LoginScreen from "./src/screens/LoginScreen";
+import RecuperarPasswordScreen from "./src/screens/RecuperarPasswordScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import EntradaScreen from "./src/screens/EntradaScreen";
 import SalidaScreen from "./src/screens/SalidaScreen";
@@ -66,7 +67,14 @@ function AppNavigator() {
   return (
     <Stack.Navigator screenOptions={navHeaderOptions}>
       {!token ? (
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="RecuperarPassword"
+            component={RecuperarPasswordScreen}
+            options={{ headerShown: false }}
+          />
+        </>
       ) : esAdmin ? (
         // Ronda 24: Administrador (y Residente-comité) navega por su propio
         // Drawer con el menú de todos los módulos a la izquierda — ver

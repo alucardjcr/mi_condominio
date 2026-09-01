@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, cambiarPassword } from "../services/auth.service";
+import { login, cambiarPassword, solicitarRecuperacion, resetearPassword } from "../services/auth.service";
 import { registrarPushToken } from "../services/notificaciones.service";
 import { requireAuth } from "../middleware/auth";
 
@@ -45,6 +45,41 @@ authRouter.post("/push-token", requireAuth, async (req, res) => {
   try {
     const { push_token } = req.body;
     await registrarPushToken(req.guardia!.id_usuario, push_token);
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// POST /auth/solicitar-recuperacion -> paso 1 de "olvidé mi contraseña"
+// (sin login: quien la olvidó no puede autenticarse). El "identificador"
+// acepta tanto usuariocol como correo_usuario en el mismo campo. Responde
+// SIEMPRE con el mismo mensaje genérico, exista o no el usuario/correo, para
+// no filtrar esa información a quien llame al endpoint (ver
+// auth.service.ts -> solicitarRecuperacion).
+authRouter.post("/solicitar-recuperacion", async (req, res) => {
+  try {
+    const { identificador } = req.body;
+    if (!identificador) {
+      return res.status(400).json({ error: "Falta el usuario o correo." });
+    }
+    await solicitarRecuperacion(String(identificador).trim());
+    res.json({ ok: true, mensaje: "Si el dato ingresado es válido, te llegará un código a tu correo registrado." });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// POST /auth/resetear-password -> paso 2: valida el código de 6 dígitos
+// recibido por correo y, si es válido y no expiró, define la contraseña
+// nueva. Tampoco requiere login.
+authRouter.post("/resetear-password", async (req, res) => {
+  try {
+    const { identificador, codigo, password_nueva } = req.body;
+    if (!identificador || !codigo || !password_nueva) {
+      return res.status(400).json({ error: "Faltan campos: identificador, codigo, password_nueva." });
+    }
+    await resetearPassword(String(identificador).trim(), String(codigo).trim(), password_nueva);
     res.json({ ok: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });

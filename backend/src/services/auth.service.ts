@@ -140,3 +140,122 @@ export async function cambiarPassword(idUsuario: number, passwordActual: string,
   const hash = bcrypt.hashSync(passwordNueva, 10);
   await db.prepare(`UPDATE usuario SET password_usuario = ? WHERE id_usuario = ?`).run(hash, idUsuario);
 }
+
+// Cuántos minutos dura un código de recuperación antes de expirar.
+const MINUTOS_VIGENCIA_CODIGO = 15;
+
+function generarCodigoNumerico(): string {
+  // 6 dígitos, con ceros a la izquierda si hace falta (ej. "004821").
+  return String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
+}
+
+/**
+ * TODO (pendiente de decidir proveedor SMTP/API, ej. Resend/SendGrid/Gmail):
+ * por ahora el "envío" del código es simulado — solo queda en el log del
+ * servidor (ver Railway → Logs) para poder probar el flujo completo de
+ * extremo a extremo sin depender de credenciales de correo todavía. Cuando
+ * se conecte un proveedor real, solo hay que reemplazar el console.log de
+ * abajo por la llamada de envío; el resto del flujo (generar código, hash,
+ * expiración, validación) no cambia.
+ */
+async function enviarCodigoPorCorreo(correo: string, nombreUsuario: string, codigo: string) {
+  console.log(
+    `[recuperacion-password] (SIMULADO — sin envío real de correo todavía) ` +
+      `Código para ${nombreUsuario} <${correo}>: ${codigo} (vence en ${MINUTOS_VIGENCIA_CODIGO} min)`
+  );
+}
+
+/**
+ * Paso 1 del flujo "olvidé mi contraseña": el usuario se identifica con su
+ * usuariocol (el mismo que usa para loguearse) o con su correo_usuario
+ * registrado — puede escribir cualquiera de los dos en el mismo campo. Si
+ * existe, se genera un código de 6 dígitos, se invalidan códigos previos
+ * sin usar, y se "envía" por correo (ver enviarCodigoPorCorreo).
+ *
+ * Por seguridad, esta función SIEMPRE resuelve sin lanzar error aunque el
+ * identificador no exista o el usuario no tenga correo registrado — así el
+ * endpoint no revela a quien lo llame si un usuario/correo existe o no en
+ * el sistema. El caller (routes/auth.ts) siempre responde con un mensaje
+ * genérico tipo "si el dato es válido, te llegará un código".
+ */
+export async function solicitarRecuperacion(identificador: string) {
+  const usuario = (await db
+    .prepare(
+      `SELECT id_usuario, nombre_usuario, correo_usuario
+       FROM usuario
+       WHERE (usuariocol = ? OR correo_usuario = ?) AND flg_vigencia = 1`
+    )
+    .get(identificador, identificador)) as
+    | { id_usuario: number; nombre_usuario: string; correo_usuario: string | null }
+    | undefined;
+
+  // Usuario no encontrado, o encontrado pero sin correo registrado (no hay
+  // a dónde enviar el código) — en ambos casos no se hace nada más, pero
+  // tampoco se informa el motivo a quien llamó al endpoint.
+  if (!usuario || !usuario.correo_usuario) {
+    return;
+  }
+
+  // Invalida cualquier código anterior sin usar de este usuario: solo el
+  // más reciente debe servir.
+  await db
+    .prepare(`UPDATE password_reset_token SET flg_usado = 1 WHERE usuario_id_usuario = ? AND flg_usado = 0`)
+    .run(usuario.id_usuario);
+
+  const codigo = generarCodigoNumerico();
+  const codigoHash = bcrypt.hashSync(codigo, 10);
+  const fechaExpiracion = new Date(Date.now() + MINUTOS_VIGENCIA_CODIGO * 60_000)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+
+  await db
+    .prepare(
+      `INSERT INTO password_reset_token (usuario_id_usuario, codigo_hash, fecha_expiracion) VALUES (?, ?, ?)`
+    )
+    .run(usuario.id_usuario, codigoHash, fechaExpiracion);
+
+  await enviarCodigoPorCorreo(usuario.correo_usuario, usuario.nombre_usuario, codigo);
+}
+
+/**
+ * Paso 2 del flujo "olvidé mi contraseña": valida el código de 6 dígitos
+ * contra el más reciente emitido para ese usuario (no usado y no expirado)
+ * y, si coincide, actualiza la contraseña y marca el código como usado.
+ */
+export async function resetearPassword(identificador: string, codigo: string, passwordNueva: string) {
+  if (!passwordNueva || passwordNueva.length < 4) {
+    throw new Error("La contraseña nueva debe tener al menos 4 caracteres.");
+  }
+
+  const usuario = (await db
+    .prepare(`SELECT id_usuario FROM usuario WHERE (usuariocol = ? OR correo_usuario = ?) AND flg_vigencia = 1`)
+    .get(identificador, identificador)) as { id_usuario: number } | undefined;
+
+  // Mensaje genérico también acá: no distingue "usuario no existe" de
+  // "código incorrecto" para no dar pistas a quien intente adivinar.
+  const mensajeError = "El código ingresado no es válido o ya expiró.";
+  if (!usuario) {
+    throw new Error(mensajeError);
+  }
+
+  const tokenVigente = (await db
+    .prepare(
+      `SELECT id_passwordresettoken, codigo_hash
+       FROM password_reset_token
+       WHERE usuario_id_usuario = ? AND flg_usado = 0 AND fecha_expiracion > NOW()
+       ORDER BY id_passwordresettoken DESC
+       LIMIT 1`
+    )
+    .get(usuario.id_usuario)) as { id_passwordresettoken: number; codigo_hash: string } | undefined;
+
+  if (!tokenVigente || !bcrypt.compareSync(codigo, tokenVigente.codigo_hash)) {
+    throw new Error(mensajeError);
+  }
+
+  const hash = bcrypt.hashSync(passwordNueva, 10);
+  await db.prepare(`UPDATE usuario SET password_usuario = ? WHERE id_usuario = ?`).run(hash, usuario.id_usuario);
+  await db
+    .prepare(`UPDATE password_reset_token SET flg_usado = 1 WHERE id_passwordresettoken = ?`)
+    .run(tokenVigente.id_passwordresettoken);
+}

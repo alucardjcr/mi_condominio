@@ -199,6 +199,27 @@ CREATE TABLE IF NOT EXISTS residente_discapacitado (
     REFERENCES usuario (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 25: recuperación de contraseña ("olvidé mi contraseña" en Login).
+-- Flujo de 2 pasos: el usuario pide un código de 6 dígitos (identificándose
+-- por usuariocol o por correo_usuario, ver auth.service.ts) y luego lo
+-- ingresa junto a la contraseña nueva. Se guarda solo el HASH del código
+-- (bcrypt, igual que password_usuario), nunca el código en texto plano —
+-- así una fuga de la base no entrega códigos utilizables directamente.
+-- Cada solicitud nueva inserta una fila; las anteriores no usadas del mismo
+-- usuario se invalidan (flg_usado=1) para que solo el código más reciente
+-- sirva. Expira a los 15 minutos (validado en el service, no acá).
+CREATE TABLE IF NOT EXISTS password_reset_token (
+  id_passwordresettoken INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id_usuario     INT NOT NULL,
+  codigo_hash            VARCHAR(100) NOT NULL,
+  fecha_creacion         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_expiracion       DATETIME NOT NULL,
+  flg_usado              TINYINT NOT NULL DEFAULT 0,
+  CONSTRAINT fk_passwordresettoken_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario),
+  INDEX idx_passwordresettoken_usuario (usuario_id_usuario, flg_usado)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS tipo_visita (
   id_tipovisita   INT AUTO_INCREMENT PRIMARY KEY,
   gls_tipovisita  VARCHAR(100) NOT NULL,
