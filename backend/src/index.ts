@@ -24,6 +24,7 @@ import { jefeGuardiasRouter } from "./routes/jefe-guardias";
 import { mascotasRouter } from "./routes/mascotas";
 import { condominiosRouter } from "./routes/condominios";
 import { superAdminRouter } from "./routes/super-admin";
+import { privacidadRouter } from "./routes/privacidad";
 import { requireAuth, requireAdmin, requireCondominioAccess, requireSuperAdmin, requireSuscripcionAlDia } from "./middleware/auth";
 import { obtenerArchivo } from "./utils/storage";
 import { initSchema } from "./db/client";
@@ -76,6 +77,7 @@ app.use("/vetados", requireAuth, requireCondominioAccess, requireSuscripcionAlDi
 app.use("/bitacora", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, bitacoraRouter); // ronda 20: bitácora de novedades del turno — escribe Guardia, lee Guardia y Administrador/Comité (ver requireRol dentro del router)
 app.use("/jefe-guardias", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, jefeGuardiasRouter); // ronda 20: rol JEFE_GUARDIAS — calendario de turnos + CRUD de guardias, y SOLO eso (ver requireRol dentro del router)
 app.use("/mascotas", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, mascotasRouter); // ronda 20: mascotas por depto — autoservicio del residente de esa unidad, o Administrador/Comité (ver requireAuth dentro del router)
+app.use("/privacidad", requireAuth, privacidadRouter); // ronda 32, Ley 21.719: derechos ARCO — autoservicio de cualquier rol sobre sí mismo, ver routes/privacidad.ts. A propósito SIN requireSuscripcionAlDia: es un derecho de la PERSONA, no puede quedar condicionado a si el condominio pagó su mensualidad o no.
 
 // Manejador de errores genérico: cualquier excepción no capturada por un
 // try/catch específico (sea síncrona o, gracias a express-async-errors, una

@@ -53,4 +53,12 @@ export const SECCIONES_MENU_ADMIN: SeccionMenu[] = [
       { label: "Auditoría por patente", route: "AdminAuditoria", icon: "🧾" },
     ],
   },
+  {
+    // Ronda 32, Ley 21.719 de Protección de Datos Personales.
+    titulo: "Privacidad de datos",
+    items: [
+      { label: "Solicitudes de residentes", route: "AdminPrivacidad", icon: "🔐" },
+      { label: "Mis datos", route: "MisDatos", icon: "🙋" },
+    ],
+  },
 ];

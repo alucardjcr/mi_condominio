@@ -64,6 +64,10 @@ import {
   EstacionamientoAdmin,
   TipoEstacionamiento,
   EstadoEstacionamiento,
+  MisDatos,
+  TipoSolicitudArco,
+  SolicitudArco,
+  SolicitudArcoAdmin,
 } from "./types";
 
 // Ronda 17: con la sesión persistida (expo-secure-store), un token puede
@@ -760,3 +764,21 @@ export const actualizarEstacionamiento = (
     tipo_ocupante?: "Propietario" | "Arrendatario" | null;
   }
 ) => send<EstacionamientoAdmin>(`/admin/estacionamientos/${id}`, "PATCH", token, input);
+
+// --- Ronda 32: derechos ARCO (Ley 21.719 de Protección de Datos) -----------
+
+export const getMisDatos = (token: string) => get<MisDatos>(`/privacidad/mis-datos`, token);
+
+export const getMisSolicitudesArco = (token: string) => get<SolicitudArco[]>(`/privacidad/mis-solicitudes`, token);
+
+export const crearSolicitudArco = (token: string, input: { tipo: TipoSolicitudArco; detalle: string }) =>
+  send<SolicitudArco>(`/privacidad/solicitudes`, "POST", token, input);
+
+export const adminGetSolicitudesArco = (token: string, condominioId: number) =>
+  get<SolicitudArcoAdmin[]>(`/admin/privacidad/solicitudes?condominio_id=${condominioId}`, token);
+
+export const adminResolverSolicitudArco = (
+  token: string,
+  id: number,
+  input: { estado: "Resuelta" | "Rechazada"; respuesta_admin: string }
+) => send<SolicitudArcoAdmin>(`/admin/privacidad/solicitudes/${id}`, "PATCH", token, input);

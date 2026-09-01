@@ -22,6 +22,7 @@ import {
   crearEstacionamientoAdmin,
   actualizarEstacionamientoAdmin,
 } from "../services/admin.service";
+import { listarSolicitudesArcoAdmin, resolverSolicitudArco } from "../services/arco.service";
 import { reporteGastoComun, generarExcelGastoComun } from "../services/reportes.service";
 import { crearComunicado } from "../services/notificaciones.service";
 import {
@@ -758,6 +759,31 @@ adminRouter.patch("/reservas/:id/garantia", async (req, res) => {
     }
     res.json(
       await resolverGarantia(Number(req.params.id), decision, monto_retenido !== undefined ? Number(monto_retenido) : undefined, observacion)
+    );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 32, Ley 21.719: solicitudes de derechos ARCO (Rectificación/
+// Cancelación/Oposición) que un residente/guardia/personal mandó — acá las
+// revisa Administrador/Comité. Ver arco.service.ts para el porqué del
+// diseño (Acceso/Portabilidad son autoservicio instantáneo, no pasan por
+// acá — ver routes/privacidad.ts).
+adminRouter.get("/privacidad/solicitudes", async (req, res) => {
+  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  res.json(await listarSolicitudesArcoAdmin(condominioId));
+});
+
+adminRouter.patch("/privacidad/solicitudes/:id", async (req, res) => {
+  try {
+    const { estado, respuesta_admin } = req.body;
+    res.json(
+      await resolverSolicitudArco(Number(req.params.id), {
+        estado,
+        respuesta_admin,
+        resueltoPorUsuarioId: req.guardia!.id_usuario,
+      })
     );
   } catch (err: any) {
     res.status(400).json({ error: err.message });

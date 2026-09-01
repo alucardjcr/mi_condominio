@@ -16,6 +16,7 @@ import RecuperarPasswordScreen from "./src/screens/RecuperarPasswordScreen";
 import SeleccionarCondominioScreen from "./src/screens/SeleccionarCondominioScreen";
 import CrearCondominioScreen from "./src/screens/CrearCondominioScreen";
 import CambiarCondominioScreen from "./src/screens/CambiarCondominioScreen";
+import MisDatosScreen from "./src/screens/MisDatosScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import EntradaScreen from "./src/screens/EntradaScreen";
 import SalidaScreen from "./src/screens/SalidaScreen";
@@ -138,6 +139,7 @@ function AppNavigator() {
             component={CrearCondominioScreen}
             options={{ title: "Crear condominio" }}
           />
+          <Stack.Screen name="MisDatos" component={MisDatosScreen} options={{ title: "Mis datos" }} />
           {esResidente ? (
             <>
               <Stack.Screen

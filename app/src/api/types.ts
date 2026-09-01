@@ -828,3 +828,46 @@ export interface CondominioConFacturacion {
   pagado_periodo_actual: boolean;
 }
 
+// --- Ronda 32: derechos ARCO (Ley 21.719 de Protección de Datos) -----------
+
+export interface MisDatos {
+  generado_el: string;
+  identidad: {
+    nombre_usuario: string;
+    usuariocol: string | null;
+    correo_usuario: string | null;
+    rol: string;
+    condominio_id_condominio: number | null;
+  };
+  vivienda: { torre: string | null; numero_unidad: string | null; es_comite: boolean; es_propietario: boolean } | null;
+  mascotas: { nombre: string; especie: string | null; raza: string | null; numero_chip: string | null }[];
+  patentes: { patente: string; gls_tipotenencia: string }[];
+  reservas: {
+    fecha_reserva: string;
+    hora_inicio: string;
+    hora_termino: string;
+    gls_espaciocomun: string;
+    gls_estadoreserva: string;
+  }[];
+  paquetes: { fecha_recepcion: string; nombre_receptor: string; gls_tipopaquete: string; gls_estadopaquete: string }[];
+}
+
+export type TipoSolicitudArco = "Rectificacion" | "Cancelacion" | "Oposicion";
+
+export interface SolicitudArco {
+  id_solicitudarco: number;
+  tipo: TipoSolicitudArco;
+  detalle: string;
+  estado: "Pendiente" | "Resuelta" | "Rechazada";
+  respuesta_admin: string | null;
+  fecha_solicitud: string;
+  fecha_resolucion: string | null;
+}
+
+export interface SolicitudArcoAdmin extends SolicitudArco {
+  nombre_solicitante: string;
+  usuariocol_solicitante: string | null;
+  numero_unidad: string | null;
+  nombre_torre: string | null;
+}
+

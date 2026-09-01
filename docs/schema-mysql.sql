@@ -379,6 +379,38 @@ CREATE TABLE IF NOT EXISTS estacionamiento_ocupacion (
     REFERENCES estacionamiento (id_estacionamiento)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 32, a pedido explícito del usuario: derechos ARCO (Acceso,
+-- Rectificación, Cancelación/supresión, Oposición) de la Ley 21.719 de
+-- Protección de Datos Personales. "Acceso" y "Portabilidad" son
+-- autoservicio instantáneo (ver services/arco.service.ts ->
+-- obtenerMisDatos, no necesita quedar registrado acá porque no modifica
+-- nada); Rectificación/Cancelación/Oposición SÍ quedan como una solicitud
+-- formal en esta tabla, porque requieren que alguien (Administrador o
+-- Comité) revise y actúe — no se puede, por ejemplo, borrar en el acto el
+-- historial de visitas o pagos de un depto sin criterio humano de por
+-- medio. Esta tabla ES, además, la evidencia operativa que la ley exige
+-- poder mostrarle a la Agencia de Protección de Datos ante una
+-- fiscalización: quién pidió qué, cuándo, y cómo se resolvió.
+CREATE TABLE IF NOT EXISTS solicitud_arco (
+  id_solicitudarco       INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id_usuario     INT NOT NULL,
+  condominio_id_condominio INT NOT NULL,
+  tipo                   VARCHAR(20) NOT NULL, -- 'Rectificacion' | 'Cancelacion' | 'Oposicion'
+  detalle                TEXT NOT NULL,
+  estado                 VARCHAR(20) NOT NULL DEFAULT 'Pendiente', -- 'Pendiente' | 'Resuelta' | 'Rechazada'
+  respuesta_admin        TEXT NULL,
+  fecha_solicitud        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_resolucion       DATETIME NULL,
+  resuelto_por_usuario_id INT NULL,
+  CONSTRAINT fk_solicitudarco_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario),
+  CONSTRAINT fk_solicitudarco_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio),
+  CONSTRAINT fk_solicitudarco_resuelto_por FOREIGN KEY (resuelto_por_usuario_id)
+    REFERENCES usuario (id_usuario),
+  INDEX idx_solicitudarco_condominio_estado (condominio_id_condominio, estado)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Ronda 25: recuperación de contraseña ("olvidé mi contraseña" en Login).
 -- Flujo de 2 pasos: el usuario pide un código de 6 dígitos (identificándose
 -- por usuariocol o por correo_usuario, ver auth.service.ts) y luego lo
