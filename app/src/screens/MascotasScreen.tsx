@@ -17,6 +17,7 @@ import { Mascota } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import FotoCapture from "../components/FotoCapture";
+import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 
 // Ronda 20: mascotas por depto. Autoservicio de cualquier residente activo
 // de la unidad (no exclusivo del propietario) — Administrador/Comité ve
@@ -158,7 +159,7 @@ export default function MascotasScreen() {
         <View key={m.id_mascota} style={styles.card}>
           <View style={styles.cardHeader}>
             {m.foto_url ? (
-              <Image source={{ uri: m.foto_url }} style={styles.foto} />
+              <Image source={fuenteImagenPrivada(m.foto_url, token)!} style={styles.foto} />
             ) : (
               <View style={[styles.foto, styles.fotoVacia]}>
                 <Text style={{ fontSize: 24 }}>🐾</Text>

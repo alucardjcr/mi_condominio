@@ -17,6 +17,7 @@ import { Vetado } from "../../api/types";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import FotoCapture from "../../components/FotoCapture";
+import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
 
 function hoyISO() {
   const d = new Date();
@@ -205,8 +206,8 @@ export default function AdminVetadosScreen() {
           <Text style={styles.detalle}>Desde: {v.fecha_ingreso}</Text>
           {v.observaciones && <Text style={styles.observaciones}>{v.observaciones}</Text>}
           <View style={styles.fotosRow}>
-            {v.foto_persona_url && <Image source={{ uri: v.foto_persona_url }} style={styles.foto} />}
-            {v.foto_vehiculo_url && <Image source={{ uri: v.foto_vehiculo_url }} style={styles.foto} />}
+            {v.foto_persona_url && <Image source={fuenteImagenPrivada(v.foto_persona_url, token)!} style={styles.foto} />}
+            {v.foto_vehiculo_url && <Image source={fuenteImagenPrivada(v.foto_vehiculo_url, token)!} style={styles.foto} />}
           </View>
           <TouchableOpacity style={styles.botonBaja} onPress={() => handleToggleVigencia(v)}>
             <Text style={styles.botonBajaTexto}>{v.flg_vigencia ? "Dar de baja" : "Reactivar"}</Text>

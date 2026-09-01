@@ -4,6 +4,7 @@ import { buscarVetadoPorRut } from "../api/client";
 import { Vetado } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 
 // Ronda 20: consulta proactiva del guardia por RUT — para revisar antes de
 // dejar entrar a alguien si está en la lista VETADOS (ej. persona con orden
@@ -60,8 +61,8 @@ export default function ConsultaVetadoScreen() {
           {resultado.parentesco && <Text style={styles.cardAlertaDetalle}>Motivo/relación: {resultado.parentesco}</Text>}
           <Text style={styles.cardAlertaNota}>Si se presenta en portería, avisa a administración y/o Carabineros.</Text>
           <View style={styles.fotosRow}>
-            {resultado.foto_persona_url && <Image source={{ uri: resultado.foto_persona_url }} style={styles.foto} />}
-            {resultado.foto_vehiculo_url && <Image source={{ uri: resultado.foto_vehiculo_url }} style={styles.foto} />}
+            {resultado.foto_persona_url && <Image source={fuenteImagenPrivada(resultado.foto_persona_url, token)!} style={styles.foto} />}
+            {resultado.foto_vehiculo_url && <Image source={fuenteImagenPrivada(resultado.foto_vehiculo_url, token)!} style={styles.foto} />}
           </View>
         </View>
       )}

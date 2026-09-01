@@ -1,5 +1,4 @@
 import "dotenv/config";
-import path from "node:path";
 import express from "express";
 import cors from "cors";
 // Parchea Router de Express para que un error lanzado (o una promesa
@@ -26,6 +25,7 @@ import { mascotasRouter } from "./routes/mascotas";
 import { condominiosRouter } from "./routes/condominios";
 import { superAdminRouter } from "./routes/super-admin";
 import { requireAuth, requireAdmin, requireCondominioAccess, requireSuperAdmin, requireSuscripcionAlDia } from "./middleware/auth";
+import { obtenerArchivo } from "./utils/storage";
 import { initSchema } from "./db/client";
 
 const app = express();
@@ -34,10 +34,27 @@ app.use(cors());
 // paquetería llegan como data URL base64 dentro del JSON.
 app.use(express.json({ limit: "8mb" }));
 
-// Fotos/firmas de paquetería servidas como archivos estáticos. En este MVP
-// es disco local (ver src/utils/imagenes.ts); antes de tener más de un
-// backend corriendo en producción esto debe migrar a un storage tipo S3.
-app.use("/uploads", express.static(process.env.UPLOADS_DIR || path.join(__dirname, "../uploads")));
+// Ronda 31, a pedido explícito del usuario (Ley 21.719 de Protección de
+// Datos Personales, vigente desde el 1 de diciembre de 2026): hasta esta
+// ronda, `/uploads` se servía completamente público (`express.static`, sin
+// login) — cualquiera con la URL podía ver una foto de paquetería, un
+// comprobante, la foto de una persona vetada, etc. Ahora exige sesión
+// válida (requireAuth) antes de entregar cualquier archivo, sea que esté
+// en disco local o en un bucket S3 (ver utils/storage.ts -> obtenerArchivo,
+// que resuelve cuál de los dos según STORAGE_DRIVER sin que a esta ruta le
+// importe). No hace chequeo fino de "es realmente tuyo este archivo
+// puntual" (dejarlo así, exigiendo solo sesión válida, ya cierra la
+// exposición pública que era el problema real) — quedaría como mejora
+// futura acotar por condominio si hiciera falta.
+app.get("/uploads/*", requireAuth, async (req, res) => {
+  const rutaRelativa = (req.params as any)[0] as string;
+  const archivo = await obtenerArchivo(rutaRelativa);
+  if (!archivo) {
+    return res.status(404).json({ error: "Archivo no encontrado." });
+  }
+  if (archivo.contentType) res.setHeader("Content-Type", archivo.contentType);
+  archivo.stream.pipe(res);
+});
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 

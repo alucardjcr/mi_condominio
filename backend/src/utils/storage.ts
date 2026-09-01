@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 // Abstracción de almacenamiento (ronda 17) — a pedido del usuario, que
 // preguntó cómo migrar las fotos/firmas de paquetería y los comprobantes de
@@ -28,19 +28,17 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 //   S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY   (obligatorias)
 //   S3_FORCE_PATH_STYLE       (opcional, "true" para MinIO y algunos
 //                              compatibles que lo requieren)
-//   S3_PUBLIC_BASE_URL        (opcional — si el bucket/CDN es público, la URL
-//                              final se arma como `${S3_PUBLIC_BASE_URL}/<key>`;
-//                              si no se define, se usa la URL virtual-hosted
-//                              estándar de S3, que solo sirve si el bucket es
-//                              público en AWS S3 real)
 //
-// Nota de seguridad (documentada también como supuesto en el README): hoy
-// `/uploads` se sirve con `express.static` sin ningún control de acceso —
-// cualquiera con la URL puede ver una foto/firma/comprobante. El driver S3
-// mantiene la misma postura (bucket público, URL directa) para no ser MÁS
-// restrictivo de lo que ya era el comportamiento local; si se necesita que
-// las fotos sean privadas, hay que agregar URLs firmadas (presigned) más
-// adelante — no se hizo en esta ronda porque no fue parte del pedido.
+// Ronda 31, a pedido explícito del usuario (Ley 21.719 de Protección de
+// Datos Personales — entra en plena vigencia el 1 de diciembre de 2026):
+// se cerró el hueco de seguridad que había hasta esta ronda, donde
+// `/uploads` se servía completamente público (`express.static`, sin login)
+// sin importar el driver. Ahora, sea local o S3, `guardarArchivo` SIEMPRE
+// devuelve una URL propia `/uploads/<ruta>` (nunca la URL directa del
+// bucket) — el archivo real se sirve a través de `obtenerArchivo` desde
+// una ruta autenticada en index.ts (requireAuth), que en el caso S3 lo
+// trae del bucket puerta adentro (el bucket ya no necesita ser público —
+// ver S3_PUBLIC_BASE_URL, que quedó sin uso y se puede quitar del .env).
 const DRIVER = (process.env.STORAGE_DRIVER || "local").toLowerCase();
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, "../../uploads");
@@ -64,7 +62,8 @@ function getS3Client(): S3Client {
 /**
  * Guarda un archivo ya decodificado (buffer) bajo `rutaRelativa` (ej.
  * "paquetes/recepcion-123-uuid.jpg") usando el driver configurado, y
- * devuelve la URL para guardar en la base de datos.
+ * devuelve la URL para guardar en la base de datos — SIEMPRE `/uploads/...`
+ * propia, nunca la URL directa del bucket (ver nota de seguridad arriba).
  */
 export async function guardarArchivo(buffer: Buffer, rutaRelativa: string, contentType: string): Promise<string> {
   if (DRIVER === "s3") {
@@ -80,10 +79,7 @@ export async function guardarArchivo(buffer: Buffer, rutaRelativa: string, conte
         ContentType: contentType,
       })
     );
-    const base = process.env.S3_PUBLIC_BASE_URL;
-    if (base) return `${base.replace(/\/$/, "")}/${rutaRelativa}`;
-    const region = process.env.S3_REGION && process.env.S3_REGION !== "auto" ? process.env.S3_REGION : "us-east-1";
-    return `https://${bucket}.s3.${region}.amazonaws.com/${rutaRelativa}`;
+    return `/uploads/${rutaRelativa}`;
   }
 
   // Driver local (default) — mismo comportamiento que existía antes de esta
@@ -96,4 +92,35 @@ export async function guardarArchivo(buffer: Buffer, rutaRelativa: string, conte
 
 export function driverActivo(): "local" | "s3" {
   return DRIVER === "s3" ? "s3" : "local";
+}
+
+/**
+ * Ronda 31: lee un archivo ya guardado (por su ruta relativa, ej.
+ * "paquetes/recepcion-123-uuid.jpg") para servirlo desde la ruta
+ * autenticada `/uploads/*` de index.ts — nunca se expone directo. Devuelve
+ * null si no existe (la ruta responde 404 en ese caso). Sanitiza la ruta
+ * contra path traversal (ej. "../../etc/passwd") antes de tocar el disco o
+ * el bucket.
+ */
+export async function obtenerArchivo(
+  rutaRelativa: string
+): Promise<{ stream: NodeJS.ReadableStream; contentType?: string } | null> {
+  const normalizada = path.normalize(rutaRelativa).replace(/^([.]{2}[/\\])+/, "");
+  if (normalizada.includes("..")) return null;
+
+  if (DRIVER === "s3") {
+    const bucket = process.env.S3_BUCKET;
+    if (!bucket) return null;
+    try {
+      const obj = await getS3Client().send(new GetObjectCommand({ Bucket: bucket, Key: normalizada }));
+      if (!obj.Body) return null;
+      return { stream: obj.Body as unknown as NodeJS.ReadableStream, contentType: obj.ContentType };
+    } catch {
+      return null;
+    }
+  }
+
+  const destino = path.join(UPLOADS_DIR, normalizada);
+  if (!destino.startsWith(UPLOADS_DIR) || !fs.existsSync(destino)) return null;
+  return { stream: fs.createReadStream(destino) };
 }

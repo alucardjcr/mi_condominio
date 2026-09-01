@@ -9,10 +9,11 @@ import {
   adminSubirDatosFinalesMantencion,
 } from "../../api/client";
 import { Mantencion, TipoElementoMantencion } from "../../api/types";
-import { API_BASE_URL, CONDOMINIO_ID } from "../../config/api";
+import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
 import FotoCapture from "../../components/FotoCapture";
+import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
 
 function formatearMonto(monto: number) {
   return `$${monto.toLocaleString("es-CL")}`;
@@ -30,10 +31,9 @@ function formatearFecha(fechaMysql: string | null) {
   });
 }
 
-function urlCompleta(path: string | null) {
-  if (!path) return null;
-  return path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
-}
+// Ronda 31: urlCompleta local se reemplazó por fuenteImagenPrivada
+// (utils/imagenesPrivadas.ts), que además manda el token — /uploads ya no
+// es público (ver index.ts).
 
 // Ronda 19: detalle completo de una mantención para Administrador/Comité.
 // Mientras está Programada se puede editar o cancelar (con motivo
@@ -291,10 +291,10 @@ export default function AdminMantencionDetalleScreen({ route }: any) {
           <Text style={styles.cardTitulo}>Comprobante y costo real</Text>
 
           {mantencion.comprobante_url && (
-            <Image source={{ uri: urlCompleta(mantencion.comprobante_url)! }} style={styles.preview} resizeMode="contain" />
+            <Image source={fuenteImagenPrivada(mantencion.comprobante_url, token)!} style={styles.preview} resizeMode="contain" />
           )}
           {mantencion.foto_resultado_url && (
-            <Image source={{ uri: urlCompleta(mantencion.foto_resultado_url)! }} style={styles.preview} resizeMode="cover" />
+            <Image source={fuenteImagenPrivada(mantencion.foto_resultado_url, token)!} style={styles.preview} resizeMode="cover" />
           )}
           {mantencion.costo_real != null && <Text style={styles.detalle}>Costo real: {formatearMonto(mantencion.costo_real)}</Text>}
 
