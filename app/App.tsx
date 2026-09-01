@@ -11,6 +11,8 @@ import { colors, navHeaderOptions } from "./src/theme/theme";
 import AdminDrawerNavigator from "./src/navigation/AdminDrawerNavigator";
 import LoginScreen from "./src/screens/LoginScreen";
 import RecuperarPasswordScreen from "./src/screens/RecuperarPasswordScreen";
+import SeleccionarCondominioScreen from "./src/screens/SeleccionarCondominioScreen";
+import CrearCondominioScreen from "./src/screens/CrearCondominioScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import EntradaScreen from "./src/screens/EntradaScreen";
 import SalidaScreen from "./src/screens/SalidaScreen";
@@ -40,7 +42,7 @@ import JefeGuardiasGuardiasScreen from "./src/screens/jefeguardias/JefeGuardiasG
 const Stack = createNativeStackNavigator();
 
 function AppNavigator() {
-  const { token, rol, esAdmin, restaurandoSesion } = useAuth();
+  const { token, rol, esAdmin, restaurandoSesion, requiereSeleccionCondominio } = useAuth();
   // Un residente del comité (esAdmin=true aunque rol="Residente") navega
   // igual que Administrador, no por la rama de Residente.
   const esResidente = rol === "Residente" && !esAdmin;
@@ -66,7 +68,25 @@ function AppNavigator() {
 
   return (
     <Stack.Navigator screenOptions={navHeaderOptions}>
-      {!token ? (
+      {!token && requiereSeleccionCondominio ? (
+        // Ronda 26: Administrador logeado pero con más de un condominio —
+        // ver AuthContext.requiereSeleccionCondominio. Se corta acá ANTES
+        // que la rama de Login: token sigue siendo null en este punto (la
+        // sesión final todavía no existe), así que sin este chequeo caería
+        // en la rama de abajo y mostraría el Login de nuevo.
+        <>
+          <Stack.Screen
+            name="SeleccionarCondominio"
+            component={SeleccionarCondominioScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="CrearCondominio"
+            component={CrearCondominioScreen}
+            options={{ title: "Crear condominio" }}
+          />
+        </>
+      ) : !token ? (
         <>
           <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
           <Stack.Screen

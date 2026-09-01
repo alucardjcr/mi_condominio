@@ -1,11 +1,19 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as SecureStore from "expo-secure-store";
-import { login as apiLogin, registrarPushToken, setUnauthorizedHandler } from "../api/client";
+import {
+  login as apiLogin,
+  registrarPushToken,
+  seleccionarCondominio as apiSeleccionarCondominio,
+  setUnauthorizedHandler,
+} from "../api/client";
+import { CondominioOpcion } from "../api/types";
+import { setCondominioIdActual } from "../config/api";
 import { obtenerPushTokenExpo } from "../utils/notificaciones";
 
 interface Guardia {
   id_usuario: number;
   nombre_usuario: string;
+  condominio_id_condominio?: number;
   // Solo presentes cuando rol = 'Residente'.
   unidad_id_unidad?: number;
   numero_unidad?: string;
@@ -40,7 +48,30 @@ interface AuthContextValue {
   // mientras esto es true, para no hacer parpadear el login si ya había
   // una sesión guardada.
   restaurandoSesion: boolean;
+  // Ronda 26: true entre que un Administrador con más de un condominio se
+  // logea y elige a cuál entrar — App.tsx muestra SeleccionarCondominioScreen
+  // en vez de Login/Home mientras esto es true.
+  requiereSeleccionCondominio: boolean;
+  condominiosDisponibles: CondominioOpcion[];
+  // Ronda 26: token intermedio de la selección post-login — lo necesita
+  // CrearCondominioScreen para poder crear un condominio ANTES de que
+  // exista una sesión completa (cuando se llega a esa pantalla desde el
+  // selector, no desde el menú de un admin ya logeado). Nunca sirve para
+  // ninguna otra ruta que no sea /auth/seleccionar-condominio o
+  // /admin-condominios (ambas aceptan un token de Administrador aunque
+  // todavía no tenga condominio_id_condominio elegido).
+  tokenIntermedio: string | null;
+  // Ronda 26: nombre del condominio de la sesión actual (ver
+  // guardia.condominio_id_condominio) — usarlo en vez de un nombre fijo en
+  // el menú/header de Administrador.
+  nombreCondominioActual: string | null;
   login: (usuariocol: string, password: string) => Promise<void>;
+  seleccionarCondominio: (condominioId: number) => Promise<void>;
+  // Ronda 26: para un Administrador YA logeado (sesión completa) que
+  // quiere pasarse a otro de sus condominios desde el menú, sin
+  // desloguearse — reutiliza el mismo endpoint que el selector post-login,
+  // pero mandando el token de la sesión activa en vez del intermedio.
+  cambiarCondominio: (condominioId: number) => Promise<void>;
   logout: () => void;
 }
 
@@ -60,6 +91,7 @@ interface SesionGuardada {
   token: string;
   guardia: Guardia;
   rol: Rol;
+  nombreCondominio?: string;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -67,12 +99,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [guardia, setGuardia] = useState<Guardia | null>(null);
   const [rol, setRol] = useState<Rol | null>(null);
   const [restaurandoSesion, setRestaurandoSesion] = useState(true);
+  // Ronda 26: mientras se resuelve la selección de condominio de un
+  // Administrador con más de uno, se guarda acá el token intermedio (el
+  // que solo sirve para POST /auth/seleccionar-condominio) — nunca se
+  // persiste ni se usa para llamar a ninguna otra ruta.
+  const [tokenIntermedio, setTokenIntermedio] = useState<string | null>(null);
+  const [condominiosDisponibles, setCondominiosDisponibles] = useState<CondominioOpcion[]>([]);
+  const [nombreCondominioActual, setNombreCondominioActual] = useState<string | null>(null);
 
   const logout = () => {
     setToken(null);
     setGuardia(null);
     setRol(null);
+    setTokenIntermedio(null);
+    setCondominiosDisponibles([]);
+    setNombreCondominioActual(null);
     SecureStore.deleteItemAsync(CLAVE_SESION).catch(() => {});
+  };
+
+  const aplicarSesion = (resultado: { token: string; guardia: Guardia; rol: string; condominio_nombre?: string }) => {
+    setToken(resultado.token);
+    setGuardia(resultado.guardia);
+    setRol(resultado.rol as Rol);
+    setTokenIntermedio(null);
+    setCondominiosDisponibles([]);
+    setNombreCondominioActual(resultado.condominio_nombre ?? null);
+    // Ver la nota en config/api.ts: esto es lo que hace que las ~20
+    // pantallas existentes (Paquetes, Reservas, etc.) empiecen a trabajar
+    // con el condominio correcto sin tener que tocarlas una por una.
+    if (resultado.guardia.condominio_id_condominio) {
+      setCondominioIdActual(resultado.guardia.condominio_id_condominio);
+    }
+    SecureStore.setItemAsync(
+      CLAVE_SESION,
+      JSON.stringify({
+        token: resultado.token,
+        guardia: resultado.guardia,
+        rol: resultado.rol,
+        nombreCondominio: resultado.condominio_nombre,
+      })
+    ).catch(() => {
+      // Si no se pudo persistir, la sesión igual funciona en memoria para
+      // este uso de la app — solo no sobrevivirá a cerrarla.
+    });
+
+    // Ronda 16: registrar el push token del teléfono para notificaciones
+    // reales — best-effort, nunca debe frenar ni fallar el login. En Expo
+    // Go (sin development build) obtenerPushTokenExpo() devuelve null y no
+    // pasa nada: las notificaciones igual quedan disponibles dentro de la
+    // app en "Notificaciones".
+    obtenerPushTokenExpo()
+      .then((pushToken) => {
+        if (pushToken) return registrarPushToken(resultado.token, pushToken);
+      })
+      .catch(() => {});
   };
 
   // Al abrir la app: intenta restaurar la sesión guardada. Si el token
@@ -88,6 +168,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(sesion.token);
           setGuardia(sesion.guardia);
           setRol(sesion.rol);
+          setNombreCondominioActual(sesion.nombreCondominio ?? null);
+          if (sesion.guardia.condominio_id_condominio) {
+            setCondominioIdActual(sesion.guardia.condominio_id_condominio);
+          }
         }
       })
       .catch(() => {
@@ -111,33 +195,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       esAdmin: rol === "Administrador" || guardia?.esComite === true,
       esPropietario: rol === "Residente" && guardia?.esPropietario === true,
       restaurandoSesion,
+      requiereSeleccionCondominio: tokenIntermedio !== null,
+      condominiosDisponibles,
+      tokenIntermedio,
+      nombreCondominioActual,
       login: async (usuariocol: string, password: string) => {
         const resultado = await apiLogin(usuariocol, password);
-        setToken(resultado.token);
-        setGuardia(resultado.guardia);
-        setRol(resultado.rol as Rol);
-        SecureStore.setItemAsync(
-          CLAVE_SESION,
-          JSON.stringify({ token: resultado.token, guardia: resultado.guardia, rol: resultado.rol })
-        ).catch(() => {
-          // Si no se pudo persistir, la sesión igual funciona en memoria
-          // para este uso de la app — solo no sobrevivirá a cerrarla.
-        });
-
-        // Ronda 16: registrar el push token del teléfono para notificaciones
-        // reales — best-effort, nunca debe frenar ni fallar el login. En
-        // Expo Go (sin development build) obtenerPushTokenExpo() devuelve
-        // null y no pasa nada: las notificaciones igual quedan disponibles
-        // dentro de la app en "Notificaciones".
-        obtenerPushTokenExpo()
-          .then((pushToken) => {
-            if (pushToken) return registrarPushToken(resultado.token, pushToken);
-          })
-          .catch(() => {});
+        if ("requiereSeleccionCondominio" in resultado) {
+          setTokenIntermedio(resultado.token);
+          setCondominiosDisponibles(resultado.condominios);
+          return;
+        }
+        aplicarSesion(resultado);
+      },
+      seleccionarCondominio: async (condominioId: number) => {
+        if (!tokenIntermedio) return;
+        const resultado = await apiSeleccionarCondominio(tokenIntermedio, condominioId);
+        aplicarSesion(resultado);
+      },
+      cambiarCondominio: async (condominioId: number) => {
+        if (!token) return;
+        const resultado = await apiSeleccionarCondominio(token, condominioId);
+        aplicarSesion(resultado);
       },
       logout,
     }),
-    [token, guardia, rol, restaurandoSesion]
+    [token, guardia, rol, restaurandoSesion, tokenIntermedio, condominiosDisponibles, nombreCondominioActual]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

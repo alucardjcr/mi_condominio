@@ -1,0 +1,443 @@
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { crearCondominio } from "../api/client";
+import { useAuth } from "../context/AuthContext";
+import { colors, radius, spacing, typography } from "../theme/theme";
+
+interface TorreArmada {
+  nombre_torre: string;
+  cantidad_pisos?: number;
+  numeros_unidad: string[];
+}
+
+// Separa una lista pegada tipo CSV: acepta comas, saltos de línea, o
+// ambos mezclados (ej. pegar una columna de Excel) — así el administrador
+// puede escribir su propia numeración irregular sin que la app le imponga
+// un patrón, además de la opción de generarla automáticamente más abajo.
+function parsearNumeros(texto: string): string[] {
+  const vistos = new Set<string>();
+  const resultado: string[] = [];
+  for (const raw of texto.split(/[,\n]/)) {
+    const n = raw.trim();
+    if (!n || vistos.has(n)) continue;
+    vistos.add(n);
+    resultado.push(n);
+  }
+  return resultado;
+}
+
+// Patrón simple "N pisos x M deptos por piso" -> 101,102...,201,202...
+function generarPorPatron(pisos: number, deptosPorPiso: number): string[] {
+  const resultado: string[] = [];
+  for (let p = 1; p <= pisos; p++) {
+    for (let d = 1; d <= deptosPorPiso; d++) {
+      resultado.push(`${p}${String(d).padStart(2, "0")}`);
+    }
+  }
+  return resultado;
+}
+
+// Ronda 26: asistente de creación de condominio. Se llega acá desde
+// SeleccionarCondominioScreen (todavía sin sesión completa, solo el token
+// intermedio) o desde el menú de un Administrador ya logeado que quiere
+// agregar OTRO condominio a su cuenta — en ambos casos usa el mismo token
+// disponible (ver useAuth().token / tokenIntermedio) porque el backend
+// acepta cualquiera de los dos para estas rutas (ver routes/condominios.ts).
+export default function CrearCondominioScreen({ navigation }: any) {
+  const { token, tokenIntermedio, seleccionarCondominio, cambiarCondominio } = useAuth();
+  const tokenApi = token ?? tokenIntermedio;
+
+  const [paso, setPaso] = useState<1 | 2 | 3>(1);
+  const [nombreCondominio, setNombreCondominio] = useState("");
+  const [tieneTorres, setTieneTorres] = useState<boolean | null>(null);
+
+  // Estructura ya confirmada (una o más torres) mientras se arma paso a
+  // paso, o la numeración directa si el condominio es de casas.
+  const [torresAgregadas, setTorresAgregadas] = useState<TorreArmada[]>([]);
+  const [nombreTorre, setNombreTorre] = useState("");
+  const [pisosTorre, setPisosTorre] = useState("");
+  const [deptosPorPisoTorre, setDeptosPorPisoTorre] = useState("");
+  const [numerosTorreTexto, setNumerosTorreTexto] = useState("");
+
+  const [casasTexto, setCasasTexto] = useState("");
+
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleGenerarPatronTorre = () => {
+    const pisos = Number(pisosTorre);
+    const deptos = Number(deptosPorPisoTorre);
+    if (!pisos || !deptos) {
+      setError("Ingresa cuántos pisos y cuántos deptos por piso para generar la lista.");
+      return;
+    }
+    setError(null);
+    setNumerosTorreTexto(generarPorPatron(pisos, deptos).join(", "));
+  };
+
+  const handleAgregarTorre = () => {
+    setError(null);
+    if (!nombreTorre.trim()) {
+      setError("Ponle un nombre a la torre o block (ej: Torre A, Block 1).");
+      return;
+    }
+    const numeros = parsearNumeros(numerosTorreTexto);
+    if (numeros.length === 0) {
+      setError("Agrega los números de depto de esta torre (generados o escritos a mano).");
+      return;
+    }
+    setTorresAgregadas((prev) => [
+      ...prev,
+      { nombre_torre: nombreTorre.trim(), cantidad_pisos: Number(pisosTorre) || undefined, numeros_unidad: numeros },
+    ]);
+    setNombreTorre("");
+    setPisosTorre("");
+    setDeptosPorPisoTorre("");
+    setNumerosTorreTexto("");
+  };
+
+  const handleQuitarTorre = (index: number) => {
+    setTorresAgregadas((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEnviar = async () => {
+    setError(null);
+    if (!nombreCondominio.trim()) {
+      setError("Falta el nombre del condominio.");
+      setPaso(1);
+      return;
+    }
+    if (tieneTorres === null) {
+      setError("Indica si el condominio tiene torres o blocks.");
+      return;
+    }
+    if (tieneTorres && torresAgregadas.length === 0) {
+      setError("Agrega al menos una torre o block antes de continuar.");
+      return;
+    }
+    const numerosCasas = !tieneTorres ? parsearNumeros(casasTexto) : [];
+    if (!tieneTorres && numerosCasas.length === 0) {
+      setError("Agrega al menos un número o nombre de casa.");
+      return;
+    }
+    if (!tokenApi) {
+      setError("Tu sesión expiró. Vuelve a iniciar sesión.");
+      return;
+    }
+
+    setEnviando(true);
+    try {
+      const resultado = await crearCondominio(tokenApi, {
+        nombre_condominio: nombreCondominio.trim(),
+        tiene_torres: tieneTorres,
+        torres: tieneTorres ? torresAgregadas : undefined,
+        numeros_unidad_casas: !tieneTorres ? numerosCasas : undefined,
+      });
+
+      if (!token) {
+        // Todavía no había sesión completa (venimos del selector) — entra
+        // directo al condominio recién creado.
+        await seleccionarCondominio(resultado.id_condominio);
+        return;
+      }
+
+      // Ya había una sesión completa (se creó desde el menú de un admin
+      // logeado en otro condominio) — pregunta si quiere pasarse ahora.
+      Alert.alert(
+        "Condominio creado",
+        `"${resultado.nombre}" quedó creado con ${resultado.unidades_creadas} unidad(es). ¿Quieres entrar a administrarlo ahora?`,
+        [
+          { text: "Más tarde", style: "cancel", onPress: () => navigation.goBack() },
+          { text: "Entrar ahora", onPress: () => cambiarCondominio(resultado.id_condominio) },
+        ]
+      );
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={styles.titulo}>Crear condominio</Text>
+
+        {paso === 1 && (
+          <View style={styles.card}>
+            <Text style={styles.label}>Nombre del condominio</Text>
+            <TextInput
+              style={styles.input}
+              value={nombreCondominio}
+              onChangeText={setNombreCondominio}
+              placeholder="ej: Altos de San Miguel"
+              placeholderTextColor={colors.textMuted}
+            />
+            <TouchableOpacity
+              style={styles.boton}
+              onPress={() => {
+                if (!nombreCondominio.trim()) {
+                  setError("Falta el nombre del condominio.");
+                  return;
+                }
+                setError(null);
+                setPaso(2);
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.botonTexto}>Continuar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {paso === 2 && (
+          <View style={styles.card}>
+            <Text style={styles.label}>¿Este condominio tiene torres o blocks?</Text>
+            <Text style={styles.ayuda}>
+              Si es un condominio de casas, elige "No" — vas a poder cargar los números de las casas directamente.
+            </Text>
+            <View style={styles.filaOpciones}>
+              <TouchableOpacity
+                style={[styles.opcion, tieneTorres === true && styles.opcionActiva]}
+                onPress={() => setTieneTorres(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.opcionTexto, tieneTorres === true && styles.opcionTextoActivo]}>
+                  Sí, tiene torres/blocks
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.opcion, tieneTorres === false && styles.opcionActiva]}
+                onPress={() => setTieneTorres(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.opcionTexto, tieneTorres === false && styles.opcionTextoActivo]}>
+                  No, es de casas
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[styles.boton, tieneTorres === null && styles.botonDeshabilitado]}
+              onPress={() => tieneTorres !== null && setPaso(3)}
+              disabled={tieneTorres === null}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.botonTexto}>Continuar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {paso === 3 && tieneTorres && (
+          <View style={styles.card}>
+            {torresAgregadas.map((t, i) => (
+              <View key={i} style={styles.torreResumen}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.torreResumenNombre}>{t.nombre_torre}</Text>
+                  <Text style={styles.torreResumenDetalle}>{t.numeros_unidad.length} unidad(es)</Text>
+                </View>
+                <TouchableOpacity onPress={() => handleQuitarTorre(i)}>
+                  <Text style={styles.quitarTexto}>Quitar</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            <Text style={styles.subtitulo}>
+              {torresAgregadas.length > 0 ? "Agregar otra torre/block" : "Agrega la primera torre/block"}
+            </Text>
+
+            <Text style={styles.label}>Nombre de la torre o block</Text>
+            <TextInput
+              style={styles.input}
+              value={nombreTorre}
+              onChangeText={setNombreTorre}
+              placeholder="ej: Torre A"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            <Text style={styles.label}>Generar números automáticamente (opcional)</Text>
+            <View style={styles.filaPatron}>
+              <TextInput
+                style={[styles.input, styles.inputChico]}
+                value={pisosTorre}
+                onChangeText={setPisosTorre}
+                placeholder="Pisos"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="number-pad"
+              />
+              <TextInput
+                style={[styles.input, styles.inputChico]}
+                value={deptosPorPisoTorre}
+                onChangeText={setDeptosPorPisoTorre}
+                placeholder="Deptos/piso"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="number-pad"
+              />
+              <TouchableOpacity style={styles.botonGenerar} onPress={handleGenerarPatronTorre} activeOpacity={0.8}>
+                <Text style={styles.botonGenerarTexto}>Generar</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.label}>Números de depto de esta torre</Text>
+            <Text style={styles.ayuda}>
+              Separados por coma o uno por línea (puedes pegar una lista, ej. desde Excel) — o usa "Generar" arriba.
+            </Text>
+            <TextInput
+              style={[styles.input, styles.inputMultilinea]}
+              value={numerosTorreTexto}
+              onChangeText={setNumerosTorreTexto}
+              placeholder={"101, 102, 103...\no uno por línea"}
+              placeholderTextColor={colors.textMuted}
+              multiline
+            />
+
+            <TouchableOpacity style={styles.botonSecundario} onPress={handleAgregarTorre} activeOpacity={0.85}>
+              <Text style={styles.botonSecundarioTexto}>+ Agregar esta torre</Text>
+            </TouchableOpacity>
+
+            {error && <Text style={styles.error}>{error}</Text>}
+
+            <TouchableOpacity
+              style={[styles.boton, enviando && styles.botonDeshabilitado]}
+              onPress={handleEnviar}
+              disabled={enviando}
+              activeOpacity={0.85}
+            >
+              {enviando ? (
+                <ActivityIndicator color={colors.navy900} />
+              ) : (
+                <Text style={styles.botonTexto}>Crear condominio</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {paso === 3 && tieneTorres === false && (
+          <View style={styles.card}>
+            <Text style={styles.label}>Números o nombres de las casas</Text>
+            <Text style={styles.ayuda}>
+              Separados por coma o uno por línea (puedes pegar una lista, ej. desde Excel). ej: Casa 1, Casa 2... o
+              1, 2, 3...
+            </Text>
+            <TextInput
+              style={[styles.input, styles.inputMultilinea]}
+              value={casasTexto}
+              onChangeText={setCasasTexto}
+              placeholder={"Casa 1, Casa 2, Casa 3..."}
+              placeholderTextColor={colors.textMuted}
+              multiline
+            />
+
+            {error && <Text style={styles.error}>{error}</Text>}
+
+            <TouchableOpacity
+              style={[styles.boton, enviando && styles.botonDeshabilitado]}
+              onPress={handleEnviar}
+              disabled={enviando}
+              activeOpacity={0.85}
+            >
+              {enviando ? (
+                <ActivityIndicator color={colors.navy900} />
+              ) : (
+                <Text style={styles.botonTexto}>Crear condominio</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {(paso === 1 || paso === 2) && error && <Text style={styles.error}>{error}</Text>}
+
+        {paso > 1 && (
+          <TouchableOpacity style={styles.volverWrap} onPress={() => setPaso((p) => (p - 1) as 1 | 2)}>
+            <Text style={styles.volverTexto}>‹ Volver</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  scroll: { padding: spacing.lg, paddingTop: spacing.xl },
+  titulo: { ...typography.title, textAlign: "center", color: colors.textOnNavy, marginBottom: spacing.lg },
+  subtitulo: { ...typography.heading, color: colors.textDark, marginTop: spacing.md },
+  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
+  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
+  ayuda: { ...typography.small, color: colors.textMuted, marginTop: 2, marginBottom: 4 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: 14,
+    fontSize: 16,
+    marginTop: 6,
+    color: colors.textDark,
+    backgroundColor: colors.offWhite,
+  },
+  inputChico: { flex: 1, marginTop: 0 },
+  inputMultilinea: { minHeight: 90, textAlignVertical: "top" },
+  filaPatron: { flexDirection: "row", gap: spacing.sm, alignItems: "center", marginTop: 6 },
+  botonGenerar: {
+    backgroundColor: colors.navy700,
+    borderRadius: radius.sm,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+  },
+  botonGenerarTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 13 },
+  filaOpciones: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
+  opcion: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    alignItems: "center",
+  },
+  opcionActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
+  opcionTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 13, textAlign: "center" },
+  opcionTextoActivo: { color: colors.navy900 },
+  torreResumen: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.offWhite,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  torreResumenNombre: { fontWeight: "700", color: colors.textDark },
+  torreResumenDetalle: { fontSize: 12, color: colors.textMuted },
+  quitarTexto: { color: colors.danger, fontWeight: "700", fontSize: 13 },
+  boton: {
+    backgroundColor: colors.gold,
+    borderRadius: radius.sm,
+    padding: 16,
+    alignItems: "center",
+    marginTop: spacing.lg,
+  },
+  botonDeshabilitado: { opacity: 0.6 },
+  botonTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
+  botonSecundario: {
+    borderWidth: 1.5,
+    borderColor: colors.navy900,
+    borderRadius: radius.sm,
+    padding: 14,
+    alignItems: "center",
+    marginTop: spacing.md,
+  },
+  botonSecundarioTexto: { color: colors.navy900, fontWeight: "700" },
+  error: { color: colors.danger, marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
+  volverWrap: { alignItems: "center", marginTop: spacing.lg },
+  volverTexto: { color: colors.textMutedOnNavy, fontSize: 14, fontWeight: "600" },
+});

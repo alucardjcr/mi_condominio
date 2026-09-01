@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, cambiarPassword, solicitarRecuperacion, resetearPassword } from "../services/auth.service";
+import { login, cambiarPassword, solicitarRecuperacion, resetearPassword, seleccionarCondominio } from "../services/auth.service";
 import { registrarPushToken } from "../services/notificaciones.service";
 import { requireAuth } from "../middleware/auth";
 
@@ -11,7 +11,29 @@ authRouter.post("/login", async (req, res) => {
     if (!usuariocol || !password) {
       return res.status(400).json({ error: "Falta usuario o contraseña." });
     }
+    // Ronda 26: si el usuario es Administrador de más de un condominio,
+    // login() devuelve { requiereSeleccionCondominio: true, token, condominios }
+    // en vez del { token, guardia, rol } de siempre — mismo status 200 en
+    // ambos casos (no es un error, es un paso intermedio del login).
     const resultado = await login(usuariocol, password);
+    res.json(resultado);
+  } catch (err: any) {
+    res.status(401).json({ error: err.message });
+  }
+});
+
+// POST /auth/seleccionar-condominio -> paso 2 del login de un Administrador
+// con más de un condominio (ver login() -> requiereSeleccionCondominio).
+// Recibe, en el body, el token intermedio que devolvió /auth/login (no en
+// el header Authorization — ese token todavía no autoriza nada más que
+// esto) junto con el condominio elegido, y entrega el token final.
+authRouter.post("/seleccionar-condominio", async (req, res) => {
+  try {
+    const { token, condominio_id } = req.body;
+    if (!token || !condominio_id) {
+      return res.status(400).json({ error: "Faltan campos: token, condominio_id." });
+    }
+    const resultado = await seleccionarCondominio(token, Number(condominio_id));
     res.json(resultado);
   } catch (err: any) {
     res.status(401).json({ error: err.message });

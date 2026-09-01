@@ -119,6 +119,7 @@ export interface LoginResponse {
   guardia: {
     id_usuario: number;
     nombre_usuario: string;
+    condominio_id_condominio?: number;
     // Solo presentes cuando rol = 'Residente'.
     unidad_id_unidad?: number;
     numero_unidad?: string;
@@ -128,6 +129,44 @@ export interface LoginResponse {
     esComite?: boolean;
   };
   rol: "Guardia" | "Administrador" | "Residente" | "Personal" | "JefeGuardias" | string;
+  // Ronda 26: nombre del condominio con el que quedó esta sesión (ver
+  // guardia.condominio_id_condominio) — para mostrarlo en el menú en vez
+  // de un nombre fijo.
+  condominio_nombre?: string;
+}
+
+// Ronda 26: cuando un Administrador tiene más de un condominio, POST
+// /auth/login devuelve esto en vez de LoginResponse — ver
+// SeleccionarCondominioScreen.
+export interface RequiereSeleccionCondominioResponse {
+  requiereSeleccionCondominio: true;
+  token: string; // token intermedio: solo sirve para POST /auth/seleccionar-condominio
+  condominios: CondominioOpcion[];
+}
+
+export interface CondominioOpcion {
+  id_condominio: number;
+  nombre: string;
+}
+
+export interface CrearCondominioTorreInput {
+  nombre_torre: string;
+  cantidad_pisos?: number;
+  numeros_unidad: string[];
+}
+
+export interface CrearCondominioInput {
+  nombre_condominio: string;
+  tiene_torres: boolean;
+  torres?: CrearCondominioTorreInput[];
+  numeros_unidad_casas?: string[];
+}
+
+export interface CrearCondominioResponse {
+  id_condominio: number;
+  nombre: string;
+  torres_creadas: number;
+  unidades_creadas: number;
 }
 
 // --- Administrador -----------------------------------------------------

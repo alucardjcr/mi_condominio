@@ -199,6 +199,57 @@ CREATE TABLE IF NOT EXISTS residente_discapacitado (
     REFERENCES usuario (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 26: multi-condominio para Administrador — un mismo administrador
+-- puede llevar más de un condominio (ej. "Valles de Varoli" y "Altos de
+-- San Miguel") con la MISMA cuenta (usuariocol/password), eligiendo a cuál
+-- entrar después de loguearse (ver auth.service.ts -> login/
+-- seleccionarCondominio). Fase 1: solo Administrador usa esta tabla;
+-- Guardia/Residente/Personal siguen atados a un solo condominio vía
+-- usuario.condominio_id_condominio como hasta ahora (queda pendiente para
+-- una ronda futura extender el mismo mecanismo a esos roles).
+CREATE TABLE IF NOT EXISTS usuario_condominio (
+  id_usuariocondominio   INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id_usuario     INT NOT NULL,
+  condominio_id_condominio INT NOT NULL,
+  flg_vigencia           TINYINT NOT NULL DEFAULT 1,
+  CONSTRAINT fk_usuariocondominio_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario),
+  CONSTRAINT fk_usuariocondominio_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio),
+  UNIQUE KEY uq_usuariocondominio (usuario_id_usuario, condominio_id_condominio)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Backfill idempotente (INSERT IGNORE + UNIQUE KEY de arriba): cada
+-- Administrador que ya existía antes de esta ronda queda automáticamente
+-- vinculado a su condominio original la primera vez que arranca el
+-- backend con este schema — así ningún admin actual pierde acceso a su
+-- condominio de siempre. Se ejecuta en cada arranque (initSchema corre
+-- todo este archivo siempre), pero no duplica filas gracias al UNIQUE KEY.
+INSERT IGNORE INTO usuario_condominio (usuario_id_usuario, condominio_id_condominio)
+SELECT u.id_usuario, u.condominio_id_condominio
+FROM usuario u
+JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
+WHERE tu.gls_tipousuario = 'Administrador' AND u.flg_vigencia = 1;
+-- Flujo de 2 pasos: el usuario pide un código de 6 dígitos (identificándose
+-- por usuariocol o por correo_usuario, ver auth.service.ts) y luego lo
+-- ingresa junto a la contraseña nueva. Se guarda solo el HASH del código
+-- (bcrypt, igual que password_usuario), nunca el código en texto plano —
+-- así una fuga de la base no entrega códigos utilizables directamente.
+-- Cada solicitud nueva inserta una fila; las anteriores no usadas del mismo
+-- usuario se invalidan (flg_usado=1) para que solo el código más reciente
+-- sirva. Expira a los 15 minutos (validado en el service, no acá).
+CREATE TABLE IF NOT EXISTS password_reset_token (
+  id_passwordresettoken INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id_usuario     INT NOT NULL,
+  codigo_hash            VARCHAR(100) NOT NULL,
+  fecha_creacion         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_expiracion       DATETIME NOT NULL,
+  flg_usado              TINYINT NOT NULL DEFAULT 0,
+  CONSTRAINT fk_passwordresettoken_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario),
+  INDEX idx_passwordresettoken_usuario (usuario_id_usuario, flg_usado)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS tipo_visita (
   id_tipovisita   INT AUTO_INCREMENT PRIMARY KEY,
   gls_tipovisita  VARCHAR(100) NOT NULL,

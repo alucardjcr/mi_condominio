@@ -28,6 +28,8 @@ import EstacionamientosArriendoScreen from "../screens/EstacionamientosArriendoS
 import AdminVetadosScreen from "../screens/admin/AdminVetadosScreen";
 import BitacoraScreen from "../screens/BitacoraScreen";
 import MascotasScreen from "../screens/MascotasScreen";
+import CrearCondominioScreen from "../screens/CrearCondominioScreen";
+import CambiarCondominioScreen from "../screens/CambiarCondominioScreen";
 import NotificacionesScreen from "../screens/NotificacionesScreen";
 import { colors, navHeaderOptions } from "../theme/theme";
 
@@ -107,6 +109,8 @@ export default function AdminStackNavigator() {
         options={{ title: "Estacionamientos en arriendo" }}
       />
       <Stack.Screen name="AdminVetados" component={AdminVetadosScreen} options={{ title: "Vetados" }} />
+      <Stack.Screen name="CambiarCondominio" component={CambiarCondominioScreen} options={{ title: "Cambiar de condominio" }} />
+      <Stack.Screen name="CrearCondominio" component={CrearCondominioScreen} options={{ title: "Crear condominio" }} />
       <Stack.Screen name="Bitacora" component={BitacoraScreen} options={{ title: "Bitácora de guardias" }} />
       <Stack.Screen name="Mascotas" component={MascotasScreen} options={{ title: "Mascotas" }} />
       <Stack.Screen name="Notificaciones" component={NotificacionesScreen} options={{ title: "Notificaciones" }} />

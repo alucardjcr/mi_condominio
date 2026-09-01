@@ -17,6 +17,19 @@
 // Expo (app.config.ts + EAS) en vez de un valor fijo en el código.
 export const API_BASE_URL = "https://micondominio-production.up.railway.app";
 
-// Condominio con el que trabaja este MVP (todavía no hay login/selector
-// de condominio — se agrega cuando construyamos el módulo de usuarios).
-export const CONDOMINIO_ID = 1;
+// Ronda 26: condominio con el que está trabajando la sesión actual. Deja
+// de ser un valor fijo — ahora AuthContext lo actualiza (vía
+// setCondominioIdActual) apenas se resuelve el login (o el residente/
+// admin elige un condominio, en el caso de Administrador con más de
+// uno). Se mantiene como `export let` a propósito: TODAS las pantallas
+// que ya hacían `import { CONDOMINIO_ID } from "../config/api"` (más de
+// 20 en este proyecto) siguen funcionando sin tocarlas una por una,
+// porque los imports de ES modules son "live bindings" — leen el valor
+// actual de la variable en el momento en que se usa, no el que tenía al
+// importarla. Arranca en 1 (compatibilidad con el condominio único que
+// existía antes de esta ronda) hasta que AuthContext lo actualice.
+export let CONDOMINIO_ID = 1;
+
+export function setCondominioIdActual(id: number) {
+  CONDOMINIO_ID = id;
+}

@@ -29,6 +29,18 @@ export interface GuardiaAutenticado {
   id_usuario: number;
   nombre_usuario: string;
   rol: string; // 'Guardia' | 'Administrador' | 'Residente' | 'Personal' (ronda 18) | 'JefeGuardias' (ronda 20)
+  // Ronda 26: condominio con el que está trabajando esta sesión.
+  // - Para Guardia/Residente/Personal/JefeGuardias: siempre su único
+  //   condominio (usuario.condominio_id_condominio) — sin cambios de
+  //   comportamiento, se agrega solo para dejar la base lista para cuando
+  //   esos roles también tengan multi-condominio (fase futura).
+  // - Para Administrador: el condominio que ELIGIÓ en el selector
+  //   post-login (ver seleccionarCondominio más abajo) — puede ser
+  //   distinto entre dos sesiones del mismo admin si administra más de
+  //   uno. Ausente únicamente en el token "intermedio" que se entrega
+  //   cuando un admin con más de un condominio todavía no elige (ver
+  //   login() -> requiereSeleccionCondominio).
+  condominio_id_condominio?: number;
   // Solo presente cuando rol = 'Residente': su depto, para poder acotar
   // server-side qué puede ver (sus propios paquetes/reservas, nunca los de
   // otro depto) sin depender de lo que mande el cliente.
@@ -45,6 +57,25 @@ export interface GuardiaAutenticado {
   // arrendado). Da derecho a administrar el listado de residentes de esa
   // unidad desde /mi-depto/* — ver middleware/auth.ts y routes/mi-depto.ts.
   esPropietario?: boolean;
+}
+
+// Ronda 26: forma de firmar el token una vez que ya se sabe con qué
+// condominio va a trabajar la sesión (para Administrador, el que eligió;
+// para los demás roles, siempre el mismo — ver GuardiaAutenticado). Se
+// extrajo de login() para reutilizarla también en seleccionarCondominio().
+async function emitirTokenFinal(payload: GuardiaAutenticado) {
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: expiresInPorRol(payload.rol) });
+  const condominioNombre = payload.condominio_id_condominio
+    ? await nombreDeCondominio(payload.condominio_id_condominio)
+    : undefined;
+  return { token, guardia: payload, rol: payload.rol, condominio_nombre: condominioNombre };
+}
+
+async function nombreDeCondominio(condominioId: number): Promise<string | undefined> {
+  const row = (await db
+    .prepare(`SELECT gls_condominio FROM condominio WHERE id_condominio = ?`)
+    .get(condominioId)) as { gls_condominio: string } | undefined;
+  return row?.gls_condominio;
 }
 
 export async function login(usuariocol: string, password: string) {
@@ -93,7 +124,7 @@ export async function login(usuariocol: string, password: string) {
     }
   }
 
-  const payload: GuardiaAutenticado = {
+  const payloadBase: GuardiaAutenticado = {
     id_usuario: usuario.id_usuario,
     nombre_usuario: usuario.nombre_usuario,
     rol: usuario.gls_tipousuario,
@@ -108,8 +139,94 @@ export async function login(usuariocol: string, password: string) {
     ...(usuario.flg_propietario ? { esPropietario: true } : {}),
   };
 
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: expiresInPorRol(usuario.gls_tipousuario) });
-  return { token, guardia: payload, rol: usuario.gls_tipousuario };
+  // Ronda 26: solo Administrador (y nunca un Residente-comité, que sigue
+  // atado a un único condominio vía su unidad) puede tener más de un
+  // condominio. Si tiene más de uno, la sesión queda "a medio autenticar"
+  // — se entrega un token SIN condominio_id_condominio (no sirve para
+  // /admin/* ni /condominios, solo para POST /auth/seleccionar-condominio)
+  // junto con la lista para que la app muestre el selector.
+  if (usuario.gls_tipousuario === "Administrador") {
+    const condominios = (await db
+      .prepare(
+        `SELECT c.id_condominio, c.gls_condominio
+         FROM usuario_condominio uc
+         JOIN condominio c ON c.id_condominio = uc.condominio_id_condominio
+         WHERE uc.usuario_id_usuario = ? AND uc.flg_vigencia = 1 AND c.flg_vigencia = 1
+         ORDER BY c.gls_condominio`
+      )
+      .all(usuario.id_usuario)) as { id_condominio: number; gls_condominio: string }[];
+
+    if (condominios.length === 0) {
+      // No debería pasar (el backfill del schema vincula a todo admin
+      // existente con su condominio original) — pero si de algún modo
+      // ocurre, se autorepara vinculándolo a ese condominio en vez de
+      // dejarlo sin poder entrar.
+      await db
+        .prepare(
+          `INSERT IGNORE INTO usuario_condominio (usuario_id_usuario, condominio_id_condominio) VALUES (?, ?)`
+        )
+        .run(usuario.id_usuario, usuario.condominio_id_condominio);
+      condominios.push({ id_condominio: usuario.condominio_id_condominio, gls_condominio: "" });
+    }
+
+    if (condominios.length > 1) {
+      const tokenIntermedio = jwt.sign(payloadBase, JWT_SECRET, { expiresIn: "10m" });
+      return {
+        requiereSeleccionCondominio: true as const,
+        token: tokenIntermedio,
+        condominios: condominios.map((c) => ({ id_condominio: c.id_condominio, nombre: c.gls_condominio })),
+      };
+    }
+
+    // Un solo condominio: se salta el selector y se entra directo, como
+    // siempre — sin cambio de comportamiento para el caso más común hoy.
+    return await emitirTokenFinal({ ...payloadBase, condominio_id_condominio: condominios[0].id_condominio });
+  }
+
+  return await emitirTokenFinal({ ...payloadBase, condominio_id_condominio: usuario.condominio_id_condominio });
+}
+
+/**
+ * Paso 2 del login de un Administrador con más de un condominio: recibe el
+ * token intermedio (sin condominio_id_condominio) que devolvió login() y el
+ * id del condominio elegido, valida que el admin realmente tenga acceso a
+ * ese condominio (nunca confía en el id que mande el cliente sin
+ * verificarlo contra usuario_condominio) y entrega el token final.
+ */
+export async function seleccionarCondominio(tokenIntermedio: string, condominioId: number) {
+  let payload: GuardiaAutenticado;
+  try {
+    payload = jwt.verify(tokenIntermedio, JWT_SECRET) as GuardiaAutenticado;
+  } catch {
+    throw new Error("Sesión inválida o expirada. Vuelve a iniciar sesión.");
+  }
+  if (payload.rol !== "Administrador") {
+    throw new Error("Esta acción es solo para el perfil Administrador.");
+  }
+
+  const acceso = (await db
+    .prepare(
+      `SELECT 1 FROM usuario_condominio WHERE usuario_id_usuario = ? AND condominio_id_condominio = ? AND flg_vigencia = 1`
+    )
+    .get(payload.id_usuario, condominioId)) as unknown;
+  if (!acceso) {
+    throw new Error("No tienes acceso a ese condominio.");
+  }
+
+  return await emitirTokenFinal({ ...payload, condominio_id_condominio: condominioId });
+}
+
+/** Lista los condominios de un Administrador — usada por la pantalla de selección para poder refrescarla (ej. recién creó uno nuevo). */
+export async function listarCondominiosDeAdmin(idUsuario: number) {
+  return db
+    .prepare(
+      `SELECT c.id_condominio, c.gls_condominio AS nombre
+       FROM usuario_condominio uc
+       JOIN condominio c ON c.id_condominio = uc.condominio_id_condominio
+       WHERE uc.usuario_id_usuario = ? AND uc.flg_vigencia = 1 AND c.flg_vigencia = 1
+       ORDER BY c.gls_condominio`
+    )
+    .all(idUsuario);
 }
 
 export function verificarToken(token: string): GuardiaAutenticado {

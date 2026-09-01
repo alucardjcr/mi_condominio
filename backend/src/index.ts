@@ -23,7 +23,8 @@ import { vetadosRouter } from "./routes/vetados";
 import { bitacoraRouter } from "./routes/bitacora";
 import { jefeGuardiasRouter } from "./routes/jefe-guardias";
 import { mascotasRouter } from "./routes/mascotas";
-import { requireAuth, requireAdmin } from "./middleware/auth";
+import { condominiosRouter } from "./routes/condominios";
+import { requireAuth, requireAdmin, requireAdminCondominioAccess } from "./middleware/auth";
 import { initSchema } from "./db/client";
 
 const app = express();
@@ -46,7 +47,8 @@ app.use("/", requireAuth, catalogosRouter); // /torres, /torres/:id/unidades, /u
 app.use("/patentes", requireAuth, patentesRouter);
 app.use("/paquetes", requireAuth, paquetesRouter); // Guardia y Administrador (no es exclusivo de admin)
 app.use("/reservas", requireAuth, reservasRouter); // Residente reserva, Guardia opera "Reserva Área Común" (ver requireRol dentro del router)
-app.use("/admin", requireAuth, requireAdmin, adminRouter); // solo perfil Administrador (config de espacios y aprobación de reservas incluida)
+app.use("/admin", requireAuth, requireAdmin, requireAdminCondominioAccess, adminRouter); // solo perfil Administrador (config de espacios y aprobación de reservas incluida); ronda 26: valida que el condominio pedido sea uno de los del admin logeado
+app.use("/admin-condominios", requireAuth, requireAdmin, condominiosRouter); // ronda 26: crear un condominio nuevo y listar los del admin logeado — sin requireAdminCondominioAccess a propósito, ver routes/condominios.ts
 app.use("/mi-depto", requireAuth, miDeptoRouter); // solo el dueño del depto, autoadministra el listado de residentes de SU unidad (ver requireRol dentro del router)
 app.use("/notificaciones", requireAuth, notificacionesRouter); // bandeja propia de notificaciones (paquetes/visitas/comunicados)
 app.use("/personal", requireAuth, personalRouter); // autoservicio del propio Personal externo: turno + mis tareas (ver requireRol dentro del router)

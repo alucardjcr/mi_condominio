@@ -21,7 +21,7 @@ function useRutaActivaAnidada(): string | undefined {
 }
 
 export default function AdminDrawerContent(props: DrawerContentComponentProps) {
-  const { guardia, logout } = useAuth();
+  const { guardia, logout, nombreCondominioActual, rol } = useAuth();
   const rutaActiva = useRutaActivaAnidada();
 
   return (
@@ -29,7 +29,7 @@ export default function AdminDrawerContent(props: DrawerContentComponentProps) {
       <DrawerContentScrollView {...props} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <Image source={require("../../assets/icon.png")} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.nombreCondominio}>Valles de Varoli</Text>
+          <Text style={styles.nombreCondominio}>{nombreCondominioActual ?? "Mi Condominio"}</Text>
           <Text style={styles.nombreUsuario}>{guardia?.nombre_usuario}</Text>
         </View>
 
@@ -64,6 +64,16 @@ export default function AdminDrawerContent(props: DrawerContentComponentProps) {
       </DrawerContentScrollView>
 
       <View style={styles.footer}>
+        {rol === "Administrador" && (
+          <TouchableOpacity
+            style={styles.item}
+            onPress={() => props.navigation.navigate("CambiarCondominio" as never)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.itemIcono}>🏘️</Text>
+            <Text style={styles.itemTexto}>Cambiar de condominio</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={styles.item}
           onPress={() => props.navigation.navigate("CambiarPassword" as never)}

@@ -52,6 +52,10 @@ import {
   UnidadGastoComun,
   Vetado,
   Visita,
+  CondominioOpcion,
+  CrearCondominioInput,
+  CrearCondominioResponse,
+  RequiereSeleccionCondominioResponse,
 } from "./types";
 
 // Ronda 17: con la sesión persistida (expo-secure-store), un token puede
@@ -95,14 +99,34 @@ async function send<T>(path: string, method: string, token: string, body?: objec
   return handleResponse<T>(res);
 }
 
-export async function login(usuariocol: string, password: string): Promise<LoginResponse> {
+export async function login(
+  usuariocol: string,
+  password: string
+): Promise<LoginResponse | RequiereSeleccionCondominioResponse> {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ usuariocol, password }),
   });
-  return handleResponse<LoginResponse>(res);
+  return handleResponse(res);
 }
+
+// Ronda 26: paso 2 del login cuando login() devolvió requiereSeleccionCondominio.
+// `tokenIntermedio` es el que vino en esa respuesta (no el de una sesión ya
+// activa) — se manda en el body, no como Authorization.
+export async function seleccionarCondominio(tokenIntermedio: string, condominioId: number): Promise<LoginResponse> {
+  const res = await fetch(`${API_BASE_URL}/auth/seleccionar-condominio`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: tokenIntermedio, condominio_id: condominioId }),
+  });
+  return handleResponse(res);
+}
+
+export const getMisCondominios = (token: string) => get<CondominioOpcion[]>(`/admin-condominios/mios`, token);
+
+export const crearCondominio = (token: string, input: CrearCondominioInput) =>
+  send<CrearCondominioResponse>(`/admin-condominios`, "POST", token, input as unknown as object);
 
 export const cambiarPassword = (token: string, passwordActual: string, passwordNueva: string) =>
   send<{ ok: boolean }>(`/auth/cambiar-password`, "POST", token, {
