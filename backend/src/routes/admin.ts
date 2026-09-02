@@ -24,7 +24,7 @@ import {
 } from "../services/admin.service";
 import { listarSolicitudesArcoAdmin, resolverSolicitudArco } from "../services/arco.service";
 import { listarAuditoria } from "../services/auditoria.service";
-import { listarPoliticasRetencion, configurarPoliticaRetencion, ejecutarLimpiezaRetencion } from "../services/retencion.service";
+import { listarPoliticasRetencion, configurarPoliticaRetencion, ejecutarLimpiezaRetencion, convertirADias } from "../services/retencion.service";
 import { crearIncidente, listarIncidentes, marcarNotificadoAgencia, marcarNotificadoAfectados, cerrarIncidente } from "../services/incidentes.service";
 import { reporteGastoComun, generarExcelGastoComun } from "../services/reportes.service";
 import { crearComunicado } from "../services/notificaciones.service";
@@ -826,12 +826,19 @@ adminRouter.get("/retencion", async (req, res) => {
 adminRouter.put("/retencion/:categoria", async (req, res) => {
   try {
     const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
-    const { dias_retencion } = req.body;
-    await configurarPoliticaRetencion(
-      condominioId,
-      req.params.categoria as any,
-      dias_retencion === null || dias_retencion === "" ? null : Number(dias_retencion)
-    );
+    const { cantidad, unidad, dias_retencion } = req.body;
+    // Ronda 35: la app ya manda {cantidad, unidad} (días/semanas/años) —
+    // se deja también dias_retencion como respaldo por si algún cliente
+    // viejo todavía lo manda así.
+    let dias: number | null;
+    if (cantidad === null || cantidad === "" || cantidad === undefined) {
+      dias = null;
+    } else if (unidad) {
+      dias = convertirADias(Number(cantidad), unidad);
+    } else {
+      dias = dias_retencion === null || dias_retencion === "" ? null : Number(dias_retencion);
+    }
+    await configurarPoliticaRetencion(condominioId, req.params.categoria as any, dias);
     res.json({ ok: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });

@@ -29,6 +29,8 @@ import { requireAuth, requireAdmin, requireCondominioAccess, requireSuperAdmin, 
 import { obtenerArchivo } from "./utils/storage";
 import { registrarAuditoria } from "./services/auditoria.service";
 import { initSchema } from "./db/client";
+import cron from "node-cron";
+import { ejecutarLimpiezaRetencionTodosLosCondominios } from "./services/retencion.service";
 
 const app = express();
 app.use(cors());
@@ -138,6 +140,34 @@ initSchema()
     app.listen(port, () => {
       console.log(`Backend "estacionamientos de visita" escuchando en http://localhost:${port}`);
     });
+
+    // Ronda 35, a pedido explícito del usuario: la limpieza de retención de
+    // datos (Ley 21.719) ya no depende de que alguien entre a la app y
+    // apriete "Ejecutar limpieza ahora" — corre sola todos los días a las
+    // 03:00 hora de Chile, para TODOS los condominios que tengan al menos
+    // una categoría configurada (los que no configuraron nada ni se
+    // tocan). El botón manual del panel de Administrador se mantiene, por
+    // si alguien quiere forzarla al toque sin esperar al cron.
+    cron.schedule(
+      "0 3 * * *",
+      async () => {
+        try {
+          const resultado = await ejecutarLimpiezaRetencionTodosLosCondominios();
+          const totalFilas = resultado.reduce(
+            (acc, c) => acc + c.resultados.reduce((a, r) => a + r.filas_eliminadas, 0),
+            0
+          );
+          console.log(
+            `[retencion-cron] Limpieza automática ejecutada en ${resultado.length} condominio(s), ${totalFilas} fila(s) eliminada(s) en total.`
+          );
+        } catch (err) {
+          // Un fallo acá (ej. la base momentáneamente caída) no debe
+          // tumbar el proceso del backend — solo queda en el log.
+          console.error("[retencion-cron] Error ejecutando la limpieza automática:", err);
+        }
+      },
+      { timezone: "America/Santiago" }
+    );
   })
   .catch((err) => {
     console.error("No se pudo aplicar el schema / conectar a la base de datos:", err);

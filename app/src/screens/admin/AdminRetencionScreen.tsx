@@ -1,20 +1,43 @@
 import React, { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { adminConfigurarRetencion, adminEjecutarLimpiezaRetencion, adminGetRetencion } from "../../api/client";
+import { adminConfigurarRetencion, adminEjecutarLimpiezaRetencion, adminGetRetencion, UnidadRetencion } from "../../api/client";
 import { PoliticaRetencionItem } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { CONDOMINIO_ID } from "../../config/api";
 import { colors, radius, spacing, typography } from "../../theme/theme";
 
-// Ronda 34, a pedido explícito del usuario: retención de datos — Ley N°
+const UNIDADES: { valor: UnidadRetencion; label: string; dias: number }[] = [
+  { valor: "dias", label: "Días", dias: 1 },
+  { valor: "semanas", label: "Semanas", dias: 7 },
+  { valor: "anios", label: "Años", dias: 365 },
+];
+
+// Convierte los días guardados a la unidad más natural para mostrar (ej.
+// 730 días se ve mejor como "2 años" que como "730 días").
+function unidadNaturalPara(dias: number): { cantidad: number; unidad: UnidadRetencion } {
+  if (dias % 365 === 0) return { cantidad: dias / 365, unidad: "anios" };
+  if (dias % 7 === 0) return { cantidad: dias / 7, unidad: "semanas" };
+  return { cantidad: dias, unidad: "dias" };
+}
+
+interface EstadoCategoria {
+  cantidad: string;
+  unidad: UnidadRetencion;
+}
+
+// Ronda 34/35, a pedido explícito del usuario: retención de datos — Ley N°
 // 21.719 exige minimización (no guardar datos más tiempo del necesario).
 // Cada categoría empieza SIN configurar (nunca se borra nada) hasta que el
-// Administrador/Comité le pone un plazo a propósito.
+// Administrador/Comité le pone un plazo a propósito, en la unidad que le
+// acomode (días, semanas o años — puertas adentro siempre se guarda en
+// días, ver retencion.service.ts -> convertirADias). Desde la ronda 35 la
+// limpieza además corre sola todos los días por un cron — este botón
+// "Ejecutar limpieza ahora" sigue sirviendo para forzarla al toque.
 export default function AdminRetencionScreen() {
   const { token } = useAuth();
   const [politicas, setPoliticas] = useState<PoliticaRetencionItem[]>([]);
-  const [valores, setValores] = useState<Record<string, string>>({});
+  const [valores, setValores] = useState<Record<string, EstadoCategoria>>({});
   const [cargando, setCargando] = useState(true);
   const [guardandoCategoria, setGuardandoCategoria] = useState<string | null>(null);
   const [ejecutando, setEjecutando] = useState(false);
@@ -26,9 +49,14 @@ export default function AdminRetencionScreen() {
     adminGetRetencion(token, CONDOMINIO_ID)
       .then((lista) => {
         setPoliticas(lista);
-        const iniciales: Record<string, string> = {};
+        const iniciales: Record<string, EstadoCategoria> = {};
         lista.forEach((p) => {
-          iniciales[p.categoria] = p.dias_retencion !== null ? String(p.dias_retencion) : "";
+          if (p.dias_retencion !== null) {
+            const { cantidad, unidad } = unidadNaturalPara(p.dias_retencion);
+            iniciales[p.categoria] = { cantidad: String(cantidad), unidad };
+          } else {
+            iniciales[p.categoria] = { cantidad: "", unidad: "dias" };
+          }
         });
         setValores(iniciales);
       })
@@ -40,10 +68,17 @@ export default function AdminRetencionScreen() {
 
   const handleGuardar = async (categoria: PoliticaRetencionItem["categoria"]) => {
     if (!token) return;
-    const texto = valores[categoria]?.trim() ?? "";
+    const estado = valores[categoria];
+    const texto = estado?.cantidad.trim() ?? "";
     setGuardandoCategoria(categoria);
     try {
-      await adminConfigurarRetencion(token, CONDOMINIO_ID, categoria, texto === "" ? null : Number(texto));
+      await adminConfigurarRetencion(
+        token,
+        CONDOMINIO_ID,
+        categoria,
+        texto === "" ? null : Number(texto),
+        estado.unidad
+      );
       cargar();
     } catch (e: any) {
       Alert.alert("Error", e.message);
@@ -93,39 +128,56 @@ export default function AdminRetencionScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.intro}>
-        Define cuántos días quieres conservar cada tipo de dato operativo antes de poder borrarlo. Vacío = nunca se
-        borra nada de esa categoría automáticamente.
+        Define cuánto tiempo quieres conservar cada tipo de dato operativo antes de poder borrarlo — en días,
+        semanas o años, como prefieras. Vacío = nunca se borra nada de esa categoría. La limpieza corre sola todos
+        los días a las 3 AM; también puedes forzarla ahora con el botón de abajo.
       </Text>
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {politicas.map((p) => (
-        <View key={p.categoria} style={styles.card}>
-          <Text style={styles.nombreCategoria}>{p.nombre}</Text>
-          <View style={styles.filaInput}>
-            <TextInput
-              style={styles.input}
-              value={valores[p.categoria] ?? ""}
-              onChangeText={(t) => setValores((prev) => ({ ...prev, [p.categoria]: t }))}
-              placeholder="Sin configurar"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="number-pad"
-            />
-            <Text style={styles.diasTexto}>días</Text>
-            <TouchableOpacity
-              style={[styles.botonGuardar, guardandoCategoria === p.categoria && styles.botonDeshabilitado]}
-              onPress={() => handleGuardar(p.categoria)}
-              disabled={guardandoCategoria === p.categoria}
-            >
-              {guardandoCategoria === p.categoria ? (
-                <ActivityIndicator color={colors.navy900} size="small" />
-              ) : (
-                <Text style={styles.botonGuardarTexto}>Guardar</Text>
-              )}
-            </TouchableOpacity>
+      {politicas.map((p) => {
+        const estado = valores[p.categoria] ?? { cantidad: "", unidad: "dias" as UnidadRetencion };
+        return (
+          <View key={p.categoria} style={styles.card}>
+            <Text style={styles.nombreCategoria}>{p.nombre}</Text>
+            <View style={styles.filaInput}>
+              <TextInput
+                style={styles.input}
+                value={estado.cantidad}
+                onChangeText={(t) => setValores((prev) => ({ ...prev, [p.categoria]: { ...estado, cantidad: t } }))}
+                placeholder="Sin configurar"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="number-pad"
+              />
+              <TouchableOpacity
+                style={[styles.botonGuardar, guardandoCategoria === p.categoria && styles.botonDeshabilitado]}
+                onPress={() => handleGuardar(p.categoria)}
+                disabled={guardandoCategoria === p.categoria}
+              >
+                {guardandoCategoria === p.categoria ? (
+                  <ActivityIndicator color={colors.navy900} size="small" />
+                ) : (
+                  <Text style={styles.botonGuardarTexto}>Guardar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.filaUnidades}>
+              {UNIDADES.map((u) => (
+                <TouchableOpacity
+                  key={u.valor}
+                  style={[styles.opcionUnidad, estado.unidad === u.valor && styles.opcionUnidadActiva]}
+                  onPress={() => setValores((prev) => ({ ...prev, [p.categoria]: { ...estado, unidad: u.valor } }))}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.opcionUnidadTexto, estado.unidad === u.valor && styles.opcionUnidadTextoActivo]}>
+                    {u.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
 
       <TouchableOpacity
         style={[styles.botonEjecutar, ejecutando && styles.botonDeshabilitado]}
@@ -139,8 +191,8 @@ export default function AdminRetencionScreen() {
         )}
       </TouchableOpacity>
       <Text style={styles.ayudaEjecutar}>
-        Hoy se ejecuta a mano desde acá. Para que sea automático, conviene programarlo para correr una vez al día
-        (ej. desde un cron externo).
+        La limpieza automática corre todos los días a las 3 AM (hora de Chile). Este botón la fuerza al toque, sin
+        esperar.
       </Text>
     </ScrollView>
   );
@@ -164,11 +216,16 @@ const styles = StyleSheet.create({
     color: colors.textDark,
     backgroundColor: colors.offWhite,
   },
-  diasTexto: { color: colors.textMuted, fontSize: 13 },
   botonGuardar: { backgroundColor: colors.gold, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 10 },
   botonGuardarTexto: { color: colors.navy900, fontWeight: "800", fontSize: 13 },
   botonDeshabilitado: { opacity: 0.6 },
+  filaUnidades: { flexDirection: "row", gap: spacing.xs, marginTop: spacing.sm },
+  opcionUnidad: { flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: 8, alignItems: "center" },
+  opcionUnidadActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
+  opcionUnidadTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 12 },
+  opcionUnidadTextoActivo: { color: colors.navy900 },
   botonEjecutar: { backgroundColor: colors.danger, borderRadius: radius.sm, padding: 16, alignItems: "center", marginTop: spacing.md },
   botonEjecutarTexto: { color: colors.white, fontWeight: "800" },
   ayudaEjecutar: { ...typography.small, color: colors.textMuted, textAlign: "center" },
 });
+

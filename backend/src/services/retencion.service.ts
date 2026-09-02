@@ -21,6 +21,20 @@ export interface PoliticaRetencionItem {
   dias_retencion: number | null; // null = sin configurar, nunca se borra nada de esta categoría
 }
 
+// Ronda 35, a pedido explícito del usuario: cada condominio puede definir
+// el plazo en la unidad que le acomode (días, semanas o años) — puertas
+// adentro sigue viviendo todo en días (dias_retencion, sin tocar el
+// schema), pero la API acepta {cantidad, unidad} y hace la conversión acá,
+// en un solo lugar, para no duplicar esta cuenta en cada pantalla/ruta.
+export type UnidadRetencion = "dias" | "semanas" | "anios";
+const DIAS_POR_UNIDAD: Record<UnidadRetencion, number> = { dias: 1, semanas: 7, anios: 365 };
+
+export function convertirADias(cantidad: number, unidad: UnidadRetencion): number {
+  const factor = DIAS_POR_UNIDAD[unidad];
+  if (!factor) throw new Error("Unidad inválida — debe ser 'dias', 'semanas' o 'anios'.");
+  return Math.round(cantidad * factor);
+}
+
 export async function listarPoliticasRetencion(condominioId: number): Promise<PoliticaRetencionItem[]> {
   const filas = (await db
     .prepare(`SELECT categoria, dias_retencion FROM politica_retencion WHERE condominio_id_condominio = ?`)
@@ -77,11 +91,11 @@ export interface ResultadoLimpieza {
 /**
  * Borra, para cada categoría CONFIGURADA (las que no tienen política
  * definida se saltan por completo — ver el criterio en la nota del
- * schema), todas las filas más antiguas que su plazo. Hoy se dispara a
- * mano desde el panel de Administrador ("Ejecutar limpieza ahora"); no hay
- * un scheduler/cron en este backend todavía, así que en producción
- * conviene automatizarlo llamando este mismo endpoint desde un cron
- * externo (ej. un GitHub Action o cron job de Railway) una vez al día.
+ * schema), todas las filas más antiguas que su plazo. Ronda 35: se
+ * dispara automáticamente todos los días vía cron (ver index.ts ->
+ * ejecutarLimpiezaRetencionTodosLosCondominios) — el botón "Ejecutar
+ * limpieza ahora" del panel de Administrador sigue existiendo para poder
+ * forzarla al toque sin esperar al cron.
  */
 export async function ejecutarLimpiezaRetencion(condominioId: number): Promise<ResultadoLimpieza[]> {
   const politicas = await listarPoliticasRetencion(condominioId);
@@ -129,4 +143,25 @@ export async function ejecutarLimpiezaRetencion(condominioId: number): Promise<R
   }
 
   return resultados;
+}
+
+/**
+ * Ronda 35: corre ejecutarLimpiezaRetencion() para TODOS los condominios
+ * que tengan al menos una categoría configurada — es lo que dispara el
+ * cron diario (ver index.ts). Un condominio sin ninguna política
+ * configurada ni siquiera se toca (no aparece en la consulta).
+ */
+export async function ejecutarLimpiezaRetencionTodosLosCondominios(): Promise<
+  { condominioId: number; resultados: ResultadoLimpieza[] }[]
+> {
+  const condominios = (await db
+    .prepare(`SELECT DISTINCT condominio_id_condominio FROM politica_retencion`)
+    .all()) as { condominio_id_condominio: number }[];
+
+  const salida: { condominioId: number; resultados: ResultadoLimpieza[] }[] = [];
+  for (const c of condominios) {
+    const resultados = await ejecutarLimpiezaRetencion(c.condominio_id_condominio);
+    salida.push({ condominioId: c.condominio_id_condominio, resultados });
+  }
+  return salida;
 }

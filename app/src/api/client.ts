@@ -808,12 +808,22 @@ export const adminGetAuditoria = (
 export const adminGetRetencion = (token: string, condominioId: number) =>
   get<PoliticaRetencionItem[]>(`/admin/retencion?condominio_id=${condominioId}`, token);
 
+// Ronda 35, a pedido explícito del usuario: cada condominio define el
+// plazo en la unidad que le acomode — días, semanas o años.
+export type UnidadRetencion = "dias" | "semanas" | "anios";
+
 export const adminConfigurarRetencion = (
   token: string,
   condominioId: number,
   categoria: CategoriaRetencion,
-  diasRetencion: number | null
-) => send<{ ok: boolean }>(`/admin/retencion/${categoria}`, "PUT", token, { condominio_id_condominio: condominioId, dias_retencion: diasRetencion });
+  cantidad: number | null,
+  unidad: UnidadRetencion
+) =>
+  send<{ ok: boolean }>(`/admin/retencion/${categoria}`, "PUT", token, {
+    condominio_id_condominio: condominioId,
+    cantidad,
+    unidad,
+  });
 
 export const adminEjecutarLimpiezaRetencion = (token: string, condominioId: number) =>
   send<ResultadoLimpieza[]>(`/admin/retencion/ejecutar`, "POST", token, { condominio_id_condominio: condominioId });
