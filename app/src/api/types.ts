@@ -970,3 +970,19 @@ export interface CrearIncidenteInput {
   acciones_tomadas?: string | null;
 }
 
+// --- Ronda 40: "quién viene hoy" (personal externo + mantenciones) --------
+
+export interface PersonalEnTurnoHoy {
+  id_turnopersonal: number;
+  fecha_inicio: string;
+  fecha_termino: string | null;
+  id_usuario: number;
+  nombre_usuario: string;
+  gls_tipopersonal: string | null;
+}
+
+export interface QuienVieneHoy {
+  personal_externo: PersonalEnTurnoHoy[];
+  mantenciones: Mantencion[];
+}
+

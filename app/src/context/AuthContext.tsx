@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import {
   login as apiLogin,
   registrarPushToken,
+  eliminarPushToken,
   seleccionarCondominio as apiSeleccionarCondominio,
   completarOnboarding as apiCompletarOnboarding,
   setUnauthorizedHandler,
@@ -131,6 +132,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [rolPagoPendiente, setRolPagoPendiente] = useState<string | null>(null);
 
   const logout = () => {
+    // Ronda 40, a pedido explícito del usuario: da de baja el push token de
+    // ESTE dispositivo antes de limpiar la sesión — best-effort (nunca debe
+    // frenar el cierre de sesión), para que este teléfono deje de recibir
+    // push de esta cuenta apenas la persona sale. Si el token actual sigue
+    // vigente lo manda; si falla obtenerlo o la llamada, no importa —
+    // simplemente no se limpia y queda para la próxima vez.
+    if (token) {
+      obtenerPushTokenExpo()
+        .then((pushToken) => {
+          if (pushToken) return eliminarPushToken(token, pushToken);
+        })
+        .catch(() => {});
+    }
     setToken(null);
     setGuardia(null);
     setRol(null);

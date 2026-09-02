@@ -178,6 +178,29 @@ export async function listarTurnosDePersonal(usuarioId: number) {
     .all(usuarioId);
 }
 
+// Ronda 40, a pedido explícito del usuario: "quién viene hoy" — vista para
+// cualquier residente (no solo Administrador/Comité) de qué personal
+// externo (aseo, jardinería, mantención, etc.) tiene turno registrado HOY
+// en el condominio, esté trabajando ahora mismo o ya se haya retirado. Se
+// arma con turno_personal.fecha_inicio = hoy — no existe hoy un concepto
+// de "agendado con anticipación" para Personal (a diferencia de
+// Mantenciones, que sí se programan con fecha_programada — ver
+// mantencion.service.ts), así que esto muestra quién efectivamente marcó
+// turno hoy, condominio completo (no depende de depto).
+export async function listarPersonalEnTurnoHoy(condominioId: number) {
+  return db
+    .prepare(
+      `SELECT tper.id_turnopersonal, tper.fecha_inicio, tper.fecha_termino,
+              u.id_usuario, u.nombre_usuario, tp.gls_tipopersonal
+       FROM turno_personal tper
+       JOIN usuario u ON u.id_usuario = tper.usuario_id_usuario
+       LEFT JOIN tipo_personal tp ON tp.id_tipopersonal = u.tipo_personal_id_tipopersonal
+       WHERE tper.condominio_id_condominio = ? AND DATE(tper.fecha_inicio) = CURDATE()
+       ORDER BY tper.fecha_inicio DESC`
+    )
+    .all(condominioId);
+}
+
 // ---------------------------------------------------------------------------
 // Tareas (administrador/comité escribe, el trabajador la completa)
 // ---------------------------------------------------------------------------

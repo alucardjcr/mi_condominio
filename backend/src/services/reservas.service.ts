@@ -376,10 +376,14 @@ export async function crearReserva(input: CrearReservaInput, creadoPor: { id: nu
 }
 
 // Si no se valida el pago hasta 2 días antes de la fecha de uso, la reserva
-// expira sola y el horario queda libre (regla 6). No hay cron en este MVP,
-// así que se revisa "de paso" cada vez que se lista algo — barato porque
-// solo toca filas en estado Aprobado, que son pocas.
-async function expirarReservasVencidas(conn: DbLike) {
+// expira sola y el horario queda libre (regla 6). Ronda 40, a pedido
+// explícito del usuario: antes solo se revisaba "de paso" cada vez que se
+// listaba algo (barato, pero dependía de que alguien consultara reservas
+// para que corriera) — ahora TAMBIÉN corre sola por un cron diario (ver
+// index.ts), así que se exporta. Sigue llamándose también "de paso" en
+// cada listado/acción, así que el cron es un respaldo — no hace falta que
+// corra exactamente a tiempo para que el sistema quede consistente.
+export async function expirarReservasVencidas(conn: DbLike) {
   const estadoAprobadoId = await getEstadoId(conn, ESTADOS.APROBADO);
   const estadoExpiradoId = await getEstadoId(conn, ESTADOS.EXPIRADO);
   await conn

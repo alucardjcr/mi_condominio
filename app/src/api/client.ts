@@ -78,6 +78,7 @@ import {
   ResultadoLimpieza,
   IncidenteSeguridad,
   CrearIncidenteInput,
+  QuienVieneHoy,
 } from "./types";
 
 // Ronda 17: con la sesión persistida (expo-secure-store), un token puede
@@ -190,6 +191,12 @@ export const cambiarPassword = (token: string, passwordActual: string, passwordN
 // ver src/utils/notificaciones.ts. Nunca debería frenar el login si falla.
 export const registrarPushToken = (token: string, pushToken: string) =>
   send<{ ok: boolean }>(`/auth/push-token`, "POST", token, { push_token: pushToken });
+
+// Ronda 40: se llama al cerrar sesión (best-effort) para que ESTE
+// dispositivo deje de recibir push apenas la persona sale — ver
+// AuthContext -> logout.
+export const eliminarPushToken = (token: string, pushToken: string) =>
+  send<{ ok: boolean }>(`/auth/push-token`, "DELETE", token, { push_token: pushToken });
 
 // Flujo "olvidé mi contraseña" (ronda 25) — sin token, el usuario todavía
 // no puede loguearse. `identificador` acepta usuariocol o correo_usuario.
@@ -927,3 +934,8 @@ export const adminNotificarAfectados = (token: string, id: number) =>
 
 export const adminCerrarIncidente = (token: string, id: number, accionesTomadas: string) =>
   send<IncidenteSeguridad>(`/admin/incidentes/${id}/cerrar`, "POST", token, { acciones_tomadas: accionesTomadas });
+
+// --- Ronda 40: "quién viene hoy" (personal externo + mantenciones) --------
+
+export const getQuienVieneHoy = (token: string, condominioId: number) =>
+  get<QuienVieneHoy>(`/hoy?condominio_id=${condominioId}`, token);

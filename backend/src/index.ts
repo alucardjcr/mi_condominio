@@ -22,15 +22,17 @@ import { vetadosRouter } from "./routes/vetados";
 import { bitacoraRouter } from "./routes/bitacora";
 import { jefeGuardiasRouter } from "./routes/jefe-guardias";
 import { mascotasRouter } from "./routes/mascotas";
+import { hoyRouter } from "./routes/hoy";
 import { condominiosRouter } from "./routes/condominios";
 import { superAdminRouter } from "./routes/super-admin";
 import { privacidadRouter } from "./routes/privacidad";
 import { requireAuth, requireAdmin, requireCondominioAccess, requireSuperAdmin, requireSuscripcionAlDia } from "./middleware/auth";
 import { obtenerArchivo } from "./utils/storage";
 import { registrarAuditoria } from "./services/auditoria.service";
-import { initSchema } from "./db/client";
+import { initSchema, db } from "./db/client";
 import cron from "node-cron";
 import { ejecutarLimpiezaRetencionTodosLosCondominios } from "./services/retencion.service";
+import { expirarReservasVencidas } from "./services/reservas.service";
 
 const app = express();
 app.use(cors());
@@ -118,6 +120,7 @@ app.use("/vetados", requireAuth, requireCondominioAccess, requireSuscripcionAlDi
 app.use("/bitacora", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, bitacoraRouter); // ronda 20: bitácora de novedades del turno — escribe Guardia, lee Guardia y Administrador/Comité (ver requireRol dentro del router)
 app.use("/jefe-guardias", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, jefeGuardiasRouter); // ronda 20: rol JEFE_GUARDIAS — calendario de turnos + CRUD de guardias, y SOLO eso (ver requireRol dentro del router)
 app.use("/mascotas", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, mascotasRouter); // ronda 20: mascotas por depto — autoservicio del residente de esa unidad, o Administrador/Comité (ver requireAuth dentro del router)
+app.use("/hoy", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, hoyRouter); // ronda 40: "quién viene hoy" — personal externo + mantenciones del día, cualquier rol logeado del condominio
 app.use("/privacidad", requireAuth, privacidadRouter); // ronda 32, Ley 21.719: derechos ARCO — autoservicio de cualquier rol sobre sí mismo, ver routes/privacidad.ts. A propósito SIN requireSuscripcionAlDia: es un derecho de la PERSONA, no puede quedar condicionado a si el condominio pagó su mensualidad o no.
 
 // Manejador de errores genérico: cualquier excepción no capturada por un
@@ -164,6 +167,25 @@ initSchema()
           // Un fallo acá (ej. la base momentáneamente caída) no debe
           // tumbar el proceso del backend — solo queda en el log.
           console.error("[retencion-cron] Error ejecutando la limpieza automática:", err);
+        }
+      },
+      { timezone: "America/Santiago" }
+    );
+
+    // Ronda 40, a pedido explícito del usuario: expiración de reservas ya
+    // no depende únicamente de que alguien consulte algo para que corra
+    // (ver reservas.service.ts -> expirarReservasVencidas, que sigue
+    // llamándose también "de paso" en cada acción, como respaldo). Corre
+    // cada 6 horas — no hace falta más frecuencia porque la regla es a
+    // nivel de DÍA (2 días antes de la fecha de uso), no de hora exacta.
+    cron.schedule(
+      "0 */6 * * *",
+      async () => {
+        try {
+          await expirarReservasVencidas(db);
+          console.log("[reservas-cron] Revisión de reservas vencidas ejecutada.");
+        } catch (err) {
+          console.error("[reservas-cron] Error revisando reservas vencidas:", err);
         }
       },
       { timezone: "America/Santiago" }

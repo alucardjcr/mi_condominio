@@ -173,6 +173,7 @@ export default function HomeScreen({ navigation }: any) {
             onPress={() => navigation.navigate("EstacionamientosArriendo")}
           />
           <EnlaceSecundario label="Mis mascotas" onPress={() => navigation.navigate("Mascotas")} />
+          <EnlaceSecundario label="Quién viene hoy" onPress={() => navigation.navigate("QuienVieneHoy")} />
           <EnlaceSecundario
             label={`Notificaciones${noLeidas > 0 ? ` (${noLeidas})` : ""}`}
             onPress={() => navigation.navigate("Notificaciones")}

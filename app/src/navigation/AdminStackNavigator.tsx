@@ -32,6 +32,7 @@ import AdminLogAuditoriaScreen from "../screens/admin/AdminLogAuditoriaScreen";
 import AdminRetencionScreen from "../screens/admin/AdminRetencionScreen";
 import AdminIncidentesScreen from "../screens/admin/AdminIncidentesScreen";
 import MisDatosScreen from "../screens/MisDatosScreen";
+import QuienVieneHoyScreen from "../screens/QuienVieneHoyScreen";
 import AvisoPrivacidadScreen from "../screens/AvisoPrivacidadScreen";
 import BitacoraScreen from "../screens/BitacoraScreen";
 import MascotasScreen from "../screens/MascotasScreen";
@@ -80,6 +81,7 @@ export default function AdminStackNavigator() {
       />
       <Stack.Screen name="CambiarPassword" component={CambiarPasswordScreen} options={{ title: "Cambiar contraseña" }} />
       <Stack.Screen name="MisDatos" component={MisDatosScreen} options={{ title: "Mis datos" }} />
+      <Stack.Screen name="QuienVieneHoy" component={QuienVieneHoyScreen} options={{ title: "Quién viene hoy" }} />
       <Stack.Screen
         name="AvisoPrivacidad"
         component={AvisoPrivacidadScreen}

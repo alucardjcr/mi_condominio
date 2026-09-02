@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { login, cambiarPassword, solicitarRecuperacion, resetearPassword, seleccionarCondominio, completarOnboardingResidente } from "../services/auth.service";
-import { registrarPushToken } from "../services/notificaciones.service";
+import { registrarPushToken, eliminarPushToken } from "../services/notificaciones.service";
 import { requireAuth } from "../middleware/auth";
 
 export const authRouter = Router();
@@ -76,15 +76,29 @@ authRouter.post("/cambiar-password", requireAuth, async (req, res) => {
 
 // POST /auth/push-token -> el propio usuario logeado registra el token de
 // push de Expo de su teléfono (ronda 16 — ver expo-notifications en la
-// app). Se sobreescribe en cada registro; un usuario, un token a la vez en
-// este MVP. Necesita una development build para funcionar de verdad en
-// Expo Go desde el SDK 53 (ver "Supuestos" en el README) — igual se guarda
-// sin problema aunque no llegue push real, porque la notificación siempre
-// queda en la bandeja dentro de la app.
+// app). Ronda 40: ahora soporta más de un dispositivo por usuario (ver
+// notificaciones.service.ts -> registrarPushToken). Necesita una
+// development build para funcionar de verdad en Expo Go desde el SDK 53
+// (ver "Supuestos" en el README) — igual se guarda sin problema aunque no
+// llegue push real, porque la notificación siempre queda en la bandeja
+// dentro de la app.
 authRouter.post("/push-token", requireAuth, async (req, res) => {
   try {
     const { push_token } = req.body;
     await registrarPushToken(req.guardia!.id_usuario, push_token);
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// DELETE /auth/push-token -> se llama al cerrar sesión (best-effort) para
+// que ESTE dispositivo deje de recibir push apenas la persona sale — ver
+// eliminarPushToken en notificaciones.service.ts.
+authRouter.delete("/push-token", requireAuth, async (req, res) => {
+  try {
+    const { push_token } = req.body;
+    await eliminarPushToken(req.guardia!.id_usuario, push_token);
     res.json({ ok: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });

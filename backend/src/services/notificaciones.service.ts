@@ -185,10 +185,13 @@ export async function crearNotificacionParaCondominio(
 
 /**
  * Manda (best-effort) los push reales pendientes de una notificación ya
- * creada, a quienes tengan push_token registrado. Se llama SIEMPRE fuera de
- * cualquier transacción (después del commit) — nunca debe interrumpir el
- * flujo que generó la notificación (registrar un paquete, una visita, un
- * comunicado), así que atrapa cualquier error y no relanza nada.
+ * creada, a quienes tengan al menos un dispositivo con push_token
+ * registrado. Ronda 40: ahora manda a TODOS los dispositivos de cada
+ * destinatario (antes solo al único token que tenía guardado). Se llama
+ * SIEMPRE fuera de cualquier transacción (después del commit) — nunca debe
+ * interrumpir el flujo que generó la notificación (registrar un paquete,
+ * una visita, un comunicado), así que atrapa cualquier error y no relanza
+ * nada.
  */
 export async function enviarPushesDeNotificacion(idNotificacion: number | null | undefined): Promise<void> {
   if (!idNotificacion) return;
@@ -200,18 +203,23 @@ export async function enviarPushesDeNotificacion(idNotificacion: number | null |
 
     const destinatarios = (await db
       .prepare(
-        `SELECT nu.id_notificacionusuario, u.push_token
+        `SELECT nu.id_notificacionusuario, upt.push_token
          FROM notificacion_usuario nu
-         JOIN usuario u ON u.id_usuario = nu.usuario_id_usuario
-         WHERE nu.notificacion_id_notificacion = ? AND u.push_token IS NOT NULL`
+         JOIN usuario_push_token upt ON upt.usuario_id_usuario = nu.usuario_id_usuario
+         WHERE nu.notificacion_id_notificacion = ?`
       )
       .all(idNotificacion)) as { id_notificacionusuario: number; push_token: string }[];
 
+    // Un destinatario puede aparecer varias veces (uno por dispositivo) —
+    // se manda a cada uno, pero basta con que UNO tenga éxito para marcar
+    // la notificación como entregada por push.
+    const idsExitosos = new Set<number>();
     for (const d of destinatarios) {
       const ok = await enviarPushExpo(d.push_token, notif.titulo, notif.cuerpo, { idNotificacion });
-      if (ok) {
-        await db.prepare(`UPDATE notificacion_usuario SET flg_push_enviado = 1 WHERE id_notificacionusuario = ?`).run(d.id_notificacionusuario);
-      }
+      if (ok) idsExitosos.add(d.id_notificacionusuario);
+    }
+    for (const id of idsExitosos) {
+      await db.prepare(`UPDATE notificacion_usuario SET flg_push_enviado = 1 WHERE id_notificacionusuario = ?`).run(id);
     }
   } catch {
     // Best-effort: un fallo acá nunca debe tumbar el registro de un
@@ -274,13 +282,45 @@ export async function marcarNotificacionLeida(idNotificacionUsuario: number, usu
 /**
  * Guarda el push token de Expo del teléfono donde el usuario logeado tiene
  * la sesión abierta ahora (lo llama la app después de loguearse y de que el
- * usuario acepta el permiso de notificaciones). Un usuario, un token a la
- * vez — se sobreescribe en cada registro.
+ * usuario acepta el permiso de notificaciones). Ronda 40, a pedido
+ * explícito del usuario: ahora soporta MÁS DE UN dispositivo por usuario
+ * (antes se sobreescribía un único token en la propia tabla `usuario` — si
+ * la misma cuenta estaba logeada en 2 celulares, solo el último en
+ * loguearse recibía push). Un mismo token de dispositivo solo puede estar
+ * vinculado a una cuenta a la vez — si el teléfono cambió de usuario
+ * (cerró sesión alguien, entró otra persona), el token se reasigna acá,
+ * quitándolo de quien lo tuviera antes.
  */
 export async function registrarPushToken(usuarioId: number, token: string) {
   if (!token || typeof token !== "string" || !token.trim()) {
     throw new Error("Falta el push_token.");
   }
-  await db.prepare(`UPDATE usuario SET push_token = ? WHERE id_usuario = ?`).run(token.trim(), usuarioId);
+  const tokenLimpio = token.trim();
+
+  const existente = (await db
+    .prepare(`SELECT id_usuariopushtoken, usuario_id_usuario FROM usuario_push_token WHERE push_token = ?`)
+    .get(tokenLimpio)) as { id_usuariopushtoken: number; usuario_id_usuario: number } | undefined;
+
+  if (existente) {
+    if (existente.usuario_id_usuario !== usuarioId) {
+      // El dispositivo tenía otra cuenta logeada antes — se reasigna.
+      await db.prepare(`UPDATE usuario_push_token SET usuario_id_usuario = ? WHERE id_usuariopushtoken = ?`).run(usuarioId, existente.id_usuariopushtoken);
+    }
+    // Si ya era de este mismo usuario, no hay nada que hacer.
+  } else {
+    await db.prepare(`INSERT INTO usuario_push_token (usuario_id_usuario, push_token) VALUES (?, ?)`).run(usuarioId, tokenLimpio);
+  }
+  return { ok: true };
+}
+
+/**
+ * Ronda 40: se llama al cerrar sesión (best-effort, ver AuthContext ->
+ * logout) para que ESTE dispositivo deje de recibir push apenas la persona
+ * sale — sin esto, el token seguiría vinculado a la cuenta hasta que
+ * alguien más lo pisara entrando en el mismo teléfono.
+ */
+export async function eliminarPushToken(usuarioId: number, token: string) {
+  if (!token) return { ok: true };
+  await db.prepare(`DELETE FROM usuario_push_token WHERE usuario_id_usuario = ? AND push_token = ?`).run(usuarioId, token.trim());
   return { ok: true };
 }

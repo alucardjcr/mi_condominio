@@ -534,6 +534,26 @@ CREATE TABLE IF NOT EXISTS incidente_seguridad (
     REFERENCES usuario (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 40, a pedido explícito del usuario: notificaciones push a más de un
+-- dispositivo por usuario — antes usuario.push_token era una sola columna
+-- (un usuario, un token a la vez), así que si la misma cuenta estaba
+-- logeada en 2 celulares, solo el último en loguearse recibía push. Tabla
+-- aparte (1 a N con usuario, no columnas nuevas en `usuario` — mismo
+-- criterio conservador de siempre) para poder guardar varios tokens por
+-- persona. UNIQUE en push_token (no en usuario+token): un mismo dispositivo
+-- físico solo puede estar vinculado a UNA cuenta a la vez — si alguien
+-- cierra sesión y otra persona entra en el mismo teléfono, el token se
+-- reasigna (ver notificaciones.service.ts -> registrarPushToken).
+CREATE TABLE IF NOT EXISTS usuario_push_token (
+  id_usuariopushtoken INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id_usuario    INT NOT NULL,
+  push_token             VARCHAR(255) NOT NULL UNIQUE,
+  fecha_registro          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_usuariopushtoken_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario),
+  INDEX idx_usuariopushtoken_usuario (usuario_id_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Ronda 25: recuperación de contraseña ("olvidé mi contraseña" en Login).
 -- Flujo de 2 pasos: el usuario pide un código de 6 dígitos (identificándose
 -- por usuariocol o por correo_usuario, ver auth.service.ts) y luego lo
