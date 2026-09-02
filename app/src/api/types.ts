@@ -1062,3 +1062,39 @@ export interface ResumenEventoSeguridad {
   ultimos_7dias: number;
 }
 
+// --- Ronda 47: dashboard del Home de Administrador -------------------------
+
+export interface DashboardAdmin {
+  condominio: {
+    nombre: string;
+    total_deptos: number;
+    residentes_activos: number;
+    espacios_comunes: number;
+    guardias_activos: number;
+  };
+  gasto_comun: {
+    deptos_pagados: number;
+    deptos_total: number;
+    porcentaje_pagado: number;
+  };
+  estacionamientos: {
+    total_cupos: number;
+    visitas_dentro: number;
+  };
+  solicitudes: {
+    abiertas: number;
+    urgentes: number;
+  };
+  seguridad: {
+    incidentes_abiertos: number;
+    ultimo_evento: string | null;
+  };
+}
+
+export interface ActividadRecienteItem {
+  id_bitacora: number;
+  texto: string;
+  fecha_hora: string;
+  nombre_usuario: string;
+}
+

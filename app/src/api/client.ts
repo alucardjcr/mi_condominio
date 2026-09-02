@@ -85,6 +85,8 @@ import {
   CrearAmonestacionInput,
   EventoSeguridad,
   ResumenEventoSeguridad,
+  DashboardAdmin,
+  ActividadRecienteItem,
 } from "./types";
 
 // Ronda 17: con la sesión persistida (expo-secure-store), un token puede
@@ -1017,3 +1019,11 @@ export const adminRechazarMulta = (token: string, id: number, motivo: string) =>
 
 export const adminNotificarMulta = (token: string, id: number) =>
   send<Amonestacion>(`/admin/amonestaciones/${id}/notificar`, "POST", token, {});
+
+// --- Ronda 47: dashboard del Home de Administrador --------------------------
+
+export const adminGetDashboard = (token: string, condominioId: number) =>
+  get<DashboardAdmin>(`/admin/dashboard?condominio_id=${condominioId}`, token);
+
+export const adminGetActividadReciente = (token: string, condominioId: number) =>
+  get<ActividadRecienteItem[]>(`/admin/dashboard/actividad-reciente?condominio_id=${condominioId}`, token);

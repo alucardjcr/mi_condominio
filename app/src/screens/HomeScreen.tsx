@@ -133,23 +133,7 @@ export default function HomeScreen({ navigation }: any) {
         </Text>
       )}
 
-      {esAdmin ? (
-        // Ronda 24: en modo Administrador los módulos se navegan desde el
-        // menú lateral (☰, arriba a la izquierda) — acá solo queda un
-        // resumen rápido, no la lista de ~19 botones que había antes.
-        <View style={styles.card}>
-          <Text style={styles.tipHint}>Usa el menú ☰ (arriba a la izquierda) para ir a cualquier módulo.</Text>
-          <Pressable
-            onPress={() => navigation.navigate("Notificaciones")}
-            style={({ pressed }) => [styles.filaResumen, pressed && { opacity: 0.7 }]}
-          >
-            <Text style={styles.filaResumenTexto}>Notificaciones</Text>
-            <View style={[styles.badge, noLeidas === 0 && styles.badgeVacio]}>
-              <Text style={styles.badgeTexto}>{noLeidas}</Text>
-            </View>
-          </Pressable>
-        </View>
-      ) : esResidente ? (
+      {esResidente ? (
         <>
           <BotonAccion label="MIS PAQUETES" color={colors.navy500} onPress={() => navigation.navigate("MisPaquetes")} />
           <BotonAccion

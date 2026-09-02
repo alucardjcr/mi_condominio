@@ -13,35 +13,35 @@ export interface SeccionMenu {
   items: ItemMenu[];
 }
 
+// Ronda 47, a pedido explícito del usuario, con referencia visual:
+// reagrupado más cerca de esas categorías (Gestión de residentes / Visitas
+// y estacionamientos / Guardias y conserjería / Finanzas / Operación y
+// comunicación / Seguridad y auditoría / Privacidad de datos) — ningún
+// módulo se quitó, solo se reordenaron y renombraron algunas secciones.
 export const SECCIONES_MENU_ADMIN: SeccionMenu[] = [
   {
-    titulo: "Operación diaria",
+    titulo: "Gestión de residentes",
     items: [
-      { label: "Paquetes", route: "PaqueteBusqueda", icon: "📦" },
-      { label: "Reservas de espacios comunes", route: "AdminReservas", icon: "📅" },
-      { label: "Mantenciones", route: "AdminMantenciones", icon: "🛠️" },
-      { label: "Estacionamientos en arriendo", route: "EstacionamientosArriendo", icon: "🚗" },
-      { label: "Estacionamientos (estado)", route: "AdminEstacionamientos", icon: "🅿️" },
+      { label: "Residentes", route: "AdminResidentes", icon: "🏠" },
+      { label: "Patentes de residentes", route: "AdminPatentes", icon: "🔎" },
+      { label: "Mascotas", route: "Mascotas", icon: "🐾" },
+      { label: "Vetados", route: "AdminVetados", icon: "⛔" },
+    ],
+  },
+  {
+    titulo: "Visitas y estacionamientos",
+    items: [
       { label: "Disponibilidad de cupos", route: "Disponibilidad", icon: "📍" },
+      { label: "Estacionamientos (estado)", route: "AdminEstacionamientos", icon: "🅿️" },
+      { label: "Estacionamientos en arriendo", route: "EstacionamientosArriendo", icon: "🚗" },
       { label: "Bitácora de guardias", route: "Bitacora", icon: "📖" },
     ],
   },
   {
-    titulo: "Convivencia",
+    titulo: "Guardias y conserjería",
     items: [
-      { label: "Amonestaciones", route: "AdminAmonestaciones", icon: "📋" },
-      { label: "Multas", route: "AdminMultas", icon: "💰" },
-    ],
-  },
-  {
-    titulo: "Personas",
-    items: [
-      { label: "Residentes", route: "AdminResidentes", icon: "🏠" },
-      { label: "Patentes de residentes", route: "AdminPatentes", icon: "🔎" },
       { label: "Guardias", route: "AdminGuardias", icon: "🛡️" },
       { label: "Personal externo", route: "AdminPersonal", icon: "🧰" },
-      { label: "Vetados", route: "AdminVetados", icon: "⛔" },
-      { label: "Mascotas", route: "Mascotas", icon: "🐾" },
     ],
   },
   {
@@ -52,12 +52,28 @@ export const SECCIONES_MENU_ADMIN: SeccionMenu[] = [
     ],
   },
   {
-    titulo: "Configuración y comunicación",
+    titulo: "Operación y comunicación",
     items: [
+      { label: "Paquetes", route: "PaqueteBusqueda", icon: "📦" },
+      { label: "Reservas de espacios comunes", route: "AdminReservas", icon: "📅" },
+      { label: "Mantenciones", route: "AdminMantenciones", icon: "🛠️" },
       { label: "Configurar espacios comunes", route: "AdminEspacios", icon: "⚙️" },
       { label: "Enviar comunicado", route: "AdminComunicados", icon: "📣" },
       { label: "Notificaciones", route: "Notificaciones", icon: "🔔" },
+    ],
+  },
+  {
+    titulo: "Convivencia",
+    items: [
+      { label: "Amonestaciones", route: "AdminAmonestaciones", icon: "📋" },
+      { label: "Multas", route: "AdminMultas", icon: "💰" },
+    ],
+  },
+  {
+    titulo: "Seguridad y auditoría",
+    items: [
       { label: "Auditoría por patente", route: "AdminAuditoria", icon: "🧾" },
+      { label: "Incidentes de seguridad", route: "AdminIncidentes", icon: "🚨" },
     ],
   },
   {
@@ -67,8 +83,7 @@ export const SECCIONES_MENU_ADMIN: SeccionMenu[] = [
       { label: "Solicitudes de residentes", route: "AdminPrivacidad", icon: "🔐" },
       { label: "Registro de auditoría", route: "AdminLogAuditoria", icon: "📋" },
       { label: "Retención de datos", route: "AdminRetencion", icon: "🗓️" },
-      { label: "Incidentes de seguridad", route: "AdminIncidentes", icon: "🚨" },
-      { label: "Mis datos", route: "MisDatos", icon: "🙋" },
+      { label: "Mi perfil", route: "MisDatos", icon: "🙋" },
     ],
   },
 ];

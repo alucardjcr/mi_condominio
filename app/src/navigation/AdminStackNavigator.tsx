@@ -1,9 +1,10 @@
 import React from "react";
-import { Text, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { DrawerActions, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useAuth } from "../context/AuthContext";
 
-import HomeScreen from "../screens/HomeScreen";
+import AdminHomeScreen from "../screens/admin/AdminHomeScreen";
 import CambiarPasswordScreen from "../screens/CambiarPasswordScreen";
 import DisponibilidadScreen from "../screens/DisponibilidadScreen";
 import PaqueteBusquedaScreen from "../screens/PaqueteBusquedaScreen";
@@ -67,6 +68,34 @@ function BotonMenu() {
   );
 }
 
+// Ronda 47, a pedido explícito del usuario, con referencia visual: campanita
+// (notificaciones) + avatar (iniciales) en el header del Home de
+// Administrador. Sin contador de no-leídas en el ícono mismo (ese número
+// ya se ve destacado abajo en el propio dashboard) — evita tener que
+// levantar ese estado hasta acá, que vive dentro de AdminHomeScreen.
+function HeaderDerecho() {
+  const navigation = useNavigation<any>();
+  const { guardia } = useAuth();
+  const inicial = guardia?.nombre_usuario?.trim()?.[0]?.toUpperCase() ?? "?";
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingRight: 4 }}>
+      <TouchableOpacity onPress={() => navigation.navigate("Notificaciones")} hitSlop={10}>
+        <Text style={{ fontSize: 20 }}>🔔</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate("MisDatos")} hitSlop={10}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarTexto}>{inicial}</Text>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.navy500, alignItems: "center", justifyContent: "center" },
+  avatarTexto: { color: colors.textOnNavy, fontWeight: "800", fontSize: 14 },
+});
+
 // Ronda 24: todo lo que antes vivía directo dentro del branch `esAdmin` del
 // Stack.Navigator único de App.tsx, ahora anidado adentro de
 // AdminDrawerNavigator (Drawer > este Stack). El menú lateral navega acá por
@@ -77,8 +106,8 @@ export default function AdminStackNavigator() {
     <Stack.Navigator screenOptions={navHeaderOptions}>
       <Stack.Screen
         name="Home"
-        component={HomeScreen}
-        options={{ title: "Mi Condominio", headerLeft: () => <BotonMenu /> }}
+        component={AdminHomeScreen}
+        options={{ title: "Mi Condominio", headerLeft: () => <BotonMenu />, headerRight: () => <HeaderDerecho /> }}
       />
       <Stack.Screen name="CambiarPassword" component={CambiarPasswordScreen} options={{ title: "Cambiar contraseña" }} />
       <Stack.Screen name="MisDatos" component={MisDatosScreen} options={{ title: "Mis datos" }} />

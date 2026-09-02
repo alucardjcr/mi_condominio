@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requirePerteneceAlCondominio } from "../middleware/auth";
+import { obtenerDashboardAdmin, obtenerActividadReciente } from "../services/dashboard.service";
 import { revocarSesionesDeUsuario } from "../services/auth.service";
 import {
   listarGuardias,
@@ -1101,6 +1102,28 @@ adminRouter.post("/usuarios/:id/cerrar-sesion", requirePerteneceAlCondominio("us
   try {
     await revocarSesionesDeUsuario(Number(req.params.id));
     res.json({ ok: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 47, a pedido explícito del usuario: dashboard real del Home de
+// Administrador — ver la nota completa en dashboard.service.ts sobre qué
+// datos son reales y cómo se adaptaron los conceptos de la referencia
+// visual que no tienen un campo 1 a 1 en el modelo actual.
+adminRouter.get("/dashboard", async (req, res) => {
+  try {
+    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    res.json(await obtenerDashboardAdmin(condominioId));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+adminRouter.get("/dashboard/actividad-reciente", async (req, res) => {
+  try {
+    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    res.json(await obtenerActividadReciente(condominioId));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
