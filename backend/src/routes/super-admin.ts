@@ -8,6 +8,7 @@ import {
   configurarFacturacion,
   marcarPagado,
 } from "../services/superadmin.service";
+import { listarEventosSeguridad, resumenEventosSeguridad } from "../services/eventosSeguridad.service";
 
 // Ronda 27: montado en index.ts con requireAuth + requireSuperAdmin — el
 // dueño del sistema, no un Administrador de condominio. Ver
@@ -96,6 +97,31 @@ superAdminRouter.post("/facturacion/:condominioId/marcar-pagado", async (req, re
       registradoPorUsuarioId: req.guardia!.id_usuario,
     });
     res.json({ ok: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 45, a pedido explícito del usuario: monitoreo de actividad
+// sospechosa — ver la nota completa en schema-mysql.sql, sobre
+// evento_seguridad. Exclusivo del SuperAdmin (ver la nota en esa tabla
+// sobre por qué no es por condominio).
+superAdminRouter.get("/eventos-seguridad", async (req, res) => {
+  try {
+    res.json(
+      await listarEventosSeguridad({
+        tipo: req.query.tipo ? String(req.query.tipo) : undefined,
+        desde: req.query.desde ? String(req.query.desde) : undefined,
+      })
+    );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+superAdminRouter.get("/eventos-seguridad/resumen", async (req, res) => {
+  try {
+    res.json(await resumenEventosSeguridad());
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

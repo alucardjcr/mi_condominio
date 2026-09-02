@@ -40,6 +40,11 @@ export default function SuperAdminHomeScreen({ navigation }: any) {
         ayuda="Ver todas las cuentas Administrador del sistema"
         onPress={() => navigation.navigate("SuperAdminAdministradores")}
       />
+      <BotonAccion
+        label="Actividad sospechosa"
+        ayuda="Intentos de login fallidos y límites de fuerza bruta disparados"
+        onPress={() => navigation.navigate("SuperAdminEventosSeguridad")}
+      />
 
       <Pressable onPress={logout} style={({ pressed }) => [styles.cerrarSesion, pressed && { opacity: 0.6 }]}>
         <Text style={styles.cerrarSesionTexto}>Cerrar sesión</Text>

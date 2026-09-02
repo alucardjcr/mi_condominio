@@ -6,6 +6,7 @@ import SuperAdminFacturacionScreen from "../screens/superadmin/SuperAdminFactura
 import SuperAdminFacturacionDetalleScreen from "../screens/superadmin/SuperAdminFacturacionDetalleScreen";
 import SuperAdminCrearAdminScreen from "../screens/superadmin/SuperAdminCrearAdminScreen";
 import SuperAdminAdministradoresScreen from "../screens/superadmin/SuperAdminAdministradoresScreen";
+import SuperAdminEventosSeguridadScreen from "../screens/superadmin/SuperAdminEventosSeguridadScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +36,11 @@ export default function SuperAdminStackNavigator() {
         name="SuperAdminAdministradores"
         component={SuperAdminAdministradoresScreen}
         options={{ title: "Administradores" }}
+      />
+      <Stack.Screen
+        name="SuperAdminEventosSeguridad"
+        component={SuperAdminEventosSeguridadScreen}
+        options={{ title: "Actividad sospechosa" }}
       />
     </Stack.Navigator>
   );

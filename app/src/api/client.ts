@@ -83,6 +83,8 @@ import {
   TipoMulta,
   Amonestacion,
   CrearAmonestacionInput,
+  EventoSeguridad,
+  ResumenEventoSeguridad,
 } from "./types";
 
 // Ronda 17: con la sesión persistida (expo-secure-store), un token puede
@@ -808,6 +810,19 @@ export const superAdminGetCondominios = (token: string) => get<CondominioSimple[
 
 export const superAdminGetAdministradores = (token: string) =>
   get<AdministradorCuenta[]>(`/super-admin/administradores`, token);
+
+// Ronda 45, a pedido explícito del usuario: monitoreo de actividad
+// sospechosa — exclusivo del SuperAdmin.
+export const superAdminGetEventosSeguridad = (token: string, filtro?: { tipo?: string; desde?: string }) => {
+  const params = new URLSearchParams();
+  if (filtro?.tipo) params.set("tipo", filtro.tipo);
+  if (filtro?.desde) params.set("desde", filtro.desde);
+  const qs = params.toString();
+  return get<EventoSeguridad[]>(`/super-admin/eventos-seguridad${qs ? `?${qs}` : ""}`, token);
+};
+
+export const superAdminGetResumenEventosSeguridad = (token: string) =>
+  get<ResumenEventoSeguridad[]>(`/super-admin/eventos-seguridad/resumen`, token);
 
 export const superAdminCrearAdministrador = (token: string, input: CrearAdministradorInput) =>
   send<AdministradorCuenta>(`/super-admin/administradores`, "POST", token, input);

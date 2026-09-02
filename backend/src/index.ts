@@ -37,6 +37,15 @@ import { expirarReservasVencidas } from "./services/reservas.service";
 
 const app = express();
 
+// Ronda 45, a pedido explícito del usuario: Railway (y cualquier hosting
+// detrás de un proxy/load balancer) reenvía la request con el header
+// "X-Forwarded-For" — sin decirle esto a Express, `req.ip` devuelve la IP
+// del PROXY, no la del cliente real. Esto ya afectaba silenciosamente al
+// rate limiter (que agrupa por IP) y ahora también al registro de
+// eventos de seguridad (ver eventosSeguridad.service.ts) — sin esto,
+// todos los intentos se verían como si vinieran de la misma IP.
+app.set("trust proxy", 1);
+
 // Ronda 43, a pedido explícito del usuario: cabeceras de seguridad
 // estándar (X-Content-Type-Options, X-Frame-Options, Strict-Transport-
 // Security, etc.) — este backend nunca sirve HTML para navegador (es solo

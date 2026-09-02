@@ -1043,3 +1043,22 @@ export interface CrearAmonestacionInput {
   unidad_monto?: string;
 }
 
+// --- Ronda 45: monitoreo de actividad sospechosa (exclusivo SuperAdmin) --
+
+export type TipoEventoSeguridad = "rate_limit_login" | "rate_limit_recuperacion" | "login_fallido";
+
+export interface EventoSeguridad {
+  id_eventoseguridad: number;
+  tipo: TipoEventoSeguridad;
+  ip: string | null;
+  usuariocol_intentado: string | null;
+  detalle: string | null;
+  fecha: string;
+}
+
+export interface ResumenEventoSeguridad {
+  tipo: TipoEventoSeguridad;
+  ultimas_24h: number;
+  ultimos_7dias: number;
+}
+

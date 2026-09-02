@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { db } from "../db/client";
 import { verificarTurnoParaLogin } from "./turnos.service";
 import { condominioEstaBloqueado } from "./facturacion.service";
+import { registrarEventoSeguridad } from "./eventosSeguridad.service";
 
 // Ronda 36, a pedido explícito del usuario (revisión de encriptación): antes
 // había un valor por defecto ("dev-secret-cambiar-en-produccion") si no se
@@ -160,7 +161,7 @@ async function nombreDeCondominio(condominioId: number): Promise<string | undefi
   return row?.gls_condominio;
 }
 
-export async function login(usuariocol: string, password: string) {
+export async function login(usuariocol: string, password: string, ip?: string) {
   // Ronda 26 (fase 2): esta consulta ya NO trae rol/condominio/unidad — eso
   // ahora vive en `membresia`, porque puede haber más de uno por persona
   // (y hasta ser distinto entre condominios). Acá solo se resuelve la
@@ -170,9 +171,16 @@ export async function login(usuariocol: string, password: string) {
     .get(usuariocol)) as { id_usuario: number; nombre_usuario: string; password_usuario: string | null } | undefined;
 
   if (!usuario || !usuario.password_usuario) {
+    // Ronda 45, a pedido explícito del usuario: registra el intento, sin
+    // filtrar en el propio mensaje de error si el usuario existe o no (eso
+    // sigue siendo genérico, como siempre) — el registro sirve para que el
+    // SuperAdmin pueda notar un patrón (ej. muchos intentos contra
+    // usuarios que ni existen, típico de fuerza bruta con diccionario).
+    await registrarEventoSeguridad("login_fallido", { ip, usuariocolIntentado: usuariocol, detalle: "Usuario no existe o está inactivo" });
     throw new Error("Usuario o contraseña incorrectos.");
   }
   if (!bcrypt.compareSync(password, usuario.password_usuario)) {
+    await registrarEventoSeguridad("login_fallido", { ip, usuariocolIntentado: usuariocol, detalle: "Contraseña incorrecta" });
     throw new Error("Usuario o contraseña incorrectos.");
   }
 

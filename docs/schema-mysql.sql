@@ -563,6 +563,30 @@ CREATE TABLE IF NOT EXISTS usuario_sesion_revocada (
     REFERENCES usuario (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 45, a pedido explícito del usuario (revisión de seguridad — punto
+-- 3, "sin monitoreo activo"): antes, si alguien atacaba el login por
+-- fuerza bruta o el rate limiter se disparaba una y otra vez, todo eso
+-- pasaba en silencio — se bloqueaba correctamente, pero nadie se enteraba.
+-- Tabla GLOBAL (sin condominio_id_condominio a propósito): un intento de
+-- login fallido no siempre resuelve a un usuario real (alguien puede estar
+-- probando usuarios que ni existen), así que no siempre hay a qué
+-- condominio asociarlo — y un ataque contra el login no distingue
+-- condominios de todos modos. Por eso este panel es EXCLUSIVO del
+-- SuperAdmin (el dueño del sistema), no de un Administrador de condominio
+-- — un Administrador de un condominio no debería poder ver intentos de
+-- login fallidos contra OTRO condominio.
+CREATE TABLE IF NOT EXISTS evento_seguridad (
+  id_eventoseguridad INT AUTO_INCREMENT PRIMARY KEY,
+  -- 'rate_limit_login' | 'rate_limit_recuperacion' | 'login_fallido'
+  tipo                  VARCHAR(40) NOT NULL,
+  ip                     VARCHAR(45) NULL, -- IPv4 o IPv6
+  usuariocol_intentado    VARCHAR(50) NULL, -- el usuario que se intentó usar, exista o no
+  detalle                 VARCHAR(255) NULL,
+  fecha                    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_eventoseguridad_fecha (fecha),
+  INDEX idx_eventoseguridad_tipo (tipo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ---------------------------------------------------------------------------
 -- Amonestaciones y multas (ronda 41), a pedido explícito del usuario.
 -- Catálogos del ERD original (`tipo_amonestacion` con 11 filas,

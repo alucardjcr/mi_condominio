@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 import { login, cambiarPassword, solicitarRecuperacion, resetearPassword, seleccionarCondominio, completarOnboardingResidente } from "../services/auth.service";
 import { registrarPushToken, eliminarPushToken } from "../services/notificaciones.service";
 import { requireAuth } from "../middleware/auth";
+import { registrarEventoSeguridad } from "../services/eventosSeguridad.service";
 
 export const authRouter = Router();
 
@@ -14,12 +15,25 @@ export const authRouter = Router();
 // distintos desde la misma IP sin frenarse). 10 intentos cada 15 minutos
 // es generoso para alguien que se equivoca tipeando, pero corta en seco
 // cualquier ataque de fuerza bruta automatizado.
+//
+// Ronda 45: cada vez que el límite se dispara, además de responder 429,
+// queda un registro en evento_seguridad (ver eventosSeguridad.service.ts)
+// — antes esto pasaba en silencio, sin que nadie se enterara de que algo
+// estaba pasando.
 const limitadorLogin = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Demasiados intentos. Espera unos minutos antes de volver a intentar." },
+  handler: async (req, res) => {
+    await registrarEventoSeguridad("rate_limit_login", {
+      ip: req.ip,
+      usuariocolIntentado: req.body?.usuariocol ? String(req.body.usuariocol) : null,
+      detalle: `${req.method} ${req.path}`,
+    });
+    res.status(429).json({ error: "Demasiados intentos. Espera unos minutos antes de volver a intentar." });
+  },
 });
 
 // Recuperación de contraseña: límite más estricto — cada solicitud manda
@@ -32,6 +46,14 @@ const limitadorRecuperacion = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Demasiadas solicitudes. Espera unos minutos antes de volver a intentar." },
+  handler: async (req, res) => {
+    await registrarEventoSeguridad("rate_limit_recuperacion", {
+      ip: req.ip,
+      usuariocolIntentado: req.body?.identificador ? String(req.body.identificador) : null,
+      detalle: `${req.method} ${req.path}`,
+    });
+    res.status(429).json({ error: "Demasiadas solicitudes. Espera unos minutos antes de volver a intentar." });
+  },
 });
 
 authRouter.post("/login", limitadorLogin, async (req, res) => {
@@ -44,7 +66,7 @@ authRouter.post("/login", limitadorLogin, async (req, res) => {
     // login() devuelve { requiereSeleccionCondominio: true, token, condominios }
     // en vez del { token, guardia, rol } de siempre — mismo status 200 en
     // ambos casos (no es un error, es un paso intermedio del login).
-    const resultado = await login(usuariocol, password);
+    const resultado = await login(usuariocol, password, req.ip);
     res.json(resultado);
   } catch (err: any) {
     res.status(401).json({ error: err.message });
