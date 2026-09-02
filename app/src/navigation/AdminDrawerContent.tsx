@@ -20,21 +20,14 @@ function useRutaActivaAnidada(): string | undefined {
   });
 }
 
-// Ronda 39, a pedido explícito del usuario (bug reportado: TODO el menú
-// tiraba "The action 'NAVIGATE' with payload {name:...}' was not handled").
-// El motivo: `props.navigation` acá es la navegación del DRAWER, que
-// registra una única pantalla llamada "AdminApp" (ver AdminDrawerNavigator
-// -> <Drawer.Screen name="AdminApp" component={AdminStackNavigator} />).
-// Llamar `.navigate("CambiarCondominio")` directo sobre esa navegación
-// buscaba una pantalla con ese nombre EN EL DRAWER, no la encontraba (vive
-// adentro del stack anidado), y fallaba — a menos que esa pantalla ya
-// hubiera sido visitada antes en la sesión (por eso el bug podía
-// "aparentar" funcionar a veces y no otras, según qué se hubiera abierto
-// antes). La forma correcta de navegar a una pantalla de un navegador
-// anidado desde un ancestro es nombrando explícitamente el navegador
-// contenedor + la pantalla destino.
+// Ronda 48, a pedido explícito del usuario (bug reportado: cualquier botón
+// del menú abre la pantalla correcta, pero el menú lateral no se cierra
+// solo). navegarEnStack solo navegaba — nunca le pedía al Drawer que se
+// cerrara, así que quedaba abierto tapando la pantalla nueva hasta que el
+// usuario lo cerraba a mano (deslizando o tocando afuera).
 function navegarEnStack(navigation: DrawerContentComponentProps["navigation"], pantalla: string) {
   (navigation as any).navigate("AdminApp", { screen: pantalla });
+  navigation.closeDrawer();
 }
 
 export default function AdminDrawerContent(props: DrawerContentComponentProps) {
