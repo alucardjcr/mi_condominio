@@ -79,6 +79,10 @@ import {
   IncidenteSeguridad,
   CrearIncidenteInput,
   QuienVieneHoy,
+  TipoAmonestacion,
+  TipoMulta,
+  Amonestacion,
+  CrearAmonestacionInput,
 } from "./types";
 
 // Ronda 17: con la sesión persistida (expo-secure-store), un token puede
@@ -939,3 +943,62 @@ export const adminCerrarIncidente = (token: string, id: number, accionesTomadas:
 
 export const getQuienVieneHoy = (token: string, condominioId: number) =>
   get<QuienVieneHoy>(`/hoy?condominio_id=${condominioId}`, token);
+
+// --- Ronda 41: Amonestaciones y Multas --------------------------------------
+// Todas estas rutas viven bajo /admin/*, así que Administrador o Comité
+// (ambos con acceso al módulo completo). El chequeo exclusivo de
+// Administrador para "notificar" una multa se hace en el backend — el
+// front igualmente oculta ese botón si el rol no es Administrador, para
+// que no llegue a intentarlo y se lleve un error.
+
+export const adminGetTiposAmonestacion = (token: string, condominioId: number, incluirInactivos = false) =>
+  get<TipoAmonestacion[]>(
+    `/admin/tipos-amonestacion?condominio_id=${condominioId}${incluirInactivos ? "&incluir_inactivos=true" : ""}`,
+    token
+  );
+
+export const adminCrearTipoAmonestacion = (
+  token: string,
+  condominioId: number,
+  input: { gls_tipoamonestacion: string; flg_es_multa?: number }
+) => send<TipoAmonestacion>(`/admin/tipos-amonestacion`, "POST", token, { ...input, condominio_id_condominio: condominioId });
+
+export const adminActualizarTipoAmonestacion = (
+  token: string,
+  id: number,
+  input: { gls_tipoamonestacion?: string; flg_es_multa?: number; flg_vigencia?: number }
+) => send<TipoAmonestacion>(`/admin/tipos-amonestacion/${id}`, "PATCH", token, input);
+
+export const adminGetTiposMulta = (token: string, condominioId: number, incluirInactivos = false) =>
+  get<TipoMulta[]>(`/admin/tipos-multa?condominio_id=${condominioId}${incluirInactivos ? "&incluir_inactivos=true" : ""}`, token);
+
+export const adminCrearTipoMulta = (
+  token: string,
+  condominioId: number,
+  input: { gls_tipomulta: string; monto_sugerido?: number; unidad_monto?: string }
+) => send<TipoMulta>(`/admin/tipos-multa`, "POST", token, { ...input, condominio_id_condominio: condominioId });
+
+export const adminActualizarTipoMulta = (
+  token: string,
+  id: number,
+  input: { gls_tipomulta?: string; monto_sugerido?: number | null; unidad_monto?: string; flg_vigencia?: number }
+) => send<TipoMulta>(`/admin/tipos-multa/${id}`, "PATCH", token, input);
+
+export const adminGetAmonestaciones = (token: string, condominioId: number, filtro?: { estado?: string; unidad_id?: number }) => {
+  const params = new URLSearchParams({ condominio_id: String(condominioId) });
+  if (filtro?.estado) params.set("estado", filtro.estado);
+  if (filtro?.unidad_id) params.set("unidad_id", String(filtro.unidad_id));
+  return get<Amonestacion[]>(`/admin/amonestaciones?${params.toString()}`, token);
+};
+
+export const adminCrearAmonestacion = (token: string, condominioId: number, input: CrearAmonestacionInput) =>
+  send<Amonestacion>(`/admin/amonestaciones`, "POST", token, { ...input, condominio_id_condominio: condominioId });
+
+export const adminAprobarMulta = (token: string, id: number) =>
+  send<Amonestacion>(`/admin/amonestaciones/${id}/aprobar`, "POST", token, {});
+
+export const adminRechazarMulta = (token: string, id: number, motivo: string) =>
+  send<Amonestacion>(`/admin/amonestaciones/${id}/rechazar`, "POST", token, { motivo });
+
+export const adminNotificarMulta = (token: string, id: number) =>
+  send<Amonestacion>(`/admin/amonestaciones/${id}/notificar`, "POST", token, {});

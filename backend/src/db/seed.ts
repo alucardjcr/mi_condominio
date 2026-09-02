@@ -1,6 +1,7 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { db, initSchema } from "./client";
+import { sembrarCatalogosAmonestacionMulta } from "../services/catalogos-default.service";
 
 function run(sql: string, params: unknown[] = []) {
   return db.prepare(sql).run(...(params as any[]));
@@ -437,6 +438,11 @@ async function main() {
       CONDOMINIO_ID,
     ]);
   }
+
+  // Ronda 41, a pedido explícito del usuario: catálogos por defecto de
+  // amonestaciones/multas (11 y 20 tipos) + los 2 tipos de notificación
+  // nuevos que necesita ese módulo — ver catalogos-default.service.ts.
+  await sembrarCatalogosAmonestacionMulta(CONDOMINIO_ID);
 
   // -----------------------------------------------------------------------
   // Mantenciones (ronda 19): catálogo de elementos de infraestructura

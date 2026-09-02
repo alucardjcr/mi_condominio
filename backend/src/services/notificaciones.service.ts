@@ -101,7 +101,7 @@ export interface CrearNotificacionInput {
   titulo: string;
   cuerpo: string;
   destinatarios: number[];
-  referenciaTipo?: "paquete" | "visita" | "tarea_personal" | "mantencion";
+  referenciaTipo?: "paquete" | "visita" | "tarea_personal" | "mantencion" | "amonestacion";
   referenciaId?: number;
   creadoPorUsuarioId?: number;
 }

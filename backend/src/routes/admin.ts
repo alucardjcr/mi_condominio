@@ -26,6 +26,20 @@ import { listarSolicitudesArcoAdmin, resolverSolicitudArco } from "../services/a
 import { listarAuditoria } from "../services/auditoria.service";
 import { listarPoliticasRetencion, configurarPoliticaRetencion, ejecutarLimpiezaRetencion, convertirADias } from "../services/retencion.service";
 import { crearIncidente, listarIncidentes, marcarNotificadoAgencia, marcarNotificadoAfectados, cerrarIncidente } from "../services/incidentes.service";
+import {
+  listarTiposAmonestacion,
+  crearTipoAmonestacion,
+  actualizarTipoAmonestacion,
+  listarTiposMulta,
+  crearTipoMulta,
+  actualizarTipoMulta,
+  listarAmonestaciones,
+  getAmonestacion,
+  crearAmonestacion,
+  aprobarMulta,
+  rechazarMulta,
+  notificarMulta,
+} from "../services/amonestaciones.service";
 import { reporteGastoComun, generarExcelGastoComun } from "../services/reportes.service";
 import { crearComunicado } from "../services/notificaciones.service";
 import {
@@ -909,6 +923,165 @@ adminRouter.post("/incidentes/:id/cerrar", async (req, res) => {
   try {
     const { acciones_tomadas } = req.body;
     res.json(await cerrarIncidente(Number(req.params.id), acciones_tomadas));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Amonestaciones y multas (ronda 41), a pedido explícito del usuario. Todo
+// este bloque ya está detrás de requireAdmin (Administrador o Comité) por
+// el montaje del router en index.ts — igual que el resto de /admin/*. La
+// ÚNICA restricción adicional (exclusiva del Administrador, ni siquiera el
+// Comité) es notificar una multa ya aprobada, chequeada a mano en esa ruta.
+// ---------------------------------------------------------------------------
+
+adminRouter.get("/tipos-amonestacion", async (req, res) => {
+  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  res.json(await listarTiposAmonestacion(condominioId, req.query.incluir_inactivos === "true"));
+});
+
+adminRouter.post("/tipos-amonestacion", async (req, res) => {
+  try {
+    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const { gls_tipoamonestacion, flg_es_multa } = req.body;
+    res.status(201).json(await crearTipoAmonestacion(condominioId, { gls_tipoamonestacion, flg_es_multa: flg_es_multa ? 1 : 0 }));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+adminRouter.patch("/tipos-amonestacion/:id", async (req, res) => {
+  try {
+    const { gls_tipoamonestacion, flg_es_multa, flg_vigencia } = req.body;
+    res.json(
+      await actualizarTipoAmonestacion(Number(req.params.id), {
+        gls_tipoamonestacion,
+        flg_es_multa: flg_es_multa !== undefined ? (flg_es_multa ? 1 : 0) : undefined,
+        flg_vigencia,
+      })
+    );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+adminRouter.get("/tipos-multa", async (req, res) => {
+  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  res.json(await listarTiposMulta(condominioId, req.query.incluir_inactivos === "true"));
+});
+
+adminRouter.post("/tipos-multa", async (req, res) => {
+  try {
+    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const { gls_tipomulta, monto_sugerido, unidad_monto } = req.body;
+    res.status(201).json(
+      await crearTipoMulta(condominioId, {
+        gls_tipomulta,
+        monto_sugerido: monto_sugerido !== undefined ? Number(monto_sugerido) : undefined,
+        unidad_monto,
+      })
+    );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+adminRouter.patch("/tipos-multa/:id", async (req, res) => {
+  try {
+    const { gls_tipomulta, monto_sugerido, unidad_monto, flg_vigencia } = req.body;
+    res.json(
+      await actualizarTipoMulta(Number(req.params.id), {
+        gls_tipomulta,
+        monto_sugerido: monto_sugerido !== undefined ? (monto_sugerido === null ? null : Number(monto_sugerido)) : undefined,
+        unidad_monto,
+        flg_vigencia,
+      })
+    );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+adminRouter.get("/amonestaciones", async (req, res) => {
+  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  res.json(
+    await listarAmonestaciones(condominioId, {
+      estado: req.query.estado ? String(req.query.estado) : undefined,
+      unidadId: req.query.unidad_id ? Number(req.query.unidad_id) : undefined,
+    })
+  );
+});
+
+adminRouter.get("/amonestaciones/:id", async (req, res) => {
+  try {
+    res.json(await getAmonestacion(Number(req.params.id)));
+  } catch (err: any) {
+    res.status(404).json({ error: err.message });
+  }
+});
+
+// Cualquiera de Administrador o Comité puede crear — si el tipo elegido
+// implica multa, queda pendiente de aprobación; si no, se envía y notifica
+// sola en el acto (ver amonestaciones.service.ts -> crearAmonestacion).
+adminRouter.post("/amonestaciones", async (req, res) => {
+  try {
+    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const { unidad_id_unidad, tipo_amonestacion_id_tipoamonestacion, descripcion, fecha_hecho, tipo_multa_id_tipomulta, monto, unidad_monto } =
+      req.body;
+    if (!unidad_id_unidad || !tipo_amonestacion_id_tipoamonestacion) {
+      return res.status(400).json({ error: "Faltan campos: unidad_id_unidad, tipo_amonestacion_id_tipoamonestacion." });
+    }
+    const resultado = await crearAmonestacion(
+      {
+        condominioId,
+        unidadId: Number(unidad_id_unidad),
+        tipoAmonestacionId: Number(tipo_amonestacion_id_tipoamonestacion),
+        descripcion,
+        fechaHecho: fecha_hecho,
+        tipoMultaId: tipo_multa_id_tipomulta ? Number(tipo_multa_id_tipomulta) : undefined,
+        monto: monto !== undefined ? Number(monto) : undefined,
+        unidadMonto: unidad_monto,
+      },
+      req.guardia!.id_usuario
+    );
+    res.status(201).json(resultado);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Aprobar/rechazar: Comité o Administrador (regla explícita del usuario —
+// "el comité aprueba las multas"; se deja también al Administrador porque
+// en el resto del sistema siempre tiene autoridad al menos igual que el
+// comité, y un condominio chico podría no tener comité activo todavía).
+adminRouter.post("/amonestaciones/:id/aprobar", async (req, res) => {
+  try {
+    res.json(await aprobarMulta(Number(req.params.id), req.guardia!.id_usuario));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+adminRouter.post("/amonestaciones/:id/rechazar", async (req, res) => {
+  try {
+    const { motivo } = req.body;
+    res.json(await rechazarMulta(Number(req.params.id), req.guardia!.id_usuario, motivo));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Notificar: EXCLUSIVO del Administrador real — regla explícita del
+// usuario: "es el administrador quien le envía la notificación al
+// residente de una multa". Un miembro del comité, aunque haya sido quien
+// la aprobó, no puede completar este paso.
+adminRouter.post("/amonestaciones/:id/notificar", async (req, res) => {
+  if (req.guardia?.rol !== "Administrador") {
+    return res.status(403).json({ error: "Solo el Administrador puede notificar una multa al residente." });
+  }
+  try {
+    res.json(await notificarMulta(Number(req.params.id), req.guardia!.id_usuario));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

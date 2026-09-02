@@ -406,19 +406,6 @@ CREATE TABLE IF NOT EXISTS pago_condominio (
 -- agregar tablas, nunca ALTER TABLE sobre una existente. Relación 1 a 1: si
 -- un cupo no tiene fila acá, simplemente no se le ha cargado esta info
 -- todavía (no significa nada por omisión).
-CREATE TABLE IF NOT EXISTS estacionamiento_ocupacion (
-  id_estacionamientoocupacion INT AUTO_INCREMENT PRIMARY KEY,
-  estacionamiento_id_estacionamiento INT NOT NULL UNIQUE,
-  patente        VARCHAR(10) NULL,
-  flg_arrendado  TINYINT NOT NULL DEFAULT 0,
-  -- 'Propietario' | 'Arrendatario' — quién ocupa el cupo. Texto libre (no
-  -- catálogo aparte) por simplicidad, mismo criterio que tipo_ocupante en
-  -- la tabla `visita`.
-  tipo_ocupante  VARCHAR(20) NULL,
-  CONSTRAINT fk_estacionamientoocupacion_estacionamiento FOREIGN KEY (estacionamiento_id_estacionamiento)
-    REFERENCES estacionamiento (id_estacionamiento)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Ronda 32, a pedido explícito del usuario: derechos ARCO (Acceso,
 -- Rectificación, Cancelación/supresión, Oposición) de la Ley 21.719 de
 -- Protección de Datos Personales. "Acceso" y "Portabilidad" son
@@ -554,6 +541,103 @@ CREATE TABLE IF NOT EXISTS usuario_push_token (
   INDEX idx_usuariopushtoken_usuario (usuario_id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ---------------------------------------------------------------------------
+-- Amonestaciones y multas (ronda 41), a pedido explícito del usuario.
+-- Catálogos del ERD original (`tipo_amonestacion` con 11 filas,
+-- `tipo_multa` con 20, ambos "fk_idcondominio" en el dump original) —
+-- confirmado explícitamente por el usuario: CADA CONDOMINIO puede agregar
+-- sus propios tipos además de los precargados por el sistema, así que
+-- ambos catálogos son por condominio, con los mismos por defecto en todos
+-- (se siembran automáticamente al crear un condominio nuevo — ver
+-- catalogos-default.service.ts) y editables/ampliables desde la app (ver
+-- amonestaciones.service.ts, mismo patrón que tipo_elemento_mantencion).
+--
+-- Reglas de negocio explícitas del usuario:
+--   - Administrador Y Comité pueden usar el módulo completo (crear
+--     amonestaciones, gestionar catálogos).
+--   - Una amonestación que NO es multa (verbal, escrita, suspensión de
+--     áreas comunes, etc.) la puede ENVIAR directo cualquiera de los dos
+--     — sin necesitar aprobación de nadie más.
+--   - Una amonestación que SÍ es multa (tipo con flg_es_multa=1) necesita
+--     que el COMITÉ la apruebe antes de poder notificarse.
+--   - Solo el ADMINISTRADOR (no un miembro del comité) puede enviar la
+--     notificación final de una multa ya aprobada al residente.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS tipo_amonestacion (
+  id_tipoamonestacion    INT AUTO_INCREMENT PRIMARY KEY,
+  gls_tipoamonestacion   VARCHAR(150) NOT NULL,
+  -- 1 = este tipo implica una multa económica — al crear una amonestación
+  -- con este tipo, además hay que elegir un tipo_multa (motivo + monto) y
+  -- pasa por el flujo de aprobación del comité antes de notificarse.
+  flg_es_multa           TINYINT NOT NULL DEFAULT 0,
+  condominio_id_condominio INT NOT NULL,
+  flg_vigencia           TINYINT NOT NULL DEFAULT 1,
+  CONSTRAINT fk_tipoamonestacion_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio),
+  INDEX idx_tipoamonestacion_condominio (condominio_id_condominio)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS tipo_multa (
+  id_tipomulta           INT AUTO_INCREMENT PRIMARY KEY,
+  gls_tipomulta          VARCHAR(150) NOT NULL,
+  monto_sugerido         DECIMAL(10,2) NULL, -- editable al crear la amonestación, esto es solo un valor por defecto
+  unidad_monto           VARCHAR(10) NOT NULL DEFAULT 'UF', -- 'UF' | 'UTM'
+  condominio_id_condominio INT NOT NULL,
+  flg_vigencia           TINYINT NOT NULL DEFAULT 1,
+  CONSTRAINT fk_tipomulta_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio),
+  INDEX idx_tipomulta_condominio (condominio_id_condominio)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS amonestacion (
+  id_amonestacion        INT AUTO_INCREMENT PRIMARY KEY,
+  condominio_id_condominio INT NOT NULL,
+  unidad_id_unidad       INT NOT NULL, -- depto afectado
+  tipo_amonestacion_id_tipoamonestacion INT NOT NULL,
+  descripcion            TEXT NOT NULL,
+  fecha_hecho            DATE NOT NULL, -- cuándo ocurrió la falta (no necesariamente hoy)
+
+  -- Solo si el tipo tiene flg_es_multa=1:
+  tipo_multa_id_tipomulta INT NULL,
+  monto                  DECIMAL(10,2) NULL,
+  unidad_monto           VARCHAR(10) NULL,
+
+  -- 'Enviada' (amonestación normal, terminal) | 'Pendiente de aprobación' /
+  -- 'Rechazada' / 'Aprobada' / 'Notificada' (multa, terminal en Rechazada
+  -- o Notificada) — ver el flujo completo en amonestaciones.service.ts.
+  estado                 VARCHAR(30) NOT NULL DEFAULT 'Enviada',
+
+  aprobado_por_usuario_id INT NULL,
+  fecha_aprobacion        DATETIME NULL,
+  motivo_rechazo          TEXT NULL,
+
+  -- Solo Administrador (no comité) puede completar esto — ver la regla
+  -- explícita del usuario arriba.
+  notificado_por_usuario_id INT NULL,
+  fecha_notificacion        DATETIME NULL,
+
+  creado_por_usuario_id  INT NOT NULL,
+  fecha_creacion          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_amonestacion_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio),
+  CONSTRAINT fk_amonestacion_unidad FOREIGN KEY (unidad_id_unidad)
+    REFERENCES unidad (id_unidad),
+  CONSTRAINT fk_amonestacion_tipo FOREIGN KEY (tipo_amonestacion_id_tipoamonestacion)
+    REFERENCES tipo_amonestacion (id_tipoamonestacion),
+  CONSTRAINT fk_amonestacion_tipomulta FOREIGN KEY (tipo_multa_id_tipomulta)
+    REFERENCES tipo_multa (id_tipomulta),
+  CONSTRAINT fk_amonestacion_aprobador FOREIGN KEY (aprobado_por_usuario_id)
+    REFERENCES usuario (id_usuario),
+  CONSTRAINT fk_amonestacion_notificador FOREIGN KEY (notificado_por_usuario_id)
+    REFERENCES usuario (id_usuario),
+  CONSTRAINT fk_amonestacion_creador FOREIGN KEY (creado_por_usuario_id)
+    REFERENCES usuario (id_usuario),
+  INDEX idx_amonestacion_condominio_estado (condominio_id_condominio, estado),
+  INDEX idx_amonestacion_unidad (unidad_id_unidad)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Ronda 25: recuperación de contraseña ("olvidé mi contraseña" en Login).
 -- Flujo de 2 pasos: el usuario pide un código de 6 dígitos (identificándose
 -- por usuariocol o por correo_usuario, ver auth.service.ts) y luego lo
@@ -618,6 +702,41 @@ CREATE TABLE IF NOT EXISTS estacionamiento (
   CONSTRAINT fk_estacionamiento_unidad FOREIGN KEY (unidad_id_unidad)
     REFERENCES unidad (id_unidad),
   INDEX idx_estacionamiento_condominio (condominio_id_condominio)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ronda 30, a pedido explícito del usuario: control formal que lleva el
+-- comité/administrador sobre cada cupo de RESIDENTE — a quién patente
+-- pertenece el auto que normalmente lo usa, si está arrendado, y si quien
+-- lo ocupa es el propietario del cupo o un arrendatario. Distinto del
+-- "pizarrón de arriendo entre vecinos" (precio_arriendo arriba, ronda 20,
+-- informal, lo puede tocar el propio residente dueño) — esto es el
+-- registro formal, EXCLUSIVO de Administrador/Comité (ver requireAdmin en
+-- middleware/auth.ts, ya aplicado a /admin/estacionamientos).
+--
+-- Se modela como tabla aparte (no columnas nuevas en `estacionamiento`)
+-- siguiendo el mismo criterio conservador de siempre en este archivo: solo
+-- agregar tablas, nunca ALTER TABLE sobre una existente. Relación 1 a 1: si
+-- un cupo no tiene fila acá, simplemente no se le ha cargado esta info
+-- todavía (no significa nada por omisión).
+--
+-- NOTA (ronda 41): esta tabla vivía ANTES de `estacionamiento` en este
+-- archivo (bug de orden desde que se agregó en la ronda 30, nunca
+-- detectado porque las pruebas de esa ronda en adelante siempre corrieron
+-- sobre una base de datos ya existente, nunca completamente nueva) — en
+-- una base 100% desde cero, MySQL fallaba al crear esta tabla porque
+-- `estacionamiento` (la que referencia) todavía no existía. Se corrigió
+-- moviéndola a este punto del archivo, después de `estacionamiento`.
+CREATE TABLE IF NOT EXISTS estacionamiento_ocupacion (
+  id_estacionamientoocupacion INT AUTO_INCREMENT PRIMARY KEY,
+  estacionamiento_id_estacionamiento INT NOT NULL UNIQUE,
+  patente        VARCHAR(10) NULL,
+  flg_arrendado  TINYINT NOT NULL DEFAULT 0,
+  -- 'Propietario' | 'Arrendatario' — quién ocupa el cupo. Texto libre (no
+  -- catálogo aparte) por simplicidad, mismo criterio que tipo_ocupante en
+  -- la tabla `visita`.
+  tipo_ocupante  VARCHAR(20) NULL,
+  CONSTRAINT fk_estacionamientoocupacion_estacionamiento FOREIGN KEY (estacionamiento_id_estacionamiento)
+    REFERENCES estacionamiento (id_estacionamiento)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------

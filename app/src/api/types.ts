@@ -986,3 +986,60 @@ export interface QuienVieneHoy {
   mantenciones: Mantencion[];
 }
 
+// --- Ronda 41: Amonestaciones y Multas --------------------------------------
+
+export interface TipoAmonestacion {
+  id_tipoamonestacion: number;
+  gls_tipoamonestacion: string;
+  flg_es_multa: number;
+  flg_vigencia: number;
+}
+
+export interface TipoMulta {
+  id_tipomulta: number;
+  gls_tipomulta: string;
+  monto_sugerido: number | null;
+  unidad_monto: string; // 'UF' | 'UTM'
+  flg_vigencia: number;
+}
+
+export type EstadoAmonestacionGls = "Enviada" | "Pendiente de aprobación" | "Aprobada" | "Rechazada" | "Notificada";
+
+export interface Amonestacion {
+  id_amonestacion: number;
+  condominio_id_condominio: number;
+  unidad_id_unidad: number;
+  numero_unidad: string;
+  nombre_torre: string;
+  tipo_amonestacion_id_tipoamonestacion: number;
+  gls_tipoamonestacion: string;
+  flg_es_multa: number;
+  descripcion: string;
+  fecha_hecho: string; // 'YYYY-MM-DD'
+  tipo_multa_id_tipomulta: number | null;
+  gls_tipomulta: string | null;
+  monto: string | null;
+  unidad_monto: string | null;
+  estado: EstadoAmonestacionGls;
+  aprobado_por_usuario_id: number | null;
+  nombre_aprobador: string | null;
+  fecha_aprobacion: string | null;
+  motivo_rechazo: string | null;
+  notificado_por_usuario_id: number | null;
+  nombre_notificador: string | null;
+  fecha_notificacion: string | null;
+  creado_por_usuario_id: number;
+  nombre_creador: string;
+  fecha_creacion: string;
+}
+
+export interface CrearAmonestacionInput {
+  unidad_id_unidad: number;
+  tipo_amonestacion_id_tipoamonestacion: number;
+  descripcion: string;
+  fecha_hecho: string;
+  tipo_multa_id_tipomulta?: number;
+  monto?: number;
+  unidad_monto?: string;
+}
+
