@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -13,12 +14,22 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
+// Ronda 39, a pedido explícito del usuario: la app ya no es de un
+// condominio en particular (antes decía "Valles de Varoli / Control de
+// estacionamientos de visita" acá) — es un producto que sirve para
+// cualquier condominio, así que el login ya no menciona ninguno en
+// especial. El nombre del condominio real de cada quien ya se ve después,
+// dentro de la app (menú lateral, Home, etc.).
+const ANCHO_PANTALLA = Dimensions.get("window").width;
+
 export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
   const [usuariocol, setUsuariocol] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [usuarioEnFoco, setUsuarioEnFoco] = useState(false);
+  const [passwordEnFoco, setPasswordEnFoco] = useState(false);
 
   const handleLogin = async () => {
     setError(null);
@@ -38,15 +49,15 @@ export default function LoginScreen({ navigation }: any) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <Image source={require("../../assets/logo-login.png")} style={styles.logo} resizeMode="contain" />
-      <Text style={styles.titulo}>Valles de Varoli</Text>
-      <Text style={styles.subtitulo}>Control de estacionamientos de visita</Text>
 
       <View style={styles.card}>
         <Text style={styles.label}>Usuario</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, usuarioEnFoco && styles.inputEnFoco]}
           value={usuariocol}
           onChangeText={setUsuariocol}
+          onFocus={() => setUsuarioEnFoco(true)}
+          onBlur={() => setUsuarioEnFoco(false)}
           placeholder="ej: guardia1"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
@@ -54,9 +65,11 @@ export default function LoginScreen({ navigation }: any) {
 
         <Text style={styles.label}>Contraseña</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, passwordEnFoco && styles.inputEnFoco]}
           value={password}
           onChangeText={setPassword}
+          onFocus={() => setPasswordEnFoco(true)}
+          onBlur={() => setPasswordEnFoco(false)}
           placeholder="••••••"
           placeholderTextColor={colors.textMuted}
           secureTextEntry
@@ -95,14 +108,14 @@ export default function LoginScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: spacing.lg, backgroundColor: colors.navy900 },
-  logo: { alignSelf: "center", width: 140, height: 140, marginBottom: spacing.md },
-  titulo: { ...typography.title, textAlign: "center", color: colors.textOnNavy },
-  subtitulo: {
-    ...typography.body,
-    color: colors.textMutedOnNavy,
-    textAlign: "center",
-    marginTop: 4,
-    marginBottom: spacing.xl,
+  // Antes 140x140 — a pedido del usuario, ahora ocupa buena parte del
+  // ancho de pantalla (75%), escalado desde Dimensions para verse bien
+  // tanto en un iPhone chico como en una tablet.
+  logo: {
+    alignSelf: "center",
+    width: ANCHO_PANTALLA * 0.75,
+    height: ANCHO_PANTALLA * 0.75,
+    marginBottom: spacing.lg,
   },
   card: {
     backgroundColor: colors.white,
@@ -111,7 +124,7 @@ const styles = StyleSheet.create({
   },
   label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
   input: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radius.sm,
     padding: 14,
@@ -120,6 +133,10 @@ const styles = StyleSheet.create({
     color: colors.textDark,
     backgroundColor: colors.offWhite,
   },
+  // Ronda 39, a pedido explícito del usuario: el borde cambia de color
+  // cuando el campo tiene el foco (onFocus/onBlur más arriba), para que
+  // quede claro en cuál se está escribiendo.
+  inputEnFoco: { borderColor: colors.navy900, borderWidth: 2 },
   error: { color: colors.danger, marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
   boton: {
     backgroundColor: colors.gold,

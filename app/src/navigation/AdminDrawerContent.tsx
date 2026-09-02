@@ -20,6 +20,23 @@ function useRutaActivaAnidada(): string | undefined {
   });
 }
 
+// Ronda 39, a pedido explícito del usuario (bug reportado: TODO el menú
+// tiraba "The action 'NAVIGATE' with payload {name:...}' was not handled").
+// El motivo: `props.navigation` acá es la navegación del DRAWER, que
+// registra una única pantalla llamada "AdminApp" (ver AdminDrawerNavigator
+// -> <Drawer.Screen name="AdminApp" component={AdminStackNavigator} />).
+// Llamar `.navigate("CambiarCondominio")` directo sobre esa navegación
+// buscaba una pantalla con ese nombre EN EL DRAWER, no la encontraba (vive
+// adentro del stack anidado), y fallaba — a menos que esa pantalla ya
+// hubiera sido visitada antes en la sesión (por eso el bug podía
+// "aparentar" funcionar a veces y no otras, según qué se hubiera abierto
+// antes). La forma correcta de navegar a una pantalla de un navegador
+// anidado desde un ancestro es nombrando explícitamente el navegador
+// contenedor + la pantalla destino.
+function navegarEnStack(navigation: DrawerContentComponentProps["navigation"], pantalla: string) {
+  (navigation as any).navigate("AdminApp", { screen: pantalla });
+}
+
 export default function AdminDrawerContent(props: DrawerContentComponentProps) {
   const { guardia, logout, nombreCondominioActual, rol } = useAuth();
   const rutaActiva = useRutaActivaAnidada();
@@ -35,7 +52,7 @@ export default function AdminDrawerContent(props: DrawerContentComponentProps) {
 
         <TouchableOpacity
           style={[styles.item, rutaActiva === "Home" && styles.itemActivo]}
-          onPress={() => props.navigation.navigate("Home" as never)}
+          onPress={() => navegarEnStack(props.navigation, "Home")}
           activeOpacity={0.7}
         >
           <Text style={styles.itemIcono}>🏡</Text>
@@ -51,7 +68,7 @@ export default function AdminDrawerContent(props: DrawerContentComponentProps) {
                 <TouchableOpacity
                   key={item.route}
                   style={[styles.item, activo && styles.itemActivo]}
-                  onPress={() => props.navigation.navigate(item.route as never)}
+                  onPress={() => navegarEnStack(props.navigation, item.route)}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.itemIcono}>{item.icon}</Text>
@@ -67,7 +84,7 @@ export default function AdminDrawerContent(props: DrawerContentComponentProps) {
         {rol === "Administrador" && (
           <TouchableOpacity
             style={styles.item}
-            onPress={() => props.navigation.navigate("CambiarCondominio" as never)}
+            onPress={() => navegarEnStack(props.navigation, "CambiarCondominio")}
             activeOpacity={0.7}
           >
             <Text style={styles.itemIcono}>🏘️</Text>
@@ -76,7 +93,7 @@ export default function AdminDrawerContent(props: DrawerContentComponentProps) {
         )}
         <TouchableOpacity
           style={styles.item}
-          onPress={() => props.navigation.navigate("CambiarPassword" as never)}
+          onPress={() => navegarEnStack(props.navigation, "CambiarPassword")}
           activeOpacity={0.7}
         >
           <Text style={styles.itemIcono}>🔑</Text>
