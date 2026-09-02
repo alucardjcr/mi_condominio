@@ -28,7 +28,10 @@ export const SECCIONES_MENU_ADMIN: SeccionMenu[] = [
   },
   {
     titulo: "Convivencia",
-    items: [{ label: "Amonestaciones y multas", route: "AdminAmonestaciones", icon: "📋" }],
+    items: [
+      { label: "Amonestaciones", route: "AdminAmonestaciones", icon: "📋" },
+      { label: "Multas", route: "AdminMultas", icon: "💰" },
+    ],
   },
   {
     titulo: "Personas",

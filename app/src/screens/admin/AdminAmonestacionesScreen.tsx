@@ -38,8 +38,21 @@ type Vista = "listado" | "nueva" | "tipos";
 // exclusiva del Administrador real es notificar una multa ya aprobada al
 // residente (ver handleNotificar, que oculta el botón si el rol no calza;
 // el backend igual lo vuelve a validar).
-export default function AdminAmonestacionesScreen() {
+//
+// Ronda 42, a pedido explícito del usuario: aunque por dentro es UN SOLO
+// registro/pantalla (una multa es, ni más ni menos, la amonestación que
+// además tiene plata de por medio — así venía diseñado desde el catálogo
+// original, donde "Multa económica" es uno de los 11 tipos de
+// amonestación, no una tabla aparte), en el menú se ven como dos entradas
+// separadas: "Amonestaciones" y "Multas". Se logra registrando esta MISMA
+// pantalla dos veces en la navegación con un `initialParams` distinto —
+// ver AdminStackNavigator.tsx — sin duplicar nada de la lógica de acá.
+export default function AdminAmonestacionesScreen({ route }: any) {
   const { token, rol } = useAuth();
+  // undefined = vista general (sin filtrar); true = entrada "Multas";
+  // false = entrada "Amonestaciones" (sin plata de por medio).
+  const soloMultas: boolean | undefined = route?.params?.soloMultas;
+
   const [vista, setVista] = useState<Vista>("listado");
 
   const [amonestaciones, setAmonestaciones] = useState<Amonestacion[]>([]);
@@ -71,10 +84,23 @@ export default function AdminAmonestacionesScreen() {
     }, [cargar])
   );
 
+  // Entrando desde "Amonestaciones" solo se ven/crean las que NO implican
+  // multa; entrando desde "Multas" solo las que sí. Si soloMultas es
+  // undefined (por si en algún momento se navega a esta pantalla sin
+  // pasar por el menú), no filtra nada.
+  const tiposAmonestacionFiltrados = useMemo(() => {
+    if (soloMultas === undefined) return tiposAmonestacion;
+    return tiposAmonestacion.filter((t) => !!t.flg_es_multa === soloMultas);
+  }, [tiposAmonestacion, soloMultas]);
+
   const amonestacionesFiltradas = useMemo(() => {
-    if (filtroEstado === "Todas") return amonestaciones;
-    return amonestaciones.filter((a) => a.estado === filtroEstado);
-  }, [amonestaciones, filtroEstado]);
+    let base = amonestaciones;
+    if (soloMultas !== undefined) {
+      base = base.filter((a) => !!a.flg_es_multa === soloMultas);
+    }
+    if (filtroEstado === "Todas") return base;
+    return base.filter((a) => a.estado === filtroEstado);
+  }, [amonestaciones, filtroEstado, soloMultas]);
 
   if (cargando) {
     return (
@@ -111,11 +137,12 @@ export default function AdminAmonestacionesScreen() {
           filtroEstado={filtroEstado}
           setFiltroEstado={setFiltroEstado}
           rol={rol}
+          soloMultas={soloMultas}
           onCambio={cargar}
         />
       )}
       {vista === "nueva" && (
-        <NuevaAmonestacion tiposAmonestacion={tiposAmonestacion} tiposMulta={tiposMulta} onCreada={() => { cargar(); setVista("listado"); }} />
+        <NuevaAmonestacion tiposAmonestacion={tiposAmonestacionFiltrados} tiposMulta={tiposMulta} onCreada={() => { cargar(); setVista("listado"); }} />
       )}
       {vista === "tipos" && (
         <GestionTipos tiposAmonestacion={tiposAmonestacion} tiposMulta={tiposMulta} onCambio={cargar} />
@@ -129,16 +156,29 @@ function Listado({
   filtroEstado,
   setFiltroEstado,
   rol,
+  soloMultas,
   onCambio,
 }: {
   amonestaciones: Amonestacion[];
   filtroEstado: string;
   setFiltroEstado: (v: string) => void;
   rol: string | null;
+  soloMultas: boolean | undefined;
   onCambio: () => void;
 }) {
   const { token } = useAuth();
   const [procesando, setProcesando] = useState<number | null>(null);
+
+  // Una amonestación normal (sin plata de por medio) solo pasa por
+  // "Enviada" — mostrarle los estados de aprobación de una multa sería
+  // puro ruido. Al revés, una multa nunca queda en "Enviada" (esa es
+  // justo la que se salta al pasar por aprobación).
+  const ESTADOS_CHIP =
+    soloMultas === true
+      ? ["Todas", "Pendiente de aprobación", "Aprobada", "Notificada", "Rechazada"]
+      : soloMultas === false
+        ? ["Todas", "Enviada"]
+        : ["Todas", "Pendiente de aprobación", "Aprobada", "Notificada", "Rechazada", "Enviada"];
 
   const handleAprobar = async (a: Amonestacion) => {
     if (!token) return;
@@ -197,7 +237,7 @@ function Listado({
   return (
     <ScrollView contentContainerStyle={styles.lista}>
       <View style={styles.filtroEstados}>
-        {["Todas", "Pendiente de aprobación", "Aprobada", "Notificada", "Rechazada", "Enviada"].map((e) => (
+        {ESTADOS_CHIP.map((e) => (
           <TouchableOpacity
             key={e}
             style={[styles.filtroChip, filtroEstado === e && styles.filtroChipActivo]}

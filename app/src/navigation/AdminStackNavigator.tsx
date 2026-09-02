@@ -92,7 +92,18 @@ export default function AdminStackNavigator() {
       <Stack.Screen name="AdminLogAuditoria" component={AdminLogAuditoriaScreen} options={{ title: "Registro de auditoría" }} />
       <Stack.Screen name="AdminRetencion" component={AdminRetencionScreen} options={{ title: "Retención de datos" }} />
       <Stack.Screen name="AdminIncidentes" component={AdminIncidentesScreen} options={{ title: "Incidentes de seguridad" }} />
-      <Stack.Screen name="AdminAmonestaciones" component={AdminAmonestacionesScreen} options={{ title: "Amonestaciones y multas" }} />
+      <Stack.Screen
+        name="AdminAmonestaciones"
+        component={AdminAmonestacionesScreen}
+        initialParams={{ soloMultas: false }}
+        options={{ title: "Amonestaciones" }}
+      />
+      <Stack.Screen
+        name="AdminMultas"
+        component={AdminAmonestacionesScreen}
+        initialParams={{ soloMultas: true }}
+        options={{ title: "Multas" }}
+      />
       <Stack.Screen name="Disponibilidad" component={DisponibilidadScreen} options={{ title: "Disponibilidad" }} />
       <Stack.Screen name="PaqueteBusqueda" component={PaqueteBusquedaScreen} options={{ title: "Buscar paquetes" }} />
       <Stack.Screen name="AdminGuardias" component={AdminGuardiasScreen} options={{ title: "Guardias" }} />
