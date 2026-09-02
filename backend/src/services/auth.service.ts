@@ -14,12 +14,43 @@ import { condominioEstaBloqueado } from "./facturacion.service";
 // falla rápido"), si falta JWT_SECRET el backend ni siquiera arranca — mejor
 // un error claro al desplegar que un agujero de seguridad silencioso en
 // producción.
+// Ronda 44, a pedido explícito del usuario (revisión de seguridad — "no
+// verifiqué la configuración real en producción"): antes solo se exigía
+// que JWT_SECRET EXISTIERA (ronda 36) — pero un valor corto o predecible
+// (ej. "secreto123", o copiar el placeholder de .env.example sin
+// cambiarlo) sigue siendo firmable por fuerza bruta o simplemente
+// adivinable. Ahora también se valida que sea razonablemente fuerte: al
+// menos 32 caracteres (recomendado para HMAC-SHA256, el algoritmo que usa
+// jsonwebtoken por defecto) y que no sea ninguno de los placeholders/
+// valores obviamente débiles más comunes.
+const VALORES_DEBILES = [
+  "secret",
+  "changeme",
+  "change-me",
+  "your-secret-here",
+  "genera-un-secreto-largo-y-aleatorio-aqui", // el placeholder literal de .env.example
+  "dev-secret-cambiar-en-produccion", // el default viejo que se usaba antes de la ronda 36
+  "12345678901234567890123456789012",
+];
+
 const JWT_SECRET: string = (() => {
   const valor = process.env.JWT_SECRET;
   if (!valor) {
     throw new Error(
       "Falta la variable de entorno JWT_SECRET. Sin ella el backend no puede firmar tokens de forma segura — " +
         "defínela antes de arrancar (ver backend/.env.example)."
+    );
+  }
+  if (valor.length < 32) {
+    throw new Error(
+      "JWT_SECRET es demasiado corto (mínimo 32 caracteres) — con un secreto corto, un token se puede falsificar " +
+        "por fuerza bruta. Genera uno largo y aleatorio (ej: openssl rand -base64 48) y configúralo antes de arrancar."
+    );
+  }
+  if (VALORES_DEBILES.includes(valor.toLowerCase())) {
+    throw new Error(
+      "JWT_SECRET es un valor de ejemplo/predecible conocido, no uno real — genera uno propio, largo y aleatorio " +
+        "(ej: openssl rand -base64 48) antes de arrancar."
     );
   }
   return valor;
@@ -92,6 +123,10 @@ export interface GuardiaAutenticado {
   // server-side qué puede ver (sus propios paquetes/reservas, nunca los de
   // otro depto) sin depender de lo que mande el cliente.
   unidad_id_unidad?: number;
+  // Ronda 44: "issued at" (segundos epoch) — lo agrega jsonwebtoken solo
+  // en cada token firmado; se usa para revocación de sesión (ver
+  // requireAuth en middleware/auth.ts).
+  iat?: number;
   numero_unidad?: string;
   nombre_torre?: string;
   // Solo puede venir en true cuando rol = 'Residente': es además miembro
@@ -275,6 +310,9 @@ export async function completarOnboardingResidente(
     .prepare(`UPDATE usuario SET usuariocol = ?, password_usuario = ? WHERE id_usuario = ?`)
     .run(usuariocol, hash, payload.id_usuario);
   await db.prepare(`DELETE FROM residente_onboarding_pendiente WHERE usuario_id_usuario = ?`).run(payload.id_usuario);
+  // El usuario/clave temporales que le dio el administrador ya no deberían
+  // servir para nada más — por si acaso alguien más los llegó a ver.
+  await revocarSesionesDeUsuario(payload.id_usuario);
 
   return resolverSesionParaUsuario(payload.id_usuario, payload.nombre_usuario);
 }
@@ -473,6 +511,17 @@ export function verificarToken(token: string): GuardiaAutenticado {
  * en particular para que un residente cambie la contraseña inicial que le
  * asignó el administrador al activarle el acceso.
  */
+// Ronda 44, a pedido explícito del usuario: ver la nota completa sobre
+// revocación de sesión en schema-mysql.sql, sobre usuario_sesion_revocada.
+export async function revocarSesionesDeUsuario(idUsuario: number) {
+  await db
+    .prepare(
+      `INSERT INTO usuario_sesion_revocada (usuario_id_usuario, fecha_revocado) VALUES (?, NOW())
+       ON DUPLICATE KEY UPDATE fecha_revocado = NOW()`
+    )
+    .run(idUsuario);
+}
+
 export async function cambiarPassword(idUsuario: number, passwordActual: string, passwordNueva: string) {
   const usuario = (await db
     .prepare(`SELECT password_usuario FROM usuario WHERE id_usuario = ? AND flg_vigencia = 1`)
@@ -488,6 +537,11 @@ export async function cambiarPassword(idUsuario: number, passwordActual: string,
 
   const hash = bcrypt.hashSync(passwordNueva, 10);
   await db.prepare(`UPDATE usuario SET password_usuario = ? WHERE id_usuario = ?`).run(hash, idUsuario);
+  // Al cambiar la clave, cualquier sesión vieja (ej. un celular perdido
+  // que alguien más tiene, o simplemente por las dudas) deja de servir —
+  // la persona que acaba de cambiar la clave ya tiene un token nuevo del
+  // propio login, así que a ELLA no la afecta.
+  await revocarSesionesDeUsuario(idUsuario);
 }
 
 // Cuántos minutos dura un código de recuperación antes de expirar.
@@ -605,4 +659,8 @@ export async function resetearPassword(identificador: string, codigo: string, pa
   await db
     .prepare(`UPDATE password_reset_token SET flg_usado = 1 WHERE id_passwordresettoken = ?`)
     .run(tokenVigente.id_passwordresettoken);
+  // Mismo motivo que en cambiarPassword: si alguien recuperó la clave
+  // porque sospechaba que se la habían visto, cualquier sesión vieja
+  // (la de quien la tenía antes) deja de servir de inmediato.
+  await revocarSesionesDeUsuario(usuario.id_usuario);
 }

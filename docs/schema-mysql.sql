@@ -541,6 +541,28 @@ CREATE TABLE IF NOT EXISTS usuario_push_token (
   INDEX idx_usuariopushtoken_usuario (usuario_id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 44, a pedido explícito del usuario (revisión de seguridad —
+-- "sin revocación de sesión"): antes, un token JWT ya emitido era válido
+-- hasta su expiración natural (hasta 30 días para Residente/Administrador)
+-- sin ninguna forma de "cortarlo" antes — si un celular se perdía/robaba,
+-- o si alguien cambiaba su contraseña porque sospechaba que se la habían
+-- visto, la sesión vieja seguía funcionando igual. Como los JWT son
+-- stateless (el servidor no guarda cada token emitido), la única forma de
+-- invalidar tokens ya entregados es una LISTA DE CORTES: cada fila acá
+-- dice "todo token de este usuario emitido ANTES de esta fecha ya no
+-- vale" — se consulta en cada request (ver middleware/auth.ts ->
+-- requireAuth) comparando contra el "iat" (issued at) del propio token.
+-- Se dispara automáticamente al cambiar la contraseña (cualquiera de las
+-- 3 formas: cambiarPassword, resetearPassword, completar el onboarding) y
+-- manualmente desde el panel de Administrador ("cerrar sesión remota" de
+-- un guardia/residente, ej. celular perdido).
+CREATE TABLE IF NOT EXISTS usuario_sesion_revocada (
+  usuario_id_usuario INT NOT NULL PRIMARY KEY,
+  fecha_revocado       DATETIME NOT NULL,
+  CONSTRAINT fk_usuariosesionrevocada_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ---------------------------------------------------------------------------
 -- Amonestaciones y multas (ronda 41), a pedido explícito del usuario.
 -- Catálogos del ERD original (`tipo_amonestacion` con 11 filas,

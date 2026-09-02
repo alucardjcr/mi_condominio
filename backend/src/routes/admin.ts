@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requirePerteneceAlCondominio } from "../middleware/auth";
+import { revocarSesionesDeUsuario } from "../services/auth.service";
 import {
   listarGuardias,
   crearGuardia,
@@ -1084,6 +1085,22 @@ adminRouter.post("/amonestaciones/:id/notificar", requirePerteneceAlCondominio("
   }
   try {
     res.json(await notificarMulta(Number(req.params.id), req.guardia!.id_usuario));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 44, a pedido explícito del usuario (revisión de seguridad — "sin
+// revocación de sesión"): permite forzar el cierre de cualquier sesión ya
+// abierta de un usuario del condominio — caso de uso real: un celular con
+// la app logeada se pierde o se lo roban, y hay que "cortar" el acceso sin
+// esperar a que el token expire solo (hasta 30 días para Residente/
+// Administrador). requirePerteneceAlCondominio evita que se pueda cerrar
+// la sesión de alguien de OTRO condominio.
+adminRouter.post("/usuarios/:id/cerrar-sesion", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
+  try {
+    await revocarSesionesDeUsuario(Number(req.params.id));
+    res.json({ ok: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

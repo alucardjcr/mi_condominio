@@ -14,6 +14,34 @@ const EXTENSION_POR_MIME: Record<string, string> = {
   "image/webp": "webp",
 };
 
+// Ronda 44, a pedido explícito del usuario (revisión de seguridad —
+// validación de subidas): antes solo se confiaba en el mimetype que el
+// propio cliente declara en el data URL ("data:image/jpeg;base64,...") —
+// nada impedía que alguien mandara CUALQUIER archivo (un ejecutable, un
+// script) etiquetado como si fuera una imagen; el servidor lo guardaba
+// igual y después lo servía de vuelta con Content-Type: image/jpeg. Ahora
+// se valida además la firma real de los primeros bytes del archivo
+// ("magic bytes") — no se puede falsificar solo cambiando el nombre/mime
+// declarado, porque el formato real del archivo tiene que coincidir.
+const MAGIC_BYTES: Record<string, (buffer: Buffer) => boolean> = {
+  "image/jpeg": (b) => b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  "image/jpg": (b) => b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  "image/png": (b) =>
+    b.length >= 8 &&
+    b[0] === 0x89 &&
+    b[1] === 0x50 &&
+    b[2] === 0x4e &&
+    b[3] === 0x47 &&
+    b[4] === 0x0d &&
+    b[5] === 0x0a &&
+    b[6] === 0x1a &&
+    b[7] === 0x0a,
+  "image/webp": (b) =>
+    b.length >= 12 &&
+    b.toString("ascii", 0, 4) === "RIFF" &&
+    b.toString("ascii", 8, 12) === "WEBP",
+};
+
 /**
  * Recibe un data URL ("data:image/jpeg;base64,....") como los que entrega
  * la cámara/firma en la app, lo decodifica y lo guarda (disco local o S3,
@@ -44,6 +72,14 @@ export async function guardarImagenBase64(
   const buffer = Buffer.from(base64, "base64");
   if (buffer.length === 0) {
     throw new Error(`La imagen de "${prefijo}" llegó vacía.`);
+  }
+  // El contenido real del archivo tiene que coincidir con el mime que
+  // declaró — ver la nota completa sobre MAGIC_BYTES más arriba.
+  const validador = MAGIC_BYTES[mime.toLowerCase()];
+  if (!validador || !validador(buffer)) {
+    throw new Error(
+      `El archivo de "${prefijo}" no es una imagen ${mime} válida (el contenido no coincide con el formato declarado).`
+    );
   }
   // Límite generoso (8 MB) para evitar que una foto sin comprimir llene el
   // disco (driver local) o genere un costo de storage innecesario (driver S3).

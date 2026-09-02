@@ -11,7 +11,7 @@ declare global {
   }
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Falta autenticación. Inicia sesión primero." });
@@ -19,7 +19,26 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
   try {
     const token = header.slice("Bearer ".length);
-    req.guardia = verificarToken(token);
+    const guardia = verificarToken(token);
+
+    // Ronda 44, a pedido explícito del usuario: revocación de sesión — ver
+    // la nota completa en schema-mysql.sql, sobre usuario_sesion_revocada.
+    // Se consulta en CADA request autenticada; el costo es una fila por
+    // id_usuario (índice por PK), despreciable para el tamaño de este
+    // sistema. FROM_UNIXTIME convierte el "iat" del token (segundos
+    // epoch) al mismo formato que fecha_revocado para comparar en SQL
+    // directamente — evita parsear fechas a mano en JS (con los líos de
+    // zona horaria/formato que eso trae).
+    if (guardia.iat) {
+      const revocado = await db
+        .prepare(`SELECT 1 FROM usuario_sesion_revocada WHERE usuario_id_usuario = ? AND fecha_revocado > FROM_UNIXTIME(?)`)
+        .get(guardia.id_usuario, guardia.iat);
+      if (revocado) {
+        return res.status(401).json({ error: "Tu sesión fue cerrada remotamente. Vuelve a iniciar sesión." });
+      }
+    }
+
+    req.guardia = guardia;
     next();
   } catch {
     return res.status(401).json({ error: "Sesión inválida o expirada. Vuelve a iniciar sesión." });
