@@ -41,7 +41,7 @@ miDeptoRouter.get("/residentes", soloResidente, async (req, res) => {
 miDeptoRouter.post("/residentes", soloResidente, async (req, res) => {
   try {
     if (rechazarSiNoEsPropietario(req, res)) return;
-    const { nombre_usuario, tipo_residente_id_tiporesidente } = req.body;
+    const { nombre_usuario, tipo_residente_id_tiporesidente, rut, fecha_nacimiento, profesion } = req.body;
     if (!nombre_usuario) {
       return res.status(400).json({ error: "Falta el campo nombre_usuario." });
     }
@@ -57,6 +57,9 @@ miDeptoRouter.post("/residentes", soloResidente, async (req, res) => {
         condominio_id_condominio: condominioId,
         tipo_residente_id_tiporesidente:
           tipo_residente_id_tiporesidente !== undefined ? Number(tipo_residente_id_tiporesidente) : undefined,
+        rut: rut || undefined,
+        fecha_nacimiento: fecha_nacimiento || undefined,
+        profesion: profesion || undefined,
       })
     );
   } catch (err: any) {
@@ -76,7 +79,7 @@ miDeptoRouter.patch("/residentes/:id", soloResidente, async (req, res) => {
         .status(400)
         .json({ error: "No puedes desactivarte a ti mismo desde acá. Pide al Administrador que lo haga si corresponde." });
     }
-    const { nombre_usuario, flg_vigencia, tipo_residente_id_tiporesidente } = req.body;
+    const { nombre_usuario, flg_vigencia, tipo_residente_id_tiporesidente, rut, fecha_nacimiento, profesion } = req.body;
     // Deliberadamente NO se aceptan acá flg_comite ni flg_propietario: el
     // dueño administra a quién vive en su depto y a qué título, pero no
     // puede otorgarse (ni quitarle a otro) permisos de comité o de
@@ -92,6 +95,9 @@ miDeptoRouter.patch("/residentes/:id", soloResidente, async (req, res) => {
               ? null
               : Number(tipo_residente_id_tiporesidente)
             : undefined,
+        rut: "rut" in req.body ? rut : undefined,
+        fecha_nacimiento: "fecha_nacimiento" in req.body ? fecha_nacimiento : undefined,
+        profesion: "profesion" in req.body ? profesion : undefined,
       })
     );
   } catch (err: any) {

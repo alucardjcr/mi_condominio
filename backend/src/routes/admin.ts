@@ -114,7 +114,7 @@ adminRouter.get("/residentes", async (req, res) => {
 
 adminRouter.post("/residentes", async (req, res) => {
   try {
-    const { nombre_usuario, unidad_id_unidad, tipo_residente_id_tiporesidente, flg_propietario } = req.body;
+    const { nombre_usuario, unidad_id_unidad, tipo_residente_id_tiporesidente, flg_propietario, rut, fecha_nacimiento, profesion } = req.body;
     if (!nombre_usuario || !unidad_id_unidad) {
       return res.status(400).json({ error: "Faltan campos: nombre_usuario, unidad_id_unidad." });
     }
@@ -126,6 +126,11 @@ adminRouter.post("/residentes", async (req, res) => {
         condominio_id_condominio: condominioId,
         tipo_residente_id_tiporesidente: tipo_residente_id_tiporesidente !== undefined ? Number(tipo_residente_id_tiporesidente) : undefined,
         flg_propietario: flg_propietario !== undefined ? Number(flg_propietario) : undefined,
+        // Ronda 36: los 3 son opcionales a propósito — no todo residente
+        // los va a tener cargados.
+        rut: rut || undefined,
+        fecha_nacimiento: fecha_nacimiento || undefined,
+        profesion: profesion || undefined,
       })
     );
   } catch (err: any) {
@@ -135,7 +140,7 @@ adminRouter.post("/residentes", async (req, res) => {
 
 adminRouter.patch("/residentes/:id", async (req, res) => {
   try {
-    const { nombre_usuario, unidad_id_unidad, flg_vigencia, password, flg_comite, tipo_residente_id_tiporesidente, flg_propietario } =
+    const { nombre_usuario, unidad_id_unidad, flg_vigencia, password, flg_comite, tipo_residente_id_tiporesidente, flg_propietario, rut, fecha_nacimiento, profesion } =
       req.body;
     // Nombrar/quitar gente del comité es una potestad exclusiva del
     // Administrador real (rol === "Administrador"), aunque el resto de esta
@@ -165,6 +170,13 @@ adminRouter.patch("/residentes/:id", async (req, res) => {
               : Number(tipo_residente_id_tiporesidente)
             : undefined,
         flg_propietario: flg_propietario !== undefined ? Number(flg_propietario) : undefined,
+        // Ronda 36: 'rut'/'fecha_nacimiento'/'profesion' en 'in req.body'
+        // porque pueden venir como null explícito (borrar el dato) — con
+        // !== undefined se perdería ese caso, igual que ya se cuida en
+        // /admin/estacionamientos/:id.
+        rut: "rut" in req.body ? rut : undefined,
+        fecha_nacimiento: "fecha_nacimiento" in req.body ? fecha_nacimiento : undefined,
+        profesion: "profesion" in req.body ? profesion : undefined,
       })
     );
   } catch (err: any) {

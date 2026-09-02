@@ -31,6 +31,17 @@ export default function MiHogarScreen() {
   const [tipoResidenteSel, setTipoResidenteSel] = useState<OpcionSelect | null>(null);
   const [creando, setCreando] = useState(false);
 
+  // Ronda 36, a pedido explícito del usuario: datos adicionales opcionales.
+  const [rutNuevo, setRutNuevo] = useState("");
+  const [fechaNacimientoNuevo, setFechaNacimientoNuevo] = useState("");
+  const [profesionNuevo, setProfesionNuevo] = useState("");
+
+  const [perfilEnEdicion, setPerfilEnEdicion] = useState<number | null>(null);
+  const [rutEditar, setRutEditar] = useState("");
+  const [fechaNacimientoEditar, setFechaNacimientoEditar] = useState("");
+  const [profesionEditar, setProfesionEditar] = useState("");
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
+
   const [tipoEnEdicion, setTipoEnEdicion] = useState<number | null>(null);
 
   const cargar = useCallback(async () => {
@@ -66,14 +77,45 @@ export default function MiHogarScreen() {
       await crearResidenteDelHogar(token, {
         nombre_usuario: nombre.trim(),
         tipo_residente_id_tiporesidente: tipoResidenteSel ? Number(tipoResidenteSel.id) : undefined,
+        rut: rutNuevo.trim() || undefined,
+        fecha_nacimiento: fechaNacimientoNuevo.trim() || undefined,
+        profesion: profesionNuevo.trim() || undefined,
       });
       setNombre("");
       setTipoResidenteSel(null);
+      setRutNuevo("");
+      setFechaNacimientoNuevo("");
+      setProfesionNuevo("");
       cargar();
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
       setCreando(false);
+    }
+  };
+
+  const handleAbrirPerfil = (r: ResidenteAdmin) => {
+    setPerfilEnEdicion(r.id_usuario);
+    setRutEditar(r.rut ?? "");
+    setFechaNacimientoEditar(r.fecha_nacimiento ?? "");
+    setProfesionEditar(r.profesion ?? "");
+  };
+
+  const handleGuardarPerfil = async (id: number) => {
+    if (!token) return;
+    setGuardandoPerfil(true);
+    try {
+      await actualizarResidenteDelHogar(token, id, {
+        rut: rutEditar.trim() || null,
+        fecha_nacimiento: fechaNacimientoEditar.trim() || null,
+        profesion: profesionEditar.trim() || null,
+      });
+      setPerfilEnEdicion(null);
+      cargar();
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    } finally {
+      setGuardandoPerfil(false);
     }
   };
 
@@ -141,6 +183,26 @@ export default function MiHogarScreen() {
               valorSeleccionado={tipoResidenteSel}
               onSeleccionar={setTipoResidenteSel}
             />
+            <TextInput
+              style={styles.input}
+              placeholder="RUT (opcional)"
+              value={rutNuevo}
+              onChangeText={setRutNuevo}
+              autoCapitalize="characters"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Fecha de nacimiento AAAA-MM-DD (opcional)"
+              value={fechaNacimientoNuevo}
+              onChangeText={setFechaNacimientoNuevo}
+              keyboardType="numbers-and-punctuation"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Profesión (opcional)"
+              value={profesionNuevo}
+              onChangeText={setProfesionNuevo}
+            />
             <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
               <Text style={styles.botonCrearTexto}>{creando ? "Agregando..." : "Agregar"}</Text>
             </TouchableOpacity>
@@ -191,6 +253,54 @@ export default function MiHogarScreen() {
                 <Text style={styles.enlaceCerrar}>Cerrar</Text>
               </TouchableOpacity>
             </View>
+          )}
+
+          {perfilEnEdicion === item.id_usuario ? (
+            <View style={styles.tipoForm}>
+              <TextInput
+                style={styles.input}
+                placeholder="RUT (opcional)"
+                value={rutEditar}
+                onChangeText={setRutEditar}
+                autoCapitalize="characters"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Fecha de nacimiento AAAA-MM-DD (opcional)"
+                value={fechaNacimientoEditar}
+                onChangeText={setFechaNacimientoEditar}
+                keyboardType="numbers-and-punctuation"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Profesión (opcional)"
+                value={profesionEditar}
+                onChangeText={setProfesionEditar}
+              />
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TouchableOpacity
+                  style={[styles.botonToggle, styles.botonActivar, { flex: 1 }]}
+                  onPress={() => handleGuardarPerfil(item.id_usuario)}
+                  disabled={guardandoPerfil}
+                >
+                  <Text style={styles.botonToggleTexto}>{guardandoPerfil ? "Guardando..." : "Guardar"}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]}
+                  onPress={() => setPerfilEnEdicion(null)}
+                >
+                  <Text style={styles.botonToggleTexto}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={() => handleAbrirPerfil(item)}>
+              <Text style={styles.tipoTexto}>
+                {item.rut || item.fecha_nacimiento || item.profesion
+                  ? `RUT ${item.rut ?? "—"} · Nac. ${item.fecha_nacimiento ?? "—"} · ${item.profesion ?? "Sin profesión"}`
+                  : "+ Agregar RUT / fecha de nacimiento / profesión"}
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
       )}

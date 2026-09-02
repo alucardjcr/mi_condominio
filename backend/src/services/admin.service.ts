@@ -65,18 +65,55 @@ export async function listarResidentes(unidadId?: number) {
   const base = `SELECT u.id_usuario, u.nombre_usuario, u.unidad_id_unidad, u.flg_vigencia, u.usuariocol, u.flg_comite, u.flg_propietario,
                        un.numero_unidad, tb.nombre_torre,
                        rd.id_residentediscapacitado, rd.numero_carnet,
-                       u.tipo_residente_id_tiporesidente, tr.gls_tiporesidente
+                       u.tipo_residente_id_tiporesidente, tr.gls_tiporesidente,
+                       rp.rut, rp.fecha_nacimiento, rp.profesion
                 FROM usuario u
                 JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
                 JOIN unidad un ON un.id_unidad = u.unidad_id_unidad
                 JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
                 LEFT JOIN residente_discapacitado rd ON rd.usuario_id_usuario = u.id_usuario AND rd.flg_vigencia = 1
                 LEFT JOIN tipo_residente tr ON tr.id_tiporesidente = u.tipo_residente_id_tiporesidente
+                LEFT JOIN residente_perfil rp ON rp.usuario_id_usuario = u.id_usuario
                 WHERE tu.gls_tipousuario = 'Residente'`;
   if (unidadId) {
     return db.prepare(`${base} AND u.unidad_id_unidad = ? ORDER BY u.nombre_usuario`).all(unidadId);
   }
   return db.prepare(`${base} ORDER BY tb.nombre_torre, un.numero_unidad, u.nombre_usuario`).all();
+}
+
+// Ronda 36, a pedido explícito del usuario: datos adicionales opcionales
+// del residente (RUT, fecha de nacimiento, profesión) — ver la nota
+// completa en schema-mysql.sql sobre por qué es una tabla aparte. Todos
+// los campos son independientes entre sí: mandar solo uno no borra los
+// otros dos (mismo patrón que actualizarEstacionamientoAdmin con
+// patente/flg_arrendado/tipo_ocupante).
+export interface PerfilResidenteInput {
+  rut?: string | null;
+  fecha_nacimiento?: string | null; // 'YYYY-MM-DD'
+  profesion?: string | null;
+}
+
+async function actualizarPerfilResidente(idUsuario: number, input: PerfilResidenteInput) {
+  const tocaAlgo = input.rut !== undefined || input.fecha_nacimiento !== undefined || input.profesion !== undefined;
+  if (!tocaAlgo) return;
+
+  const existente = (await db
+    .prepare(`SELECT id_residenteperfil, rut, fecha_nacimiento, profesion FROM residente_perfil WHERE usuario_id_usuario = ?`)
+    .get(idUsuario)) as { id_residenteperfil: number; rut: string | null; fecha_nacimiento: string | null; profesion: string | null } | undefined;
+
+  const rut = input.rut !== undefined ? input.rut : existente?.rut ?? null;
+  const fechaNacimiento = input.fecha_nacimiento !== undefined ? input.fecha_nacimiento : existente?.fecha_nacimiento ?? null;
+  const profesion = input.profesion !== undefined ? input.profesion : existente?.profesion ?? null;
+
+  if (existente) {
+    await db
+      .prepare(`UPDATE residente_perfil SET rut = ?, fecha_nacimiento = ?, profesion = ? WHERE id_residenteperfil = ?`)
+      .run(rut, fechaNacimiento, profesion, existente.id_residenteperfil);
+  } else {
+    await db
+      .prepare(`INSERT INTO residente_perfil (usuario_id_usuario, rut, fecha_nacimiento, profesion) VALUES (?, ?, ?, ?)`)
+      .run(idUsuario, rut, fechaNacimiento, profesion);
+  }
 }
 
 export async function crearResidente(input: {
@@ -85,6 +122,9 @@ export async function crearResidente(input: {
   condominio_id_condominio: number;
   tipo_residente_id_tiporesidente?: number;
   flg_propietario?: number;
+  rut?: string;
+  fecha_nacimiento?: string;
+  profesion?: string;
 }) {
   const tipoResidenteUsuarioId = await getIdByGls("tipo_usuario", "id_tipousuario", "gls_tipousuario", "Residente");
   // A lo más un dueño por unidad (ronda 15): si se crea directamente como
@@ -111,6 +151,13 @@ export async function crearResidente(input: {
   // usuariocol/password, ver activarAccesoResidente) pero ya le dejamos
   // lista su membresía a este condominio para cuando se active.
   await sincronizarMembresiaPrincipal(id);
+  if (input.rut || input.fecha_nacimiento || input.profesion) {
+    await actualizarPerfilResidente(id, {
+      rut: input.rut ?? null,
+      fecha_nacimiento: input.fecha_nacimiento ?? null,
+      profesion: input.profesion ?? null,
+    });
+  }
   return db
     .prepare(
       `SELECT id_usuario, nombre_usuario, unidad_id_unidad, flg_vigencia, tipo_residente_id_tiporesidente, flg_propietario FROM usuario WHERE id_usuario = ?`
@@ -136,6 +183,9 @@ export async function actualizarResidente(
     flg_comite?: number;
     tipo_residente_id_tiporesidente?: number | null;
     flg_propietario?: number;
+    rut?: string | null;
+    fecha_nacimiento?: string | null;
+    profesion?: string | null;
   }
 ) {
   if (input.nombre_usuario !== undefined) {
@@ -195,6 +245,11 @@ export async function actualizarResidente(
     await db.prepare(`UPDATE usuario SET password_usuario = ? WHERE id_usuario = ?`).run(hash, id);
   }
   await sincronizarMembresiaPrincipal(id);
+  await actualizarPerfilResidente(id, {
+    rut: input.rut,
+    fecha_nacimiento: input.fecha_nacimiento,
+    profesion: input.profesion,
+  });
   return db
     .prepare(
       `SELECT id_usuario, nombre_usuario, unidad_id_unidad, flg_vigencia, usuariocol, flg_comite, tipo_residente_id_tiporesidente, flg_propietario FROM usuario WHERE id_usuario = ?`

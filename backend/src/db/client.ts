@@ -13,12 +13,29 @@ const DB_USER = process.env.DB_USER || "root";
 const DB_PASSWORD = process.env.DB_PASSWORD || "";
 const DB_NAME = process.env.DB_NAME || "mi_condominio";
 
+// Ronda 36, a pedido explícito del usuario (revisión de encriptación): antes
+// la conexión al motor de base de datos no forzaba TLS, así que si el
+// proveedor no lo exige por su cuenta, todo lo que viaja entre el backend y
+// la base (incluidas las contraseñas ya hasheadas, RUTs, patentes, etc.)
+// podía ir sin cifrar por la red. Queda como variable de entorno — DB_SSL,
+// apagado por defecto — porque en desarrollo local (MySQL/MariaDB en
+// 127.0.0.1, sin certificado configurado) forzarlo rompería la conexión;
+// en producción (Railway u otro proveedor) conviene prenderlo si el
+// proveedor lo soporta. Ver backend/.env.example.
+const DB_SSL = process.env.DB_SSL === "true";
+// Algunos proveedores (incluido Railway en varios planes) usan un
+// certificado que Node no puede validar contra una CA conocida — esta
+// variable es el escape hatch si DB_SSL=true tira error de certificado; por
+// defecto sí valida (más seguro).
+const DB_SSL_REJECT_UNAUTHORIZED = process.env.DB_SSL_REJECT_UNAUTHORIZED !== "false";
+
 export const pool: Pool = mysql.createPool({
   host: DB_HOST,
   port: DB_PORT,
   user: DB_USER,
   password: DB_PASSWORD,
   database: DB_NAME,
+  ssl: DB_SSL ? { rejectUnauthorized: DB_SSL_REJECT_UNAUTHORIZED } : undefined,
   waitForConnections: true,
   connectionLimit: 10,
   // Las columnas VARCHAR con fechas ISO (ver la nota en schema-mysql.sql

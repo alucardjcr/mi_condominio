@@ -4,7 +4,26 @@ import { db } from "../db/client";
 import { verificarTurnoParaLogin } from "./turnos.service";
 import { condominioEstaBloqueado } from "./facturacion.service";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-cambiar-en-produccion";
+// Ronda 36, a pedido explícito del usuario (revisión de encriptación): antes
+// había un valor por defecto ("dev-secret-cambiar-en-produccion") si no se
+// configuraba JWT_SECRET — si alguien desplegaba el backend sin fijar esta
+// variable, quedaba firmando tokens con un secreto público y predecible
+// (literalmente el que aparece en este archivo), y cualquiera podría
+// falsificar un token de Administrador. Ahora, igual que ya hacía la
+// conexión a la base de datos (ver db/client.ts -> initSchema, "el backend
+// falla rápido"), si falta JWT_SECRET el backend ni siquiera arranca — mejor
+// un error claro al desplegar que un agujero de seguridad silencioso en
+// producción.
+const JWT_SECRET: string = (() => {
+  const valor = process.env.JWT_SECRET;
+  if (!valor) {
+    throw new Error(
+      "Falta la variable de entorno JWT_SECRET. Sin ella el backend no puede firmar tokens de forma segura — " +
+        "defínela antes de arrancar (ver backend/.env.example)."
+    );
+  }
+  return valor;
+})();
 
 // Duración del token, distinta por rol (ronda 17). Guardia mantiene 12h
 // ("dura un turno de guardia" — además suele ser un dispositivo compartido

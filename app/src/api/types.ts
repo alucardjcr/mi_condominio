@@ -227,6 +227,11 @@ export interface ResidenteAdmin {
   // ver /mi-depto/* y MiHogarScreen. A lo más un residente por unidad
   // debería tener este flag en 1.
   flg_propietario: number;
+  // Ronda 36, a pedido explícito del usuario: datos adicionales opcionales
+  // — no todo residente los va a tener cargados.
+  rut: string | null;
+  fecha_nacimiento: string | null; // 'YYYY-MM-DD'
+  profesion: string | null;
 }
 
 export interface TipoResidente {

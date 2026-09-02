@@ -199,6 +199,26 @@ CREATE TABLE IF NOT EXISTS residente_discapacitado (
     REFERENCES usuario (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 36, a pedido explícito del usuario: datos adicionales opcionales
+-- del residente — RUT, fecha de nacimiento y profesión. Se modela como
+-- tabla aparte (1 a 1 con usuario), no como columnas nuevas en `usuario`,
+-- mismo criterio conservador de siempre en este archivo (solo agregar
+-- tablas, nunca ALTER TABLE sobre una existente). TODOS los campos son
+-- opcionales a propósito: no todo residente los va a tener cargados, y
+-- ninguno es indispensable para que la app funcione (a diferencia del
+-- depto o el usuario/clave). Ver el criterio de minimización de datos
+-- (Ley 21.719) antes de agregar más campos acá — cada uno debería tener
+-- un uso real dentro de la app, no guardarse "por si acaso".
+CREATE TABLE IF NOT EXISTS residente_perfil (
+  id_residenteperfil INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id_usuario  INT NOT NULL UNIQUE,
+  rut                  VARCHAR(15) NULL,
+  fecha_nacimiento      DATE NULL,
+  profesion             VARCHAR(100) NULL,
+  CONSTRAINT fk_residenteperfil_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Ronda 26: multi-condominio para Administrador — un mismo administrador
 -- puede llevar más de un condominio (ej. "Valles de Varoli" y "Altos de
 -- San Miguel") con la MISMA cuenta (usuariocol/password), eligiendo a cuál

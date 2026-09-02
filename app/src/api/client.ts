@@ -254,6 +254,9 @@ export const adminCrearResidente = (
     unidad_id_unidad: number;
     tipo_residente_id_tiporesidente?: number;
     flg_propietario?: number;
+    rut?: string;
+    fecha_nacimiento?: string;
+    profesion?: string;
   }
 ) => send<ResidenteAdmin>(`/admin/residentes`, "POST", token, input);
 
@@ -268,6 +271,9 @@ export const adminActualizarResidente = (
     flg_comite?: number;
     tipo_residente_id_tiporesidente?: number | null;
     flg_propietario?: number;
+    rut?: string | null;
+    fecha_nacimiento?: string | null;
+    profesion?: string | null;
   }
 ) => send<ResidenteAdmin>(`/admin/residentes/${id}`, "PATCH", token, input);
 
@@ -440,13 +446,26 @@ export const getMisResidentesDelHogar = (token: string) => get<ResidenteAdmin[]>
 
 export const crearResidenteDelHogar = (
   token: string,
-  input: { nombre_usuario: string; tipo_residente_id_tiporesidente?: number }
+  input: {
+    nombre_usuario: string;
+    tipo_residente_id_tiporesidente?: number;
+    rut?: string;
+    fecha_nacimiento?: string;
+    profesion?: string;
+  }
 ) => send<ResidenteAdmin>(`/mi-depto/residentes`, "POST", token, input);
 
 export const actualizarResidenteDelHogar = (
   token: string,
   id: number,
-  input: { nombre_usuario?: string; flg_vigencia?: number; tipo_residente_id_tiporesidente?: number | null }
+  input: {
+    nombre_usuario?: string;
+    flg_vigencia?: number;
+    tipo_residente_id_tiporesidente?: number | null;
+    rut?: string | null;
+    fecha_nacimiento?: string | null;
+    profesion?: string | null;
+  }
 ) => send<ResidenteAdmin>(`/mi-depto/residentes/${id}`, "PATCH", token, input);
 
 // --- Notificaciones (ronda 16) ---------------------------------------------
