@@ -186,13 +186,18 @@ adminRouter.patch("/residentes/:id", async (req, res) => {
 
 // --- Acceso a la app (login) para residentes -------------------------------
 
+// Ronda 37, a pedido explícito del usuario: ya no se le pide al
+// administrador escribir un usuario/clave — el sistema genera un usuario
+// temporal ("<siglas>_residente_<depto>") y una clave aleatoria de un solo
+// uso (ver activarAccesoResidente en admin.service.ts), que quedan en la
+// respuesta UNA sola vez para que el administrador se los pase al
+// residente. La primera vez que entre, la app lo va a obligar a elegir su
+// usuario/clave definitivos. `usuariocol` en el body es opcional, por si
+// el administrador igual quiere fijar uno a mano.
 adminRouter.post("/residentes/:id/acceso", async (req, res) => {
   try {
-    const { usuariocol, password } = req.body;
-    if (!usuariocol || !password) {
-      return res.status(400).json({ error: "Faltan campos: usuariocol, password." });
-    }
-    res.status(201).json(await activarAccesoResidente(Number(req.params.id), { usuariocol, password }));
+    const { usuariocol } = req.body;
+    res.status(201).json(await activarAccesoResidente(Number(req.params.id), { usuariocol }));
   } catch (err: any) {
     res.status(400).json({ error: esDuplicado(err) ? "Ese nombre de usuario ya existe." : err.message });
   }

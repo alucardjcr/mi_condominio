@@ -11,6 +11,7 @@ import { colors, navHeaderOptions } from "./src/theme/theme";
 import AdminDrawerNavigator from "./src/navigation/AdminDrawerNavigator";
 import SuperAdminStackNavigator from "./src/navigation/SuperAdminStackNavigator";
 import PagoPendienteScreen from "./src/screens/PagoPendienteScreen";
+import OnboardingResidenteScreen from "./src/screens/OnboardingResidenteScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import RecuperarPasswordScreen from "./src/screens/RecuperarPasswordScreen";
 import AvisoPrivacidadScreen from "./src/screens/AvisoPrivacidadScreen";
@@ -50,7 +51,7 @@ import JefeGuardiasGuardiasScreen from "./src/screens/jefeguardias/JefeGuardiasG
 const Stack = createNativeStackNavigator();
 
 function AppNavigator() {
-  const { token, rol, esAdmin, restaurandoSesion, requiereSeleccionCondominio, pagoPendiente } = useAuth();
+  const { token, rol, esAdmin, restaurandoSesion, requiereSeleccionCondominio, pagoPendiente, requiereOnboarding } = useAuth();
   const esSuperAdmin = rol === "SuperAdmin";
   // Un residente del comité (esAdmin=true aunque rol="Residente") navega
   // igual que Administrador, no por la rama de Residente.
@@ -77,7 +78,20 @@ function AppNavigator() {
 
   return (
     <Stack.Navigator screenOptions={navHeaderOptions}>
-      {!token && pagoPendiente ? (
+      {!token && requiereOnboarding ? (
+        // Ronda 37, a pedido explícito del usuario: el administrador le
+        // activó el acceso a este residente con un usuario/clave
+        // temporales — antes de dejarlo ver CUALQUIER otra cosa (ni
+        // siquiera el selector de condominio o el aviso de pago
+        // pendiente, que dependen de tener ya una sesión resuelta), tiene
+        // que elegir su usuario definitivo y su propia contraseña. Va
+        // primero en el orden de chequeos por eso mismo.
+        <Stack.Screen
+          name="OnboardingResidente"
+          component={OnboardingResidenteScreen}
+          options={{ headerShown: false }}
+        />
+      ) : !token && pagoPendiente ? (
         // Ronda 27, a pedido del usuario: todos los condominios de esta
         // cuenta tienen la mensualidad pendiente — ver
         // AuthContext.pagoPendiente. Se corta ANTES que Login/selector:

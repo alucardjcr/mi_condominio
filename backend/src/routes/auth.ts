@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, cambiarPassword, solicitarRecuperacion, resetearPassword, seleccionarCondominio } from "../services/auth.service";
+import { login, cambiarPassword, solicitarRecuperacion, resetearPassword, seleccionarCondominio, completarOnboardingResidente } from "../services/auth.service";
 import { registrarPushToken } from "../services/notificaciones.service";
 import { requireAuth } from "../middleware/auth";
 
@@ -37,6 +37,24 @@ authRouter.post("/seleccionar-condominio", async (req, res) => {
     res.json(resultado);
   } catch (err: any) {
     res.status(401).json({ error: err.message });
+  }
+});
+
+// POST /auth/completar-onboarding -> paso 2 de un residente al que el
+// administrador le activó el acceso (ver login() -> requiereOnboarding).
+// Recibe el token intermedio que devolvió /auth/login junto con el
+// usuario y la clave que la persona eligió, y entrega el token final —
+// entra directo, sin tener que loguearse de nuevo desde cero.
+authRouter.post("/completar-onboarding", async (req, res) => {
+  try {
+    const { token, usuariocol_nuevo, password_nuevo } = req.body;
+    if (!token || !usuariocol_nuevo || !password_nuevo) {
+      return res.status(400).json({ error: "Faltan campos: token, usuariocol_nuevo, password_nuevo." });
+    }
+    const resultado = await completarOnboardingResidente(token, usuariocol_nuevo, password_nuevo);
+    res.json(resultado);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
 });
 

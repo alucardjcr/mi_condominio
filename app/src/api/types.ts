@@ -145,6 +145,17 @@ export interface PagoPendienteResponse {
   rol: string;
 }
 
+// Ronda 37, a pedido explícito del usuario: cuando el administrador le
+// activó el acceso a un residente (usuario/clave temporales generados
+// automáticamente), la PRIMERA vez que ese residente hace login,
+// POST /auth/login devuelve esto en vez de LoginResponse — la app tiene
+// que obligarlo a elegir su usuario definitivo (único) y su clave propia
+// ANTES de dejarlo ver cualquier otra cosa. Ver OnboardingResidenteScreen.
+export interface RequiereOnboardingResponse {
+  requiereOnboarding: true;
+  token: string; // token intermedio: solo sirve para POST /auth/completar-onboarding
+}
+
 // Ronda 26 (fase 2): ya no es exclusivo de Administrador — cualquier rol
 // puede tener más de un condominio con la MISMA cuenta.
 export interface RequiereSeleccionCondominioResponse {
@@ -232,6 +243,11 @@ export interface ResidenteAdmin {
   rut: string | null;
   fecha_nacimiento: string | null; // 'YYYY-MM-DD'
   profesion: string | null;
+  // Ronda 37: SOLO viene presente en la respuesta de
+  // adminActivarAccesoResidente — la clave temporal recién generada, para
+  // que el administrador se la comunique al residente. No se puede volver
+  // a consultar después (queda guardada hasheada).
+  password_temporal?: string;
 }
 
 export interface TipoResidente {

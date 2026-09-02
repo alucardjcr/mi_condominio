@@ -267,30 +267,96 @@ export async function actualizarResidente(
 // endpoint /auth/login que ya usan guardias y administrador.
 // ---------------------------------------------------------------------------
 
-export async function activarAccesoResidente(id: number, input: { usuariocol: string; password: string }) {
-  const residente = await db
+export async function activarAccesoResidente(id: number, input?: { usuariocol?: string }) {
+  const residente = (await db
     .prepare(
-      `SELECT u.id_usuario FROM usuario u
+      `SELECT u.id_usuario, u.usuariocol, un.numero_unidad, c.gls_condominio
+       FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
+       JOIN unidad un ON un.id_unidad = u.unidad_id_unidad
+       JOIN condominio c ON c.id_condominio = u.condominio_id_condominio
        WHERE u.id_usuario = ? AND tu.gls_tipousuario = 'Residente'`
     )
-    .get(id);
+    .get(id)) as { id_usuario: number; usuariocol: string | null; numero_unidad: string; gls_condominio: string } | undefined;
   if (!residente) throw new Error("No existe ese residente.");
 
-  const usuariocol = input.usuariocol.trim();
-  if (!usuariocol || !input.password) {
-    throw new Error("Faltan campos: usuariocol, password.");
+  // Ronda 37, a pedido explícito del usuario: en vez de que el
+  // administrador escriba a mano un usuario y clave definitivos, el
+  // sistema genera un usuario TEMPORAL — "<siglas del condominio>_
+  // residente_<depto>" (ej. "VDV_residente_419" para Valles de Varoli,
+  // depto 419) — y una clave aleatoria de un solo uso. La primera vez que
+  // el residente entra, la app lo obliga a elegir su usuario definitivo
+  // (único) y su propia clave (ver login()/completarOnboardingResidente en
+  // auth.service.ts). El administrador puede opcionalmente pasar un
+  // usuariocol propio (input?.usuariocol) si por algún motivo no quiere el
+  // generado — igual queda sujeto al onboarding obligatorio.
+  //
+  // Esta MISMA función sirve tanto para "activar por primera vez" como
+  // para "restablecer contraseña" (usada así desde AdminResidentesScreen):
+  // si el residente YA tenía un usuariocol (elegido por él mismo en un
+  // onboarding anterior, o generado antes) y el administrador no mandó uno
+  // explícito, se CONSERVA — un restablecimiento de clave no debería
+  // forzarlo a aprenderse un usuario nuevo también.
+  let usuariocol = input?.usuariocol?.trim();
+  if (usuariocol) {
+    const enUso = await db.prepare(`SELECT 1 FROM usuario WHERE usuariocol = ? AND id_usuario != ?`).get(usuariocol, id);
+    if (enUso) throw new Error(`El usuario "${usuariocol}" ya está en uso.`);
+  } else if (residente.usuariocol) {
+    usuariocol = residente.usuariocol;
+  } else {
+    const sigla = generarSiglaCondominio(residente.gls_condominio);
+    const base = `${sigla}_residente_${residente.numero_unidad}`;
+    usuariocol = base;
+    let sufijo = 2;
+    while (await db.prepare(`SELECT 1 FROM usuario WHERE usuariocol = ?`).get(usuariocol)) {
+      usuariocol = `${base}_${sufijo}`;
+      sufijo++;
+    }
   }
 
-  const hash = bcrypt.hashSync(input.password, 10);
+  const passwordTemporal = generarPasswordTemporal();
+  const hash = bcrypt.hashSync(passwordTemporal, 10);
   await db.prepare(`UPDATE usuario SET usuariocol = ?, password_usuario = ? WHERE id_usuario = ?`).run(usuariocol, hash, id);
-  return db
+  await db.prepare(`INSERT IGNORE INTO residente_onboarding_pendiente (usuario_id_usuario) VALUES (?)`).run(id);
+
+  const fila = await db
     .prepare(`SELECT id_usuario, nombre_usuario, unidad_id_unidad, flg_vigencia, usuariocol FROM usuario WHERE id_usuario = ?`)
     .get(id);
+  // password_temporal SOLO se devuelve en esta respuesta — no se puede
+  // volver a consultar después (se guarda hasheada, como cualquier otra
+  // contraseña). El administrador tiene que comunicársela al residente
+  // ahora, o generar una nueva más adelante si se pierde.
+  return { ...(fila as object), password_temporal: passwordTemporal };
+}
+
+// Siglas de un condominio a partir de su nombre — "Valles de Varoli" ->
+// "VDV" (primera letra de cada palabra, mayúscula). Se recalcula cada vez
+// a partir de condominio.gls_condominio en vez de guardarse aparte — no
+// hay ninguna otra parte del sistema que necesite esta sigla, así que no
+// vale la pena otra tabla/columna solo para cachearla.
+function generarSiglaCondominio(nombreCondominio: string): string {
+  const sigla = nombreCondominio
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((palabra) => palabra[0].toUpperCase())
+    .join("");
+  return sigla || "COND";
+}
+
+// Contraseña temporal aleatoria de 8 caracteres — sin 0/O/1/I (se
+// confunden fácil al leerla/tipearla desde un papel o un WhatsApp).
+function generarPasswordTemporal(): string {
+  const alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let resultado = "";
+  for (let i = 0; i < 8; i++) {
+    resultado += alfabeto[Math.floor(Math.random() * alfabeto.length)];
+  }
+  return resultado;
 }
 
 export async function revocarAccesoResidente(id: number) {
   await db.prepare(`UPDATE usuario SET usuariocol = NULL, password_usuario = NULL WHERE id_usuario = ?`).run(id);
+  await db.prepare(`DELETE FROM residente_onboarding_pendiente WHERE usuario_id_usuario = ?`).run(id);
 }
 
 export async function registrarCarnetDiscapacidad(usuarioId: number, numeroCarnet: string | undefined) {

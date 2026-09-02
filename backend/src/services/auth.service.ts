@@ -110,6 +110,33 @@ export async function login(usuariocol: string, password: string) {
     throw new Error("Usuario o contraseña incorrectos.");
   }
 
+  // Ronda 37, a pedido explícito del usuario: si a este usuario le queda
+  // pendiente elegir su usuario/clave definitivos (ver activarAccesoResidente
+  // en admin.service.ts), se corta ACÁ — antes de tocar membresía/
+  // facturación/SuperAdmin, no importa nada de eso todavía. Se entrega un
+  // token intermedio (misma forma que el de selección de condominio) que
+  // solo sirve para POST /auth/completar-onboarding.
+  const onboardingPendiente = (await db
+    .prepare(`SELECT 1 FROM residente_onboarding_pendiente WHERE usuario_id_usuario = ?`)
+    .get(usuario.id_usuario)) as unknown;
+  if (onboardingPendiente) {
+    const tokenIntermedio = jwt.sign(
+      { id_usuario: usuario.id_usuario, nombre_usuario: usuario.nombre_usuario },
+      JWT_SECRET,
+      { expiresIn: "10m" }
+    );
+    return { requiereOnboarding: true as const, token: tokenIntermedio };
+  }
+
+  return resolverSesionParaUsuario(usuario.id_usuario, usuario.nombre_usuario);
+}
+
+// Ronda 37: todo lo que había después de validar identidad/contraseña en
+// login() — se extrajo para poder reutilizarlo también desde
+// completarOnboardingResidente() (una vez que el residente elige su
+// usuario/clave definitivos, entra directo, sin tener que loguearse de
+// nuevo desde cero).
+async function resolverSesionParaUsuario(idUsuario: number, nombreUsuario: string) {
   // Ronda 27: SuperAdmin (el dueño del sistema, no un Administrador de
   // condominio) no está atado a ningún condominio en particular — se
   // detecta ANTES de tocar `membresia` y se salta por completo esa lógica
@@ -120,12 +147,12 @@ export async function login(usuariocol: string, password: string) {
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
        WHERE u.id_usuario = ? AND tu.gls_tipousuario = 'SuperAdmin'`
     )
-    .get(usuario.id_usuario)) as unknown;
+    .get(idUsuario)) as unknown;
   if (esSuperAdmin) {
-    return emitirTokenFinal({ id_usuario: usuario.id_usuario, nombre_usuario: usuario.nombre_usuario, rol: "SuperAdmin" });
+    return emitirTokenFinal({ id_usuario: idUsuario, nombre_usuario: nombreUsuario, rol: "SuperAdmin" });
   }
 
-  const membresiasCrudas = await obtenerMembresiasDeUsuario(usuario.id_usuario);
+  const membresiasCrudas = await obtenerMembresiasDeUsuario(idUsuario);
 
   if (membresiasCrudas.length === 0) {
     // No debería pasar (el backfill del schema le da una membresía a todo
@@ -163,11 +190,9 @@ export async function login(usuariocol: string, password: string) {
     // POST /auth/seleccionar-condominio, junto con la lista para que la
     // app muestre el selector (con el rol de cada una, ya que puede
     // variar: ej. "Residente en Talca" / "Guardia en Santiago").
-    const tokenIntermedio = jwt.sign(
-      { id_usuario: usuario.id_usuario, nombre_usuario: usuario.nombre_usuario },
-      JWT_SECRET,
-      { expiresIn: "10m" }
-    );
+    const tokenIntermedio = jwt.sign({ id_usuario: idUsuario, nombre_usuario: nombreUsuario }, JWT_SECRET, {
+      expiresIn: "10m",
+    });
     return {
       requiereSeleccionCondominio: true as const,
       token: tokenIntermedio,
@@ -178,7 +203,51 @@ export async function login(usuariocol: string, password: string) {
   // Una sola membresía disponible: se salta el selector y se entra
   // directo, como siempre — sin cambio de comportamiento para el caso más
   // común hoy.
-  return await construirSesionDesdeMembresia(usuario.id_usuario, usuario.nombre_usuario, membresias[0]);
+  return await construirSesionDesdeMembresia(idUsuario, nombreUsuario, membresias[0]);
+}
+
+/**
+ * Ronda 37, a pedido explícito del usuario: paso final del onboarding
+ * obligatorio de un residente — recibe el token intermedio que devolvió
+ * login() (requiereOnboarding) junto con el usuario y la clave que la
+ * persona eligió, y los deja como definitivos. El usuariocol nuevo tiene
+ * que ser único en TODO el sistema (no solo dentro de su condominio,
+ * mismo criterio que ya exige la columna UNIQUE de `usuario`).
+ */
+export async function completarOnboardingResidente(
+  tokenIntermedio: string,
+  usuariocolNuevo: string,
+  passwordNuevo: string
+) {
+  let payload: { id_usuario: number; nombre_usuario: string };
+  try {
+    payload = jwt.verify(tokenIntermedio, JWT_SECRET) as { id_usuario: number; nombre_usuario: string };
+  } catch {
+    throw new Error("Sesión inválida o expirada. Vuelve a iniciar sesión.");
+  }
+
+  const usuariocol = usuariocolNuevo?.trim();
+  if (!usuariocol || usuariocol.length < 4) {
+    throw new Error("El usuario debe tener al menos 4 caracteres.");
+  }
+  if (!passwordNuevo || passwordNuevo.length < 4) {
+    throw new Error("La contraseña debe tener al menos 4 caracteres.");
+  }
+
+  const enUso = await db
+    .prepare(`SELECT 1 FROM usuario WHERE usuariocol = ? AND id_usuario != ?`)
+    .get(usuariocol, payload.id_usuario);
+  if (enUso) {
+    throw new Error("Ese nombre de usuario ya está en uso — elige otro.");
+  }
+
+  const hash = bcrypt.hashSync(passwordNuevo, 10);
+  await db
+    .prepare(`UPDATE usuario SET usuariocol = ?, password_usuario = ? WHERE id_usuario = ?`)
+    .run(usuariocol, hash, payload.id_usuario);
+  await db.prepare(`DELETE FROM residente_onboarding_pendiente WHERE usuario_id_usuario = ?`).run(payload.id_usuario);
+
+  return resolverSesionParaUsuario(payload.id_usuario, payload.nombre_usuario);
 }
 
 interface MembresiaFila {

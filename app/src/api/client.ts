@@ -57,6 +57,7 @@ import {
   CrearCondominioResponse,
   RequiereSeleccionCondominioResponse,
   PagoPendienteResponse,
+  RequiereOnboardingResponse,
   CondominioSimple,
   AdministradorCuenta,
   CrearAdministradorInput,
@@ -135,11 +136,26 @@ async function send<T>(path: string, method: string, token: string, body?: objec
 export async function login(
   usuariocol: string,
   password: string
-): Promise<LoginResponse | RequiereSeleccionCondominioResponse | PagoPendienteResponse> {
+): Promise<LoginResponse | RequiereSeleccionCondominioResponse | PagoPendienteResponse | RequiereOnboardingResponse> {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ usuariocol, password }),
+  });
+  return handleResponse(res);
+}
+
+// Ronda 37: paso 2 del login cuando login() devolvió requiereOnboarding —
+// el residente elige su usuario/clave definitivos.
+export async function completarOnboarding(
+  tokenIntermedio: string,
+  usuariocolNuevo: string,
+  passwordNuevo: string
+): Promise<LoginResponse | RequiereSeleccionCondominioResponse | PagoPendienteResponse> {
+  const res = await fetch(`${API_BASE_URL}/auth/completar-onboarding`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: tokenIntermedio, usuariocol_nuevo: usuariocolNuevo, password_nuevo: passwordNuevo }),
   });
   return handleResponse(res);
 }
@@ -279,11 +295,13 @@ export const adminActualizarResidente = (
 
 // --- Acceso a la app (login) del residente --------------------------------
 
-export const adminActivarAccesoResidente = (
-  token: string,
-  id: number,
-  input: { usuariocol: string; password: string }
-) => send<ResidenteAdmin>(`/admin/residentes/${id}/acceso`, "POST", token, input);
+// Ronda 37: ya no se manda password — el backend genera una clave
+// aleatoria de un solo uso y la devuelve en `password_temporal` (ver
+// ResidenteAdmin) para que el admin se la comunique al residente.
+// `usuariocol` es opcional — sin él, se autogenera (o se conserva el que
+// ya tenía, si es un restablecimiento).
+export const adminActivarAccesoResidente = (token: string, id: number, input?: { usuariocol?: string }) =>
+  send<ResidenteAdmin>(`/admin/residentes/${id}/acceso`, "POST", token, input ?? {});
 
 export const adminQuitarAccesoResidente = (token: string, id: number) =>
   send<void>(`/admin/residentes/${id}/acceso`, "DELETE", token);

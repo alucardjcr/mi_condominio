@@ -4,6 +4,7 @@ import {
   login as apiLogin,
   registrarPushToken,
   seleccionarCondominio as apiSeleccionarCondominio,
+  completarOnboarding as apiCompletarOnboarding,
   setUnauthorizedHandler,
   setPagoPendienteHandler,
 } from "../api/client";
@@ -54,6 +55,12 @@ interface AuthContextValue {
   // en vez de Login/Home mientras esto es true.
   requiereSeleccionCondominio: boolean;
   condominiosDisponibles: CondominioOpcion[];
+  // Ronda 37, a pedido explícito del usuario: true cuando el administrador
+  // le activó el acceso a este residente y todavía no eligió su usuario/
+  // clave definitivos — App.tsx muestra OnboardingResidenteScreen en vez
+  // de Login/Home mientras esto es true. Reutiliza tokenIntermedio (mismo
+  // token, misma forma) para no duplicar ese estado.
+  requiereOnboarding: boolean;
   // Ronda 27, a pedido del usuario: true cuando TODOS los condominios de
   // esta cuenta tienen la mensualidad pendiente — App.tsx muestra
   // PagoPendienteScreen en vez de Login/Home mientras esto es true. La
@@ -76,6 +83,9 @@ interface AuthContextValue {
   // el menú/header de Administrador.
   nombreCondominioActual: string | null;
   login: (usuariocol: string, password: string) => Promise<void>;
+  // Ronda 37: paso 2 del onboarding obligatorio de un residente — usa el
+  // mismo tokenIntermedio que ya tiene el contexto.
+  completarOnboarding: (usuariocolNuevo: string, passwordNuevo: string) => Promise<void>;
   seleccionarCondominio: (condominioId: number) => Promise<void>;
   // Ronda 26: para un Administrador YA logeado (sesión completa) que
   // quiere pasarse a otro de sus condominios desde el menú, sin
@@ -114,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // que solo sirve para POST /auth/seleccionar-condominio) — nunca se
   // persiste ni se usa para llamar a ninguna otra ruta.
   const [tokenIntermedio, setTokenIntermedio] = useState<string | null>(null);
+  const [requiereOnboarding, setRequiereOnboarding] = useState(false);
   const [condominiosDisponibles, setCondominiosDisponibles] = useState<CondominioOpcion[]>([]);
   const [nombreCondominioActual, setNombreCondominioActual] = useState<string | null>(null);
   const [pagoPendiente, setPagoPendiente] = useState(false);
@@ -124,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setGuardia(null);
     setRol(null);
     setTokenIntermedio(null);
+    setRequiereOnboarding(false);
     setCondominiosDisponibles([]);
     setNombreCondominioActual(null);
     setPagoPendiente(false);
@@ -136,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setGuardia(resultado.guardia);
     setRol(resultado.rol as Rol);
     setTokenIntermedio(null);
+    setRequiereOnboarding(false);
     setCondominiosDisponibles([]);
     setNombreCondominioActual(resultado.condominio_nombre ?? null);
     setPagoPendiente(false);
@@ -211,6 +224,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Ronda 37: la parte que login() y completarOnboarding() tienen en
+  // común — ambos terminan devolviendo la MISMA unión de posibles
+  // resultados (sesión final / requiereSeleccionCondominio / pagoPendiente),
+  // así que se maneja en un solo lugar.
+  const manejarResultadoLogin = (resultado: any) => {
+    if ("pagoPendiente" in resultado) {
+      setPagoPendiente(true);
+      setRolPagoPendiente(resultado.rol);
+      return;
+    }
+    if ("requiereSeleccionCondominio" in resultado) {
+      setTokenIntermedio(resultado.token);
+      setRequiereOnboarding(false);
+      setCondominiosDisponibles(resultado.condominios);
+      return;
+    }
+    aplicarSesion(resultado);
+  };
+
   const value = useMemo<AuthContextValue>(
     () => ({
       token,
@@ -219,7 +251,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       esAdmin: rol === "Administrador" || guardia?.esComite === true,
       esPropietario: rol === "Residente" && guardia?.esPropietario === true,
       restaurandoSesion,
-      requiereSeleccionCondominio: tokenIntermedio !== null,
+      requiereSeleccionCondominio: tokenIntermedio !== null && !requiereOnboarding,
+      requiereOnboarding,
       condominiosDisponibles,
       pagoPendiente,
       rolPagoPendiente,
@@ -227,17 +260,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       nombreCondominioActual,
       login: async (usuariocol: string, password: string) => {
         const resultado = await apiLogin(usuariocol, password);
-        if ("pagoPendiente" in resultado) {
-          setPagoPendiente(true);
-          setRolPagoPendiente(resultado.rol);
-          return;
-        }
-        if ("requiereSeleccionCondominio" in resultado) {
+        if ("requiereOnboarding" in resultado) {
           setTokenIntermedio(resultado.token);
-          setCondominiosDisponibles(resultado.condominios);
+          setRequiereOnboarding(true);
           return;
         }
-        aplicarSesion(resultado);
+        manejarResultadoLogin(resultado);
+      },
+      completarOnboarding: async (usuariocolNuevo: string, passwordNuevo: string) => {
+        if (!tokenIntermedio) return;
+        const resultado = await apiCompletarOnboarding(tokenIntermedio, usuariocolNuevo, passwordNuevo);
+        manejarResultadoLogin(resultado);
       },
       seleccionarCondominio: async (condominioId: number) => {
         if (!tokenIntermedio) return;
@@ -251,7 +284,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       logout,
     }),
-    [token, guardia, rol, restaurandoSesion, tokenIntermedio, condominiosDisponibles, nombreCondominioActual, pagoPendiente, rolPagoPendiente]
+    [
+      token,
+      guardia,
+      rol,
+      restaurandoSesion,
+      tokenIntermedio,
+      requiereOnboarding,
+      condominiosDisponibles,
+      nombreCondominioActual,
+      pagoPendiente,
+      rolPagoPendiente,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

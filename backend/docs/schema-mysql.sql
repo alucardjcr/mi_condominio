@@ -219,6 +219,26 @@ CREATE TABLE IF NOT EXISTS residente_perfil (
     REFERENCES usuario (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ronda 37, a pedido explícito del usuario: onboarding obligatorio de un
+-- residente cuando el administrador le activa el acceso — en vez de que
+-- el administrador escriba a mano un usuario/clave definitivos, el sistema
+-- genera un usuario temporal tipo "VDV_residente_419" (siglas del
+-- condominio + "_residente_" + N° de depto) y una contraseña aleatoria de
+-- un solo uso, y la PRIMERA vez que ese residente entra, la app lo obliga
+-- (antes de dejarlo ver cualquier otra cosa) a elegir su usuario
+-- definitivo (único) y su contraseña real. Ver auth.service.ts ->
+-- login()/completarOnboardingResidente().
+--
+-- Existencia de la fila = onboarding pendiente. Se borra al completarlo —
+-- no queda historial (no hace falta: una vez resuelto, no aporta nada
+-- guardarlo, y menos con datos de acceso de por medio).
+CREATE TABLE IF NOT EXISTS residente_onboarding_pendiente (
+  usuario_id_usuario INT NOT NULL PRIMARY KEY,
+  fecha_generado       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_residenteonboarding_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Ronda 26: multi-condominio para Administrador — un mismo administrador
 -- puede llevar más de un condominio (ej. "Valles de Varoli" y "Altos de
 -- San Miguel") con la MISMA cuenta (usuariocol/password), eligiendo a cuál

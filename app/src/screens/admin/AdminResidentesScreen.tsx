@@ -72,9 +72,6 @@ export default function AdminResidentesScreen() {
 
   // Acceso a la app (portal de residentes): activar por primera vez o
   // restablecer la contraseña de un residente que ya tiene acceso.
-  const [accesoEnEdicion, setAccesoEnEdicion] = useState<number | null>(null);
-  const [accesoUsuariocol, setAccesoUsuariocol] = useState("");
-  const [accesoPassword, setAccesoPassword] = useState("");
   const [guardandoAcceso, setGuardandoAcceso] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -265,45 +262,42 @@ export default function AdminResidentesScreen() {
     }
   };
 
-  const handleAbrirAcceso = (r: ResidenteAdmin) => {
-    setAccesoEnEdicion(r.id_usuario);
-    setAccesoPassword("");
-    // Sugerencia de usuario cuando todavía no tiene acceso; si ya lo tiene,
-    // se muestra el usuariocol actual (no editable, solo se puede
-    // restablecer la contraseña).
-    setAccesoUsuariocol(r.usuariocol ?? `depto${r.numero_unidad}`.toLowerCase());
-  };
-
-  const handleGuardarAcceso = async (r: ResidenteAdmin) => {
-    if (!token) return;
-    if (!accesoPassword || accesoPassword.length < 4) {
-      Alert.alert("Contraseña muy corta", "Debe tener al menos 4 caracteres.");
-      return;
-    }
-    setGuardandoAcceso(true);
-    try {
-      if (r.usuariocol) {
-        // Ya tiene acceso: solo se restablece la contraseña, el usuario no cambia.
-        await adminActualizarResidente(token, r.id_usuario, { password: accesoPassword });
-      } else {
-        if (!accesoUsuariocol.trim()) {
-          Alert.alert("Falta el usuario", "Ingresa un nombre de usuario para el acceso.");
-          setGuardandoAcceso(false);
-          return;
-        }
-        await adminActivarAccesoResidente(token, r.id_usuario, {
-          usuariocol: accesoUsuariocol.trim(),
-          password: accesoPassword,
-        });
-      }
-      setAccesoEnEdicion(null);
-      setAccesoPassword("");
-      cargar();
-    } catch (e: any) {
-      Alert.alert("Error", e.message);
-    } finally {
-      setGuardandoAcceso(false);
-    }
+  // Ronda 37, a pedido explícito del usuario: ya no hay formulario — el
+  // sistema genera todo (usuario "<siglas>_residente_<depto>" + clave
+  // aleatoria de un solo uso, o solo la clave nueva si ya tenía usuario).
+  // La clave queda en pantalla (Alert) SOLO esta vez, porque el backend la
+  // guarda hasheada y no se puede volver a consultar — hay que
+  // comunicársela al residente ahora.
+  const handleActivarOrestablecerAcceso = (r: ResidenteAdmin) => {
+    const yaTeniaAcceso = !!r.usuariocol;
+    Alert.alert(
+      yaTeniaAcceso ? "Restablecer contraseña" : "Activar acceso a la app",
+      yaTeniaAcceso
+        ? `Se va a generar una nueva contraseña temporal para "${r.usuariocol}". ${r.nombre_usuario} va a tener que elegir una contraseña propia la próxima vez que entre. ¿Continuar?`
+        : `Se va a generar un usuario y una contraseña temporal para ${r.nombre_usuario}. La primera vez que entre, va a tener que elegir su propio usuario y contraseña. ¿Continuar?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: yaTeniaAcceso ? "Restablecer" : "Activar",
+          onPress: async () => {
+            if (!token) return;
+            setGuardandoAcceso(true);
+            try {
+              const resultado = await adminActivarAccesoResidente(token, r.id_usuario);
+              Alert.alert(
+                "Credenciales generadas",
+                `Usuario: ${resultado.usuariocol}\nContraseña temporal: ${resultado.password_temporal}\n\nCompártelas con ${r.nombre_usuario} — no se van a poder volver a consultar después. Va a tener que cambiar la contraseña (y puede elegir un usuario nuevo) la primera vez que entre.`
+              );
+              cargar();
+            } catch (e: any) {
+              Alert.alert("Error", e.message);
+            } finally {
+              setGuardandoAcceso(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleQuitarAcceso = (r: ResidenteAdmin) => {
@@ -563,60 +557,20 @@ export default function AdminResidentesScreen() {
             </TouchableOpacity>
           )}
 
-          {accesoEnEdicion === item.id_usuario ? (
-            <View style={styles.carnetForm}>
-              {!item.usuariocol && (
-                <>
-                  <Text style={styles.subLabel}>Usuario</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="ej: depto101"
-                    value={accesoUsuariocol}
-                    onChangeText={setAccesoUsuariocol}
-                    autoCapitalize="none"
-                  />
-                </>
-              )}
-              <Text style={styles.subLabel}>{item.usuariocol ? "Nueva contraseña" : "Contraseña"}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Mínimo 4 caracteres"
-                value={accesoPassword}
-                onChangeText={setAccesoPassword}
-                secureTextEntry
-              />
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <TouchableOpacity
-                  style={[styles.botonToggle, styles.botonActivar, { flex: 1 }]}
-                  onPress={() => handleGuardarAcceso(item)}
-                  disabled={guardandoAcceso}
-                >
-                  <Text style={styles.botonToggleTexto}>{guardandoAcceso ? "Guardando..." : "Guardar"}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]}
-                  onPress={() => setAccesoEnEdicion(null)}
-                >
-                  <Text style={styles.botonToggleTexto}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <View style={{ flexDirection: "row", gap: 16, marginTop: 6 }}>
-              <TouchableOpacity onPress={() => handleAbrirAcceso(item)}>
-                <Text style={styles.enlaceCarnetTexto}>
-                  {item.usuariocol ? "Restablecer contraseña" : "Activar acceso a la app"}
-                </Text>
+          <View style={{ flexDirection: "row", gap: 16, marginTop: 6 }}>
+            <TouchableOpacity onPress={() => handleActivarOrestablecerAcceso(item)} disabled={guardandoAcceso}>
+              <Text style={styles.enlaceCarnetTexto}>
+                {item.usuariocol ? "Restablecer contraseña" : "Activar acceso a la app"}
+              </Text>
+            </TouchableOpacity>
+            {item.usuariocol && (
+              <TouchableOpacity onPress={() => handleQuitarAcceso(item)}>
+                <Text style={styles.enlaceQuitarAcceso}>Quitar acceso</Text>
               </TouchableOpacity>
-              {item.usuariocol && (
-                <TouchableOpacity onPress={() => handleQuitarAcceso(item)}>
-                  <Text style={styles.enlaceQuitarAcceso}>Quitar acceso</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
+            )}
+          </View>
 
-          {esAdministradorReal && accesoEnEdicion !== item.id_usuario && (
+          {esAdministradorReal && (
             <TouchableOpacity style={{ marginTop: 6 }} onPress={() => handleToggleComite(item)}>
               <Text style={item.flg_comite ? styles.enlaceQuitarAcceso : styles.enlaceCarnetTexto}>
                 {item.flg_comite ? "Quitar del comité" : "Agregar al comité de administración"}
@@ -624,13 +578,11 @@ export default function AdminResidentesScreen() {
             </TouchableOpacity>
           )}
 
-          {accesoEnEdicion !== item.id_usuario && (
-            <TouchableOpacity style={{ marginTop: 6 }} onPress={() => handleTogglePropietario(item)}>
-              <Text style={item.flg_propietario ? styles.enlaceQuitarAcceso : styles.enlaceCarnetTexto}>
-                {item.flg_propietario ? "Quitar como dueño del depto" : "Marcar como dueño del depto"}
-              </Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity style={{ marginTop: 6 }} onPress={() => handleTogglePropietario(item)}>
+            <Text style={item.flg_propietario ? styles.enlaceQuitarAcceso : styles.enlaceCarnetTexto}>
+              {item.flg_propietario ? "Quitar como dueño del depto" : "Marcar como dueño del depto"}
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
     />
