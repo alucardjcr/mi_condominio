@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import { colors, radius, spacing, typography } from "../theme/theme";
+import { validarPassword, AYUDA_PASSWORD } from "../utils/validarPassword";
 
 // Ronda 37, a pedido explícito del usuario: cuando el administrador activa
 // el acceso de un residente, le da un usuario y clave TEMPORALES (ver
@@ -33,8 +34,9 @@ export default function OnboardingResidenteScreen() {
       setError("El usuario debe tener al menos 4 caracteres.");
       return;
     }
-    if (!passwordNuevo || passwordNuevo.length < 4) {
-      setError("La contraseña debe tener al menos 4 caracteres.");
+    const errorPassword = validarPassword(passwordNuevo);
+    if (errorPassword) {
+      setError(errorPassword);
       return;
     }
     if (passwordNuevo !== confirmacion) {
@@ -71,11 +73,12 @@ export default function OnboardingResidenteScreen() {
         />
 
         <Text style={styles.label}>Tu nueva contraseña</Text>
+        <Text style={styles.ayuda}>{AYUDA_PASSWORD}</Text>
         <TextInput
           style={styles.input}
           value={passwordNuevo}
           onChangeText={setPasswordNuevo}
-          placeholder="Mínimo 4 caracteres"
+          placeholder="ej: Matimania1500!"
           placeholderTextColor={colors.textMuted}
           secureTextEntry
         />
@@ -120,6 +123,7 @@ const styles = StyleSheet.create({
   },
   card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
   label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
+  ayuda: { ...typography.small, color: colors.textMuted, marginTop: 2 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,

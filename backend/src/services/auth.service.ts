@@ -25,6 +25,37 @@ const JWT_SECRET: string = (() => {
   return valor;
 })();
 
+// Ronda 38, a pedido explícito del usuario: exige una contraseña fuerte —
+// mínimo 12 caracteres, al menos una mayúscula, al menos un número, y al
+// menos un símbolo especial (ej. "Matimania1500!"). Se aplica SOLO a las
+// contraseñas que una persona elige para sí misma de forma definitiva:
+// completar el onboarding (ver completarOnboardingResidente), cambiar
+// contraseña (cambiarPassword) y recuperar contraseña (resetearPassword).
+// NO se aplica a la clave temporal de un solo uso que genera el sistema al
+// activar el acceso de un residente (ver admin.service.ts ->
+// generarPasswordTemporal) — esa nunca la elige la persona, y de hecho ya
+// es aleatoria y más difícil de adivinar que cualquier clave que un humano
+// se invente; lo que sí tiene que pasar por acá es la clave DEFINITIVA que
+// el residente pone en su lugar.
+const REGEX_MAYUSCULA = /[A-Z]/;
+const REGEX_NUMERO = /[0-9]/;
+const REGEX_SIMBOLO = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]/;
+
+export function validarFortalezaPassword(password: string): void {
+  if (!password || password.length < 12) {
+    throw new Error("La contraseña debe tener al menos 12 caracteres.");
+  }
+  if (!REGEX_MAYUSCULA.test(password)) {
+    throw new Error("La contraseña debe incluir al menos una letra mayúscula.");
+  }
+  if (!REGEX_NUMERO.test(password)) {
+    throw new Error("La contraseña debe incluir al menos un número.");
+  }
+  if (!REGEX_SIMBOLO.test(password)) {
+    throw new Error("La contraseña debe incluir al menos un símbolo especial (ej: @ $ % & / !).");
+  }
+}
+
 // Duración del token, distinta por rol (ronda 17). Guardia mantiene 12h
 // ("dura un turno de guardia" — además suele ser un dispositivo compartido
 // del condominio, no conviene dejarlo logeado por semanas). Residente y
@@ -230,9 +261,7 @@ export async function completarOnboardingResidente(
   if (!usuariocol || usuariocol.length < 4) {
     throw new Error("El usuario debe tener al menos 4 caracteres.");
   }
-  if (!passwordNuevo || passwordNuevo.length < 4) {
-    throw new Error("La contraseña debe tener al menos 4 caracteres.");
-  }
+  validarFortalezaPassword(passwordNuevo);
 
   const enUso = await db
     .prepare(`SELECT 1 FROM usuario WHERE usuariocol = ? AND id_usuario != ?`)
@@ -455,9 +484,7 @@ export async function cambiarPassword(idUsuario: number, passwordActual: string,
   if (!bcrypt.compareSync(passwordActual, usuario.password_usuario)) {
     throw new Error("La contraseña actual no es correcta.");
   }
-  if (!passwordNueva || passwordNueva.length < 4) {
-    throw new Error("La contraseña nueva debe tener al menos 4 caracteres.");
-  }
+  validarFortalezaPassword(passwordNueva);
 
   const hash = bcrypt.hashSync(passwordNueva, 10);
   await db.prepare(`UPDATE usuario SET password_usuario = ? WHERE id_usuario = ?`).run(hash, idUsuario);
@@ -546,9 +573,7 @@ export async function solicitarRecuperacion(identificador: string) {
  * y, si coincide, actualiza la contraseña y marca el código como usado.
  */
 export async function resetearPassword(identificador: string, codigo: string, passwordNueva: string) {
-  if (!passwordNueva || passwordNueva.length < 4) {
-    throw new Error("La contraseña nueva debe tener al menos 4 caracteres.");
-  }
+  validarFortalezaPassword(passwordNueva);
 
   const usuario = (await db
     .prepare(`SELECT id_usuario FROM usuario WHERE (usuariocol = ? OR correo_usuario = ?) AND flg_vigencia = 1`)

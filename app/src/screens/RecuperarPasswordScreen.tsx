@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { resetearPassword, solicitarRecuperacion } from "../api/client";
 import { colors, radius, spacing, typography } from "../theme/theme";
+import { validarPassword, AYUDA_PASSWORD } from "../utils/validarPassword";
 
 // Ronda 25: "olvidé mi contraseña", accesible desde el link en LoginScreen
 // (sin sesión). Flujo de 2 pasos en una sola pantalla:
@@ -56,6 +57,11 @@ export default function RecuperarPasswordScreen({ navigation }: any) {
     setError(null);
     if (!codigo.trim() || !nueva || !confirmacion) {
       setError("Completa el código y la contraseña nueva.");
+      return;
+    }
+    const errorPassword = validarPassword(nueva);
+    if (errorPassword) {
+      setError(errorPassword);
       return;
     }
     if (nueva !== confirmacion) {
@@ -128,12 +134,13 @@ export default function RecuperarPasswordScreen({ navigation }: any) {
             />
 
             <Text style={styles.label}>Contraseña nueva</Text>
+            <Text style={styles.ayuda}>{AYUDA_PASSWORD}</Text>
             <TextInput
               style={styles.input}
               value={nueva}
               onChangeText={setNueva}
               secureTextEntry
-              placeholder="Mínimo 4 caracteres"
+              placeholder="ej: Matimania1500!"
               placeholderTextColor={colors.textMuted}
             />
 
@@ -203,6 +210,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
+  ayuda: { ...typography.small, color: colors.textMuted, marginTop: 2 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
