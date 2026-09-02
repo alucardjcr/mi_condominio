@@ -47,6 +47,9 @@ import {
   TareaPersonal,
   TurnoAsignado,
   TurnoBloque,
+  PersonalTurno,
+  DuplaPatronInput,
+  ResultadoGenerarPatron,
   TurnoPersonal,
   Unidad,
   UnidadGastoComun,
@@ -689,15 +692,37 @@ export const getBitacora = (token: string, condominioId: number, fechaInicio?: s
 export const crearEntradaBitacora = (token: string, texto: string, condominioId: number) =>
   send<EntradaBitacora>(`/bitacora`, "POST", token, { texto, condominio_id_condominio: condominioId });
 
-// --- Ronda 20: JEFE_GUARDIAS -------------------------------------------------
-// Este rol SOLO tiene acceso a estas dos cosas: calendario de turnos y CRUD
-// de guardias (que reutiliza tal cual los mismos datos que adminGetGuardias/
-// adminCrearGuardia/adminActualizarGuardia, pero por rutas propias).
+// --- Ronda 20/39: JEFE_GUARDIAS ----------------------------------------------
+// Este rol tiene acceso a: calendario de turnos (con vista mensual desde la
+// ronda 39), CRUD de bloques de turno, generador de patrón ("4x4"), y CRUD
+// de guardias (que reutiliza tal cual los mismos datos que
+// adminGetGuardias/adminCrearGuardia/adminActualizarGuardia, pero por rutas
+// propias).
 
 export const jefeGetBloques = (token: string, condominioId: number) =>
   get<TurnoBloque[]>(`/jefe-guardias/bloques?condominio_id=${condominioId}`, token);
 
-export const jefeGetTurnosSemana = (token: string, condominioId: number, fechaInicio?: string, fechaTermino?: string) => {
+export const jefeCrearBloque = (
+  token: string,
+  condominioId: number,
+  input: { gls_turnobloque: string; hora_inicio: string; hora_termino: string }
+) => send<TurnoBloque>(`/jefe-guardias/bloques`, "POST", token, { ...input, condominio_id_condominio: condominioId });
+
+export const jefeActualizarBloque = (
+  token: string,
+  id: number,
+  input: { gls_turnobloque?: string; hora_inicio?: string; hora_termino?: string }
+) => send<TurnoBloque>(`/jefe-guardias/bloques/${id}`, "PATCH", token, input);
+
+export const jefeEliminarBloque = (token: string, id: number) => send<void>(`/jefe-guardias/bloques/${id}`, "DELETE", token);
+
+// Ronda 39: Guardia + JefeGuardias (antes solo se podía elegir un Guardia).
+export const jefeGetPersonal = (token: string, condominioId: number) =>
+  get<PersonalTurno[]>(`/jefe-guardias/personal?condominio_id=${condominioId}`, token);
+
+// Ronda 39: renombrada de jefeGetTurnosSemana — sin fechas trae la semana en
+// curso, con fechas cualquier rango (usado ahora para traer un mes completo).
+export const jefeGetTurnos = (token: string, condominioId: number, fechaInicio?: string, fechaTermino?: string) => {
   const params = new URLSearchParams();
   params.set("condominio_id", String(condominioId));
   if (fechaInicio) params.set("fecha_inicio", fechaInicio);
@@ -711,6 +736,27 @@ export const jefeAsignarTurno = (
 ) => send<TurnoAsignado>(`/jefe-guardias/turnos`, "POST", token, input);
 
 export const jefeQuitarTurno = (token: string, id: number) => send<void>(`/jefe-guardias/turnos/${id}`, "DELETE", token);
+
+// Ronda 39, a pedido explícito del usuario: genera el calendario de un
+// rango completo, rotando cíclicamente por `duplas` cada `diasPorBloque`
+// días (patrón "4x4"). SOBRESCRIBE cualquier asignación previa en ese
+// rango — ver la nota completa en turnos.service.ts.
+export const jefeGenerarPatronTurnos = (
+  token: string,
+  condominioId: number,
+  input: {
+    fecha_inicio: string;
+    fecha_termino: string;
+    bloque_dia_id: number;
+    bloque_noche_id: number;
+    dias_por_bloque: number;
+    duplas: DuplaPatronInput[];
+  }
+) =>
+  send<ResultadoGenerarPatron>(`/jefe-guardias/turnos/generar-patron`, "POST", token, {
+    ...input,
+    condominio_id_condominio: condominioId,
+  });
 
 export const jefeGetGuardias = (token: string) => get<Guardia[]>(`/jefe-guardias/guardias`, token);
 

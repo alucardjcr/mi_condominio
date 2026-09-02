@@ -746,7 +746,7 @@ export interface EntradaBitacora {
 
 export interface TurnoBloque {
   id_turnobloque: number;
-  gls_turnobloque: string; // "Mañana" | "Tarde" | "Noche"
+  gls_turnobloque: string; // "Mañana" | "Tarde" | "Noche" | cualquier nombre editable
   hora_inicio: string; // "HH:MM:SS"
   hora_termino: string;
 }
@@ -756,10 +756,29 @@ export interface TurnoAsignado {
   fecha: string; // "YYYY-MM-DD"
   guardia_usuario_id: number;
   nombre_guardia: string;
+  rol_guardia?: "Guardia" | "JefeGuardias";
   id_turnobloque: number;
   gls_turnobloque: string;
   hora_inicio: string;
   hora_termino: string;
+}
+
+// Ronda 39: personal asignable a un turno — Guardia + JefeGuardias (antes
+// solo se podía elegir un Guardia).
+export interface PersonalTurno {
+  id_usuario: number;
+  nombre_usuario: string;
+  rol: "Guardia" | "JefeGuardias";
+}
+
+export interface DuplaPatronInput {
+  guardia_dia_id: number;
+  guardia_noche_id: number;
+}
+
+export interface ResultadoGenerarPatron {
+  dias_generados: number;
+  asignaciones_creadas: number;
 }
 
 // --- Ronda 20: Mascotas ------------------------------------------------------

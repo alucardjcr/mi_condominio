@@ -1,5 +1,15 @@
 import { Router } from "express";
-import { listarBloques, listarTurnosSemana, asignarTurno, quitarTurno } from "../services/turnos.service";
+import {
+  listarBloques,
+  crearBloque,
+  actualizarBloque,
+  eliminarBloque,
+  listarPersonalParaTurno,
+  listarTurnos,
+  asignarTurno,
+  quitarTurno,
+  generarPatronTurnos,
+} from "../services/turnos.service";
 import { listarGuardias, crearGuardia, actualizarGuardia } from "../services/admin.service";
 import { requireRol } from "../middleware/auth";
 import { CONDOMINIO_ID_DEFAULT } from "../config";
@@ -18,20 +28,59 @@ function esDuplicado(err: any): boolean {
   return err?.code === "ER_DUP_ENTRY";
 }
 
-// --- Calendario semanal de turnos ------------------------------------------
+// --- Calendario de turnos ---------------------------------------------
 
 jefeGuardiasRouter.get("/bloques", async (req, res) => {
   const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
   res.json(await listarBloques(condominioId));
 });
 
+// Ronda 39, a pedido explícito del usuario: bloques editables (antes 3
+// fijos, sembrados una vez, sin forma de cambiarlos desde la app).
+jefeGuardiasRouter.post("/bloques", async (req, res) => {
+  try {
+    const { gls_turnobloque, hora_inicio, hora_termino } = req.body;
+    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    res.status(201).json(await crearBloque(condominioId, { gls_turnobloque, hora_inicio, hora_termino }));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+jefeGuardiasRouter.patch("/bloques/:id", async (req, res) => {
+  try {
+    const { gls_turnobloque, hora_inicio, hora_termino } = req.body;
+    res.json(await actualizarBloque(Number(req.params.id), { gls_turnobloque, hora_inicio, hora_termino }));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+jefeGuardiasRouter.delete("/bloques/:id", async (req, res) => {
+  try {
+    await eliminarBloque(Number(req.params.id));
+    res.status(204).send();
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 39: personal asignable a un turno — Guardia + JefeGuardias (antes
+// solo se podía elegir un Guardia; el jefe de guardias no aparecía acá
+// aunque en la práctica también hace turno).
+jefeGuardiasRouter.get("/personal", async (req, res) => {
+  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  res.json(await listarPersonalParaTurno(condominioId));
+});
+
 // GET /jefe-guardias/turnos?fecha_inicio=YYYY-MM-DD&fecha_termino=YYYY-MM-DD
-// Sin fechas, devuelve la semana en curso (lunes a domingo) — ver
-// turnos.service.ts.
+// Sin fechas, devuelve la semana en curso — con fechas, cualquier rango
+// (ronda 39: el front ahora pide un mes completo para la vista de
+// calendario mensual).
 jefeGuardiasRouter.get("/turnos", async (req, res) => {
   const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
   res.json(
-    await listarTurnosSemana(
+    await listarTurnos(
       condominioId,
       req.query.fecha_inicio ? String(req.query.fecha_inicio) : undefined,
       req.query.fecha_termino ? String(req.query.fecha_termino) : undefined
@@ -65,6 +114,35 @@ jefeGuardiasRouter.delete("/turnos/:id", async (req, res) => {
   try {
     await quitarTurno(Number(req.params.id));
     res.status(204).send();
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 39, a pedido explícito del usuario: generador de patrón tipo
+// "4x4" — ver la explicación completa en turnos.service.ts.
+jefeGuardiasRouter.post("/turnos/generar-patron", async (req, res) => {
+  try {
+    const { fecha_inicio, fecha_termino, bloque_dia_id, bloque_noche_id, dias_por_bloque, duplas } = req.body;
+    if (!fecha_inicio || !fecha_termino || !bloque_dia_id || !bloque_noche_id || !Array.isArray(duplas)) {
+      return res.status(400).json({
+        error: "Faltan campos: fecha_inicio, fecha_termino, bloque_dia_id, bloque_noche_id, duplas.",
+      });
+    }
+    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const resultado = await generarPatronTurnos(
+      {
+        condominioId,
+        fechaInicio: String(fecha_inicio),
+        fechaTermino: String(fecha_termino),
+        bloqueDiaId: Number(bloque_dia_id),
+        bloqueNocheId: Number(bloque_noche_id),
+        diasPorBloque: Number(dias_por_bloque) || 4,
+        duplas: duplas.map((d: any) => ({ guardiaDiaId: Number(d.guardia_dia_id), guardiaNocheId: Number(d.guardia_noche_id) })),
+      },
+      req.guardia!.id_usuario
+    );
+    res.status(201).json(resultado);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
