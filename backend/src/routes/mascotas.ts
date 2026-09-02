@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { listarMascotasDeUnidad, listarMascotasDelCondominio, crearMascota, actualizarMascota, getUnidadDeMascota } from "../services/mascotas.service";
+import { listarMascotasDeUnidad, listarMascotasDelCondominio, crearMascota, actualizarMascota, getUnidadDeMascota, getCondominioDeMascota } from "../services/mascotas.service";
 import { requireAuth } from "../middleware/auth";
 import { guardarImagenBase64 } from "../utils/imagenes";
 import { CONDOMINIO_ID_DEFAULT } from "../config";
@@ -51,8 +51,17 @@ mascotasRouter.post("/", async (req, res) => {
   }
 });
 
+// Ronda 44, a pedido explícito del usuario (revisión de seguridad — IDOR):
+// antes, esta función dejaba pasar a CUALQUIER Administrador/Comité para
+// editar/eliminar CUALQUIER mascota, sin verificar que fuera de su propio
+// condominio — un admin del condominio A podía tocar la mascota de
+// alguien del condominio B solo adivinando el id. Ahora se verifica
+// también en ese caso.
 async function puedeEditar(req: any, idMascota: number): Promise<boolean> {
-  if (esAdminOComite(req)) return true;
+  if (esAdminOComite(req)) {
+    const condominioDeLaMascota = await getCondominioDeMascota(idMascota);
+    return condominioDeLaMascota !== undefined && condominioDeLaMascota === req.guardia?.condominio_id_condominio;
+  }
   if (req.guardia?.rol !== "Residente" || !req.guardia.unidad_id_unidad) return false;
   const unidadDeLaMascota = await getUnidadDeMascota(idMascota);
   return unidadDeLaMascota === req.guardia.unidad_id_unidad;

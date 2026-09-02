@@ -53,15 +53,22 @@ export async function actualizarEstadoArriendo(
 ) {
   const spot = (await db
     .prepare(
-      `SELECT e.id_estacionamiento, e.unidad_id_unidad
+      `SELECT e.id_estacionamiento, e.unidad_id_unidad, e.condominio_id_condominio
        FROM estacionamiento e
        JOIN tipo_estacionamiento te ON te.id_tipoestacionamiento = e.tipo_estacionamiento_id_tipoestacionamiento
        WHERE e.id_estacionamiento = ? AND te.gls_tipoestacionamiento = ?`
     )
-    .get(id, GLS_TIPOEST_RESIDENTE)) as { id_estacionamiento: number; unidad_id_unidad: number | null } | undefined;
+    .get(id, GLS_TIPOEST_RESIDENTE)) as { id_estacionamiento: number; unidad_id_unidad: number | null; condominio_id_condominio: number } | undefined;
   if (!spot) throw new Error(`No existe un cupo de residente con id ${id}.`);
 
-  const esAdminOComite = usuario.rol === "Administrador" || !!usuario.esComite;
+  // Ronda 44, a pedido explícito del usuario (revisión de seguridad —
+  // IDOR): antes "esAdminOComite" dejaba pasar sin verificar que el cupo
+  // fuera de SU condominio — un Administrador/Comité de un condominio
+  // podía cambiar el estado de arriendo de un cupo de OTRO condominio con
+  // solo adivinar el id. Mismo patrón encontrado y corregido en
+  // mascotas.ts y reservas.ts en esta misma ronda.
+  const esAdminOComite =
+    (usuario.rol === "Administrador" || !!usuario.esComite) && usuario.condominio_id_condominio === spot.condominio_id_condominio;
   const esDueño = usuario.rol === "Residente" && usuario.unidad_id_unidad != null && usuario.unidad_id_unidad === spot.unidad_id_unidad;
   if (!esAdminOComite && !esDueño) {
     const err: any = new Error(

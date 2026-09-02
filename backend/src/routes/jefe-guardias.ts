@@ -11,7 +11,7 @@ import {
   generarPatronTurnos,
 } from "../services/turnos.service";
 import { listarGuardias, crearGuardia, actualizarGuardia } from "../services/admin.service";
-import { requireRol } from "../middleware/auth";
+import { requireRol, requirePerteneceAlCondominio } from "../middleware/auth";
 import { CONDOMINIO_ID_DEFAULT } from "../config";
 
 // Ronda 20: rol JEFE_GUARDIAS. A pedido explícito del usuario, este perfil
@@ -47,7 +47,7 @@ jefeGuardiasRouter.post("/bloques", async (req, res) => {
   }
 });
 
-jefeGuardiasRouter.patch("/bloques/:id", async (req, res) => {
+jefeGuardiasRouter.patch("/bloques/:id", requirePerteneceAlCondominio("turno_bloque", "id_turnobloque"), async (req, res) => {
   try {
     const { gls_turnobloque, hora_inicio, hora_termino } = req.body;
     res.json(await actualizarBloque(Number(req.params.id), { gls_turnobloque, hora_inicio, hora_termino }));
@@ -56,7 +56,7 @@ jefeGuardiasRouter.patch("/bloques/:id", async (req, res) => {
   }
 });
 
-jefeGuardiasRouter.delete("/bloques/:id", async (req, res) => {
+jefeGuardiasRouter.delete("/bloques/:id", requirePerteneceAlCondominio("turno_bloque", "id_turnobloque"), async (req, res) => {
   try {
     await eliminarBloque(Number(req.params.id));
     res.status(204).send();
@@ -110,7 +110,7 @@ jefeGuardiasRouter.post("/turnos", async (req, res) => {
   }
 });
 
-jefeGuardiasRouter.delete("/turnos/:id", async (req, res) => {
+jefeGuardiasRouter.delete("/turnos/:id", requirePerteneceAlCondominio("turno_asignado_guardia", "id_turnoasignado"), async (req, res) => {
   try {
     await quitarTurno(Number(req.params.id));
     res.status(204).send();
@@ -150,8 +150,8 @@ jefeGuardiasRouter.post("/turnos/generar-patron", async (req, res) => {
 
 // --- CRUD de guardias (reutiliza admin.service.ts tal cual) ----------------
 
-jefeGuardiasRouter.get("/guardias", async (_req, res) => {
-  res.json(await listarGuardias());
+jefeGuardiasRouter.get("/guardias", async (req, res) => {
+  res.json(await listarGuardias(req.guardia!.condominio_id_condominio!));
 });
 
 jefeGuardiasRouter.post("/guardias", async (req, res) => {
@@ -167,7 +167,7 @@ jefeGuardiasRouter.post("/guardias", async (req, res) => {
   }
 });
 
-jefeGuardiasRouter.patch("/guardias/:id", async (req, res) => {
+jefeGuardiasRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
     const { nombre_usuario, password, flg_vigencia } = req.body;
     res.json(

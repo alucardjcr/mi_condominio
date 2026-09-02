@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { verificarToken, GuardiaAutenticado } from "../services/auth.service";
+import { db } from "../db/client";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -124,4 +125,46 @@ export async function requireSuscripcionAlDia(req: Request, res: Response, next:
     });
   }
   next();
+}
+
+// ---------------------------------------------------------------------------
+// Ronda 44, a pedido explícito del usuario (revisión de seguridad — IDOR):
+// hasta esta ronda, ninguna ruta que recibe un :id directo en la URL (ej.
+// PATCH /admin/residentes/:id) verificaba que ESE :id realmente perteneciera
+// al condominio de la sesión actual. requireCondominioAccess solo compara
+// contra un condominio_id que venga en el query/body de la request — la
+// mayoría de estas rutas nunca lo mandan (el :id ya "identifica" el
+// recurso), así que quedaban SIN NINGUNA verificación real: un
+// Administrador de un condominio podía, con solo adivinar o probar un
+// número correlativo, editar/aprobar/notificar un recurso que en realidad
+// pertenece a OTRO condominio. Clásico IDOR (Insecure Direct Object
+// Reference).
+//
+// Este middleware genérico cierra ese hueco: antes de que la ruta llegue a
+// tocar el service, confirma con una consulta directa que la fila `:id`
+// existe Y pertenece al condominio de `req.guardia`. Se usa SIEMPRE
+// DESPUÉS de requireAuth (necesita req.guardia.condominio_id_condominio ya
+// seteado). Uso: `requirePerteneceAlCondominio("usuario", "id_usuario")`.
+export function requirePerteneceAlCondominio(tabla: string, columnaId: string, columnaCondominio = "condominio_id_condominio") {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const id = Number(req.params.id);
+    if (!id) {
+      return res.status(400).json({ error: "Falta un id válido en la URL." });
+    }
+    const condominioId = req.guardia?.condominio_id_condominio;
+    if (!condominioId) {
+      return res.status(403).json({ error: "Tu sesión no tiene un condominio asociado." });
+    }
+    const fila = await db
+      .prepare(`SELECT 1 FROM ${tabla} WHERE ${columnaId} = ? AND ${columnaCondominio} = ?`)
+      .get(id, condominioId);
+    if (!fila) {
+      // A propósito el mismo mensaje que "no existe" (404), NO "no tienes
+      // acceso" (403) — no hay que confirmarle a quien está probando ids
+      // que el recurso SÍ existe pero en otro condominio; para quien
+      // consulta, un id ajeno debe verse igual que un id inexistente.
+      return res.status(404).json({ error: "No existe ese recurso." });
+    }
+    next();
+  };
 }

@@ -14,16 +14,21 @@ async function getIdByGls(table: string, idColumn: string, glsColumn: string, va
 // Guardias
 // ---------------------------------------------------------------------------
 
-export async function listarGuardias() {
+// Ronda 44, a pedido explícito del usuario (revisión de seguridad — IDOR):
+// antes esta función no filtraba por condominio en absoluto — cualquier
+// Administrador o JefeGuardias, de cualquier condominio, veía la lista
+// COMPLETA de guardias de TODO el sistema (nombre, usuario, vigencia).
+// Ahora exige el condominioId de quien pregunta.
+export async function listarGuardias(condominioId: number) {
   return db
     .prepare(
       `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia
        FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
-       WHERE tu.gls_tipousuario = 'Guardia'
+       WHERE tu.gls_tipousuario = 'Guardia' AND u.condominio_id_condominio = ?
        ORDER BY u.nombre_usuario`
     )
-    .all();
+    .all(condominioId);
 }
 
 export async function crearGuardia(input: { nombre_usuario: string; usuariocol: string; password: string; condominio_id_condominio: number }) {

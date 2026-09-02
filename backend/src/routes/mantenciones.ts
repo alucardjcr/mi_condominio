@@ -8,7 +8,7 @@ import {
   registrarSalidaEmpresa,
 } from "../services/mantencion.service";
 import { CONDOMINIO_ID_DEFAULT } from "../config";
-import { requireRol } from "../middleware/auth";
+import { requireRol, requirePerteneceAlCondominio } from "../middleware/auth";
 
 // Ronda 19: mantenciones (limpieza de techo, piscina, ascensores, etc.) —
 // trabajo hecho por una empresa externa SIN cuenta en el sistema. Este
@@ -41,7 +41,7 @@ mantencionesRouter.get("/en-curso", async (req, res) => {
 // PATCH /mantenciones/:id/ingreso -> el guardia registra la llegada de la
 // empresa (empresa + persona + RUT). Solo válido si la mantención está
 // Programada — nunca se crea un registro "suelto" sin programación previa.
-mantencionesRouter.patch("/:id/ingreso", async (req, res) => {
+mantencionesRouter.patch("/:id/ingreso", requirePerteneceAlCondominio("mantencion", "id_mantencion"), async (req, res) => {
   try {
     const { empresa_nombre, persona_nombre, persona_rut } = req.body;
     if (!empresa_nombre || !persona_nombre) {
@@ -61,7 +61,7 @@ mantencionesRouter.patch("/:id/ingreso", async (req, res) => {
 
 // PATCH /mantenciones/:id/salida -> el guardia marca que la empresa se
 // retiró; la mantención pasa sola a "Realizada".
-mantencionesRouter.patch("/:id/salida", async (req, res) => {
+mantencionesRouter.patch("/:id/salida", requirePerteneceAlCondominio("mantencion", "id_mantencion"), async (req, res) => {
   try {
     res.json(await registrarSalidaEmpresa(Number(req.params.id), req.guardia!.id_usuario));
   } catch (err: any) {
@@ -71,7 +71,7 @@ mantencionesRouter.patch("/:id/salida", async (req, res) => {
 
 // GET /mantenciones/:id -> detalle. Va al final para que "elementos",
 // "programadas" y "en-curso" no se confundan con un :id.
-mantencionesRouter.get("/:id", async (req, res) => {
+mantencionesRouter.get("/:id", requirePerteneceAlCondominio("mantencion", "id_mantencion"), async (req, res) => {
   try {
     res.json(await getMantencion(Number(req.params.id)));
   } catch (err: any) {

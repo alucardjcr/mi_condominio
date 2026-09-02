@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { requirePerteneceAlCondominio } from "../middleware/auth";
 import {
   listarGuardias,
   crearGuardia,
@@ -87,8 +88,9 @@ function esDuplicado(err: any): boolean {
 
 // --- Guardias -----------------------------------------------------------
 
-adminRouter.get("/guardias", async (_req, res) => {
-  res.json(await listarGuardias());
+adminRouter.get("/guardias", async (req, res) => {
+  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  res.json(await listarGuardias(condominioId));
 });
 
 adminRouter.post("/guardias", async (req, res) => {
@@ -104,7 +106,7 @@ adminRouter.post("/guardias", async (req, res) => {
   }
 });
 
-adminRouter.patch("/guardias/:id", async (req, res) => {
+adminRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
     const { nombre_usuario, password, flg_vigencia } = req.body;
     res.json(
@@ -152,7 +154,7 @@ adminRouter.post("/residentes", async (req, res) => {
   }
 });
 
-adminRouter.patch("/residentes/:id", async (req, res) => {
+adminRouter.patch("/residentes/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
     const { nombre_usuario, unidad_id_unidad, flg_vigencia, password, flg_comite, tipo_residente_id_tiporesidente, flg_propietario, rut, fecha_nacimiento, profesion } =
       req.body;
@@ -208,7 +210,7 @@ adminRouter.patch("/residentes/:id", async (req, res) => {
 // residente. La primera vez que entre, la app lo va a obligar a elegir su
 // usuario/clave definitivos. `usuariocol` en el body es opcional, por si
 // el administrador igual quiere fijar uno a mano.
-adminRouter.post("/residentes/:id/acceso", async (req, res) => {
+adminRouter.post("/residentes/:id/acceso", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
     const { usuariocol } = req.body;
     res.status(201).json(await activarAccesoResidente(Number(req.params.id), { usuariocol }));
@@ -217,12 +219,12 @@ adminRouter.post("/residentes/:id/acceso", async (req, res) => {
   }
 });
 
-adminRouter.delete("/residentes/:id/acceso", async (req, res) => {
+adminRouter.delete("/residentes/:id/acceso", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   await revocarAccesoResidente(Number(req.params.id));
   res.status(204).send();
 });
 
-adminRouter.post("/residentes/:id/discapacidad", async (req, res) => {
+adminRouter.post("/residentes/:id/discapacidad", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
     const id = await registrarCarnetDiscapacidad(Number(req.params.id), req.body.numero_carnet);
     res.status(201).json({ id_residentediscapacitado: id });
@@ -231,7 +233,7 @@ adminRouter.post("/residentes/:id/discapacidad", async (req, res) => {
   }
 });
 
-adminRouter.delete("/residentes/:id/discapacidad", async (req, res) => {
+adminRouter.delete("/residentes/:id/discapacidad", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   await quitarCarnetDiscapacidad(Number(req.params.id));
   res.status(204).send();
 });
@@ -263,7 +265,7 @@ adminRouter.post("/patentes", async (req, res) => {
   }
 });
 
-adminRouter.patch("/patentes/:id", async (req, res) => {
+adminRouter.patch("/patentes/:id", requirePerteneceAlCondominio("patente_condominio", "id_patente"), async (req, res) => {
   try {
     const { patente, tipo_tenencia_id_tipotenencia, flg_vigencia } = req.body;
     res.json(
@@ -377,7 +379,7 @@ adminRouter.post("/espacios", async (req, res) => {
   }
 });
 
-adminRouter.patch("/espacios/:id", async (req, res) => {
+adminRouter.patch("/espacios/:id", requirePerteneceAlCondominio("espacio_comun", "id_espaciocomun"), async (req, res) => {
   try {
     const CAMPOS = [
       "nombre",
@@ -431,7 +433,7 @@ adminRouter.get("/reservas", async (req, res) => {
   );
 });
 
-adminRouter.patch("/reservas/:id/aprobar", async (req, res) => {
+adminRouter.patch("/reservas/:id/aprobar", requirePerteneceAlCondominio("reserva_espaciocomun", "id_reserva"), async (req, res) => {
   try {
     res.json(await aprobarReserva(Number(req.params.id), req.guardia!.id_usuario));
   } catch (err: any) {
@@ -439,7 +441,7 @@ adminRouter.patch("/reservas/:id/aprobar", async (req, res) => {
   }
 });
 
-adminRouter.patch("/reservas/:id/rechazar", async (req, res) => {
+adminRouter.patch("/reservas/:id/rechazar", requirePerteneceAlCondominio("reserva_espaciocomun", "id_reserva"), async (req, res) => {
   try {
     const { motivo } = req.body;
     res.json(await rechazarReserva(Number(req.params.id), motivo, req.guardia!.id_usuario));
@@ -448,7 +450,7 @@ adminRouter.patch("/reservas/:id/rechazar", async (req, res) => {
   }
 });
 
-adminRouter.patch("/reservas/:id/validar-pago", async (req, res) => {
+adminRouter.patch("/reservas/:id/validar-pago", requirePerteneceAlCondominio("reserva_espaciocomun", "id_reserva"), async (req, res) => {
   try {
     res.json(await validarPago(Number(req.params.id), req.guardia!.id_usuario));
   } catch (err: any) {
@@ -488,7 +490,7 @@ adminRouter.get("/unidades/gasto-comun", async (req, res) => {
   res.json(await listarUnidadesGastoComun(condominioId));
 });
 
-adminRouter.patch("/unidades/:id/gasto-comun", async (req, res) => {
+adminRouter.patch("/unidades/:id/gasto-comun", requirePerteneceAlCondominio("unidad", "id_unidad"), async (req, res) => {
   try {
     const { flg_gastocomun } = req.body;
     if (flg_gastocomun !== 0 && flg_gastocomun !== 1) {
@@ -539,7 +541,7 @@ adminRouter.post("/estacionamientos", async (req, res) => {
   }
 });
 
-adminRouter.patch("/estacionamientos/:id", async (req, res) => {
+adminRouter.patch("/estacionamientos/:id", requirePerteneceAlCondominio("estacionamiento", "id_estacionamiento"), async (req, res) => {
   try {
     const { estado_id, unidad_id_unidad, patente, flg_arrendado, tipo_ocupante } = req.body;
     const input: {
@@ -605,7 +607,7 @@ adminRouter.post("/personal", async (req, res) => {
   }
 });
 
-adminRouter.patch("/personal/:id", async (req, res) => {
+adminRouter.patch("/personal/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
     const { nombre_usuario, password, flg_vigencia, tipo_personal_id_tipopersonal } = req.body;
     res.json(
@@ -629,7 +631,7 @@ adminRouter.patch("/personal/:id", async (req, res) => {
 // Tarea puntual (texto libre) que administrador/comité le escribe a un
 // trabajador — le llega como notificación (bandeja + push best-effort), no
 // es una plantilla de checklist (decisión explícita del usuario).
-adminRouter.post("/personal/:id/tarea", async (req, res) => {
+adminRouter.post("/personal/:id/tarea", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
     const { descripcion } = req.body;
     const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
@@ -682,7 +684,7 @@ adminRouter.post("/elementos-mantencion", async (req, res) => {
   }
 });
 
-adminRouter.patch("/elementos-mantencion/:id", async (req, res) => {
+adminRouter.patch("/elementos-mantencion/:id", requirePerteneceAlCondominio("tipo_elemento_mantencion", "id_tipoelementomantencion"), async (req, res) => {
   try {
     const { gls_tipoelementomantencion, flg_vigencia } = req.body;
     res.json(
@@ -742,7 +744,7 @@ adminRouter.post("/mantenciones", async (req, res) => {
   }
 });
 
-adminRouter.patch("/mantenciones/:id", async (req, res) => {
+adminRouter.patch("/mantenciones/:id", requirePerteneceAlCondominio("mantencion", "id_mantencion"), async (req, res) => {
   try {
     const CAMPOS = ["titulo", "descripcion", "tipo_elemento_mantencion_id_tipoelementomantencion", "fecha_programada", "costo_estimado"] as const;
     const input: Record<string, any> = {};
@@ -755,7 +757,7 @@ adminRouter.patch("/mantenciones/:id", async (req, res) => {
   }
 });
 
-adminRouter.patch("/mantenciones/:id/cancelar", async (req, res) => {
+adminRouter.patch("/mantenciones/:id/cancelar", requirePerteneceAlCondominio("mantencion", "id_mantencion"), async (req, res) => {
   try {
     const { motivo } = req.body;
     res.json(await cancelarMantencion(Number(req.params.id), motivo, req.guardia!.id_usuario));
@@ -768,7 +770,7 @@ adminRouter.patch("/mantenciones/:id/cancelar", async (req, res) => {
 // Administrador/Comité después, al recibirlos de la empresa (nunca el
 // guardia). `comprobante`/`foto` llegan como data URL base64, igual que las
 // fotos de paquetería y el comprobante de Reservas.
-adminRouter.post("/mantenciones/:id/comprobante", async (req, res) => {
+adminRouter.post("/mantenciones/:id/comprobante", requirePerteneceAlCondominio("mantencion", "id_mantencion"), async (req, res) => {
   try {
     const { comprobante, foto, costo_real } = req.body;
     const comprobanteUrl = comprobante ? await guardarImagenBase64(comprobante, "comprobante", "mantenciones") : undefined;
@@ -785,7 +787,7 @@ adminRouter.post("/mantenciones/:id/comprobante", async (req, res) => {
   }
 });
 
-adminRouter.patch("/reservas/:id/garantia", async (req, res) => {
+adminRouter.patch("/reservas/:id/garantia", requirePerteneceAlCondominio("reserva_espaciocomun", "id_reserva"), async (req, res) => {
   try {
     const { decision, monto_retenido, observacion } = req.body;
     if (decision !== "Devuelta" && decision !== "Retenida") {
@@ -809,7 +811,7 @@ adminRouter.get("/privacidad/solicitudes", async (req, res) => {
   res.json(await listarSolicitudesArcoAdmin(condominioId));
 });
 
-adminRouter.patch("/privacidad/solicitudes/:id", async (req, res) => {
+adminRouter.patch("/privacidad/solicitudes/:id", requirePerteneceAlCondominio("solicitud_arco", "id_solicitudarco"), async (req, res) => {
   try {
     const { estado, respuesta_admin } = req.body;
     res.json(
@@ -911,15 +913,15 @@ adminRouter.post("/incidentes", async (req, res) => {
   }
 });
 
-adminRouter.post("/incidentes/:id/notificar-agencia", async (req, res) => {
+adminRouter.post("/incidentes/:id/notificar-agencia", requirePerteneceAlCondominio("incidente_seguridad", "id_incidenteseguridad"), async (req, res) => {
   res.json(await marcarNotificadoAgencia(Number(req.params.id)));
 });
 
-adminRouter.post("/incidentes/:id/notificar-afectados", async (req, res) => {
+adminRouter.post("/incidentes/:id/notificar-afectados", requirePerteneceAlCondominio("incidente_seguridad", "id_incidenteseguridad"), async (req, res) => {
   res.json(await marcarNotificadoAfectados(Number(req.params.id)));
 });
 
-adminRouter.post("/incidentes/:id/cerrar", async (req, res) => {
+adminRouter.post("/incidentes/:id/cerrar", requirePerteneceAlCondominio("incidente_seguridad", "id_incidenteseguridad"), async (req, res) => {
   try {
     const { acciones_tomadas } = req.body;
     res.json(await cerrarIncidente(Number(req.params.id), acciones_tomadas));
@@ -951,7 +953,7 @@ adminRouter.post("/tipos-amonestacion", async (req, res) => {
   }
 });
 
-adminRouter.patch("/tipos-amonestacion/:id", async (req, res) => {
+adminRouter.patch("/tipos-amonestacion/:id", requirePerteneceAlCondominio("tipo_amonestacion", "id_tipoamonestacion"), async (req, res) => {
   try {
     const { gls_tipoamonestacion, flg_es_multa, flg_vigencia } = req.body;
     res.json(
@@ -987,7 +989,7 @@ adminRouter.post("/tipos-multa", async (req, res) => {
   }
 });
 
-adminRouter.patch("/tipos-multa/:id", async (req, res) => {
+adminRouter.patch("/tipos-multa/:id", requirePerteneceAlCondominio("tipo_multa", "id_tipomulta"), async (req, res) => {
   try {
     const { gls_tipomulta, monto_sugerido, unidad_monto, flg_vigencia } = req.body;
     res.json(
@@ -1055,7 +1057,7 @@ adminRouter.post("/amonestaciones", async (req, res) => {
 // "el comité aprueba las multas"; se deja también al Administrador porque
 // en el resto del sistema siempre tiene autoridad al menos igual que el
 // comité, y un condominio chico podría no tener comité activo todavía).
-adminRouter.post("/amonestaciones/:id/aprobar", async (req, res) => {
+adminRouter.post("/amonestaciones/:id/aprobar", requirePerteneceAlCondominio("amonestacion", "id_amonestacion"), async (req, res) => {
   try {
     res.json(await aprobarMulta(Number(req.params.id), req.guardia!.id_usuario));
   } catch (err: any) {
@@ -1063,7 +1065,7 @@ adminRouter.post("/amonestaciones/:id/aprobar", async (req, res) => {
   }
 });
 
-adminRouter.post("/amonestaciones/:id/rechazar", async (req, res) => {
+adminRouter.post("/amonestaciones/:id/rechazar", requirePerteneceAlCondominio("amonestacion", "id_amonestacion"), async (req, res) => {
   try {
     const { motivo } = req.body;
     res.json(await rechazarMulta(Number(req.params.id), req.guardia!.id_usuario, motivo));
@@ -1076,7 +1078,7 @@ adminRouter.post("/amonestaciones/:id/rechazar", async (req, res) => {
 // usuario: "es el administrador quien le envía la notificación al
 // residente de una multa". Un miembro del comité, aunque haya sido quien
 // la aprobó, no puede completar este paso.
-adminRouter.post("/amonestaciones/:id/notificar", async (req, res) => {
+adminRouter.post("/amonestaciones/:id/notificar", requirePerteneceAlCondominio("amonestacion", "id_amonestacion"), async (req, res) => {
   if (req.guardia?.rol !== "Administrador") {
     return res.status(403).json({ error: "Solo el Administrador puede notificar una multa al residente." });
   }

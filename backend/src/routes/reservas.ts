@@ -15,7 +15,7 @@ import {
 } from "../services/reservas.service";
 import { guardarImagenBase64 } from "../utils/imagenes";
 import { CONDOMINIO_ID_DEFAULT } from "../config";
-import { requireRol } from "../middleware/auth";
+import { requireRol, requirePerteneceAlCondominio } from "../middleware/auth";
 
 export const reservasRouter = Router();
 
@@ -129,7 +129,7 @@ function esDueñoDeLaReserva(reserva: any, req: any): boolean {
   return esAdminOComite || reserva.unidad_id_unidad === req.guardia.unidad_id_unidad;
 }
 
-reservasRouter.patch("/:id/cancelar", puedeReservar, async (req, res) => {
+reservasRouter.patch("/:id/cancelar", puedeReservar, requirePerteneceAlCondominio("reserva_espaciocomun", "id_reserva"), async (req, res) => {
   try {
     const reservaActual: any = await getReserva(Number(req.params.id));
     if (!esDueñoDeLaReserva(reservaActual, req)) {
@@ -145,7 +145,7 @@ reservasRouter.patch("/:id/cancelar", puedeReservar, async (req, res) => {
 // POST /reservas/:id/comprobante -> subir el comprobante de transferencia
 // (foto/imagen, igual que las de paquetería) una vez que la reserva está
 // Aprobada y esperando pago.
-reservasRouter.post("/:id/comprobante", puedeReservar, async (req, res) => {
+reservasRouter.post("/:id/comprobante", puedeReservar, requirePerteneceAlCondominio("reserva_espaciocomun", "id_reserva"), async (req, res) => {
   try {
     const reservaActual: any = await getReserva(Number(req.params.id));
     if (!esDueñoDeLaReserva(reservaActual, req)) {
@@ -179,7 +179,7 @@ reservasRouter.get("/dia", soloConserjeria, async (req, res) => {
   }
 });
 
-reservasRouter.patch("/:id/llegada", soloConserjeria, async (req, res) => {
+reservasRouter.patch("/:id/llegada", soloConserjeria, requirePerteneceAlCondominio("reserva_espaciocomun", "id_reserva"), async (req, res) => {
   try {
     res.json(await marcarLlegada(Number(req.params.id)));
   } catch (err: any) {
@@ -187,7 +187,7 @@ reservasRouter.patch("/:id/llegada", soloConserjeria, async (req, res) => {
   }
 });
 
-reservasRouter.patch("/:id/salida", soloConserjeria, async (req, res) => {
+reservasRouter.patch("/:id/salida", soloConserjeria, requirePerteneceAlCondominio("reserva_espaciocomun", "id_reserva"), async (req, res) => {
   try {
     res.json(await marcarSalida(Number(req.params.id)));
   } catch (err: any) {
@@ -196,7 +196,7 @@ reservasRouter.patch("/:id/salida", soloConserjeria, async (req, res) => {
 });
 
 // GET /reservas/:id -> detalle de una reserva (Residente solo la propia).
-reservasRouter.get("/:id", async (req, res) => {
+reservasRouter.get("/:id", requirePerteneceAlCondominio("reserva_espaciocomun", "id_reserva"), async (req, res) => {
   try {
     const reserva: any = await getReserva(Number(req.params.id));
     if (req.guardia!.rol === "Residente" && !req.guardia!.esComite && reserva.unidad_id_unidad !== req.guardia!.unidad_id_unidad) {

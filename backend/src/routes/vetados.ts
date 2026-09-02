@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { listarVetados, crearVetado, actualizarVetado, buscarVetadoPorRut } from "../services/vetados.service";
-import { requireRol } from "../middleware/auth";
+import { requireRol, requirePerteneceAlCondominio } from "../middleware/auth";
 import { guardarImagenBase64 } from "../utils/imagenes";
 import { registrarAuditoria } from "../services/auditoria.service";
 import { CONDOMINIO_ID_DEFAULT } from "../config";
@@ -73,7 +73,7 @@ vetadosRouter.post("/", requireRol("Administrador"), async (req, res) => {
   }
 });
 
-vetadosRouter.patch("/:id", requireRol("Administrador"), async (req, res) => {
+vetadosRouter.patch("/:id", requireRol("Administrador"), requirePerteneceAlCondominio("vetado", "id_vetado"), async (req, res) => {
   try {
     const { nombre_completo, rut, patente, parentesco, fecha_ingreso, foto_persona, foto_vehiculo, observaciones, flg_vigencia } = req.body;
     const fotoPersonaUrl = foto_persona ? await guardarImagenBase64(foto_persona, "persona", "vetados") : undefined;

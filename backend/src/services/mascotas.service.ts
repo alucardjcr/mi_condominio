@@ -79,6 +79,22 @@ async function getUnidadDeMascota(id: number): Promise<number | undefined> {
   return fila?.unidad_id_unidad;
 }
 
+// Ronda 44, a pedido explícito del usuario (revisión de seguridad — IDOR):
+// hace falta para que Administrador/Comité no pueda tocar la mascota de
+// OTRO condominio solo adivinando el id — ver la nota completa en
+// mascotas.ts -> puedeEditar.
+async function getCondominioDeMascota(id: number): Promise<number | undefined> {
+  const fila = (await db
+    .prepare(
+      `SELECT un.condominio_id_condominio
+       FROM mascota m
+       JOIN unidad un ON un.id_unidad = m.unidad_id_unidad
+       WHERE m.id_mascota = ?`
+    )
+    .get(id)) as { condominio_id_condominio: number } | undefined;
+  return fila?.condominio_id_condominio;
+}
+
 export async function actualizarMascota(
   id: number,
   input: { nombre?: string; especie?: string | null; raza?: string | null; numeroChip?: string | null; fotoUrl?: string; flgVigencia?: number }
@@ -104,4 +120,4 @@ export async function actualizarMascota(
   return db.prepare(`SELECT * FROM mascota WHERE id_mascota = ?`).get(id);
 }
 
-export { getUnidadDeMascota };
+export { getUnidadDeMascota, getCondominioDeMascota };

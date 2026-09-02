@@ -193,6 +193,14 @@ export async function cambiarEstado(idPaquete: number, nuevoEstadoGls: string, o
 
     const paquete = (await tx.prepare(`SELECT * FROM paquete WHERE id_paquete = ?`).get(idPaquete)) as any;
     if (!paquete) throw new Error(`No existe el paquete ${idPaquete}.`);
+    // Ronda 44, a pedido explícito del usuario (revisión de seguridad —
+    // IDOR): antes `condominioId` llegaba a esta función pero nunca se
+    // usaba para verificar que ESTE paquete fuera de ese condominio — un
+    // guardia de un condominio podía cambiar el estado de un paquete de
+    // OTRO condominio con solo adivinar el id.
+    if (paquete.condominio_id_condominio !== condominioId) {
+      throw new Error(`No existe el paquete ${idPaquete}.`);
+    }
     if (paquete.fecha_entrega) {
       throw new Error("Este paquete ya fue entregado; no se puede cambiar su estado.");
     }
@@ -253,6 +261,12 @@ export async function registrarEntrega(idPaquete: number, input: RegistrarEntreg
 
     const paquete = (await tx.prepare(`SELECT * FROM paquete WHERE id_paquete = ?`).get(idPaquete)) as any;
     if (!paquete) throw new Error(`No existe el paquete ${idPaquete}.`);
+    // Ronda 44, a pedido explícito del usuario (revisión de seguridad —
+    // IDOR): mismo caso que cambiarEstado — sin este chequeo, un guardia
+    // podía registrar la entrega de un paquete de OTRO condominio.
+    if (paquete.condominio_id_condominio !== condominioId) {
+      throw new Error(`No existe el paquete ${idPaquete}.`);
+    }
     if (paquete.fecha_entrega) throw new Error("Este paquete ya fue entregado anteriormente.");
 
     const mismaPersona =
