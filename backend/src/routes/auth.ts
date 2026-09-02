@@ -1,11 +1,40 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { login, cambiarPassword, solicitarRecuperacion, resetearPassword, seleccionarCondominio, completarOnboardingResidente } from "../services/auth.service";
 import { registrarPushToken, eliminarPushToken } from "../services/notificaciones.service";
 import { requireAuth } from "../middleware/auth";
 
 export const authRouter = Router();
 
-authRouter.post("/login", async (req, res) => {
+// Ronda 43, a pedido explícito del usuario ("antibot"): sin esto, nada
+// impedía probar miles de contraseñas seguidas contra /auth/login — ni
+// siquiera hacía falta automatizar mucho, un script simple bastaba. Este
+// límite es por IP, no por usuario (adrede: limitar solo por usuariocol
+// dejaría abierta la puerta a probar contraseñas contra MUCHOS usuarios
+// distintos desde la misma IP sin frenarse). 10 intentos cada 15 minutos
+// es generoso para alguien que se equivoca tipeando, pero corta en seco
+// cualquier ataque de fuerza bruta automatizado.
+const limitadorLogin = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Demasiados intentos. Espera unos minutos antes de volver a intentar." },
+});
+
+// Recuperación de contraseña: límite más estricto — cada solicitud manda
+// un código nuevo (hoy simulado en el log del servidor, pero el día que
+// se conecte un proveedor de correo real, esto evita que alguien use el
+// endpoint para spamear a un residente con decenas de correos).
+const limitadorRecuperacion = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Demasiadas solicitudes. Espera unos minutos antes de volver a intentar." },
+});
+
+authRouter.post("/login", limitadorLogin, async (req, res) => {
   try {
     const { usuariocol, password } = req.body;
     if (!usuariocol || !password) {
@@ -27,7 +56,7 @@ authRouter.post("/login", async (req, res) => {
 // Recibe, en el body, el token intermedio que devolvió /auth/login (no en
 // el header Authorization — ese token todavía no autoriza nada más que
 // esto) junto con el condominio elegido, y entrega el token final.
-authRouter.post("/seleccionar-condominio", async (req, res) => {
+authRouter.post("/seleccionar-condominio", limitadorLogin, async (req, res) => {
   try {
     const { token, condominio_id } = req.body;
     if (!token || !condominio_id) {
@@ -45,7 +74,7 @@ authRouter.post("/seleccionar-condominio", async (req, res) => {
 // Recibe el token intermedio que devolvió /auth/login junto con el
 // usuario y la clave que la persona eligió, y entrega el token final —
 // entra directo, sin tener que loguearse de nuevo desde cero.
-authRouter.post("/completar-onboarding", async (req, res) => {
+authRouter.post("/completar-onboarding", limitadorLogin, async (req, res) => {
   try {
     const { token, usuariocol_nuevo, password_nuevo } = req.body;
     if (!token || !usuariocol_nuevo || !password_nuevo) {
@@ -111,7 +140,7 @@ authRouter.delete("/push-token", requireAuth, async (req, res) => {
 // SIEMPRE con el mismo mensaje genérico, exista o no el usuario/correo, para
 // no filtrar esa información a quien llame al endpoint (ver
 // auth.service.ts -> solicitarRecuperacion).
-authRouter.post("/solicitar-recuperacion", async (req, res) => {
+authRouter.post("/solicitar-recuperacion", limitadorRecuperacion, async (req, res) => {
   try {
     const { identificador } = req.body;
     if (!identificador) {
@@ -127,7 +156,7 @@ authRouter.post("/solicitar-recuperacion", async (req, res) => {
 // POST /auth/resetear-password -> paso 2: valida el código de 6 dígitos
 // recibido por correo y, si es válido y no expiró, define la contraseña
 // nueva. Tampoco requiere login.
-authRouter.post("/resetear-password", async (req, res) => {
+authRouter.post("/resetear-password", limitadorRecuperacion, async (req, res) => {
   try {
     const { identificador, codigo, password_nueva } = req.body;
     if (!identificador || !codigo || !password_nueva) {

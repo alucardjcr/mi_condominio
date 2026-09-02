@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import helmet from "helmet";
 import cors from "cors";
 // Parchea Router de Express para que un error lanzado (o una promesa
 // rechazada) dentro de un handler `async` se reenvíe solo al middleware de
@@ -35,6 +36,15 @@ import { ejecutarLimpiezaRetencionTodosLosCondominios } from "./services/retenci
 import { expirarReservasVencidas } from "./services/reservas.service";
 
 const app = express();
+
+// Ronda 43, a pedido explícito del usuario: cabeceras de seguridad
+// estándar (X-Content-Type-Options, X-Frame-Options, Strict-Transport-
+// Security, etc.) — este backend nunca sirve HTML para navegador (es solo
+// una API que consume la app), así que se desactiva el Content-Security-
+// Policy por defecto de helmet (pensado para páginas web) para no generar
+// cabeceras irrelevantes/confusas en una API pura; el resto de protecciones
+// de helmet sí aplican igual.
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 // Límite subido de 100kb (default) a 8mb: las fotos y firmas de
 // paquetería llegan como data URL base64 dentro del JSON.
