@@ -78,7 +78,29 @@ function AppNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={navHeaderOptions}>
+    <Stack.Navigator
+      // Ronda 48: React Navigation solo respeta `initialRouteName` en el
+      // PRIMER montaje del navigator — como este Stack.Navigator es uno
+      // solo que persiste durante toda la sesión (login, selección de
+      // condominio, etc.), sin esto el cambio de initialRouteName de más
+      // abajo no se aplicaría al loguearse en vivo, solo funcionaría en
+      // un reinicio en frío ya autenticado. Esta `key` cambia cada vez
+      // que cambia el rol efectivo (o al pasar de sin sesión a con
+      // sesión) — React desmonta y vuelve a montar el navigator entero
+      // en ese momento, así que initialRouteName se vuelve a evaluar con
+      // el valor correcto de esResidente.
+      key={token ? `${rol}-${esAdmin}` : "guest"}
+      screenOptions={navHeaderOptions}
+      // A pedido explícito del usuario: un Residente (dueño o no del
+      // depto) entra directo a "Mi hogar" al loguearse, en vez de pasar
+      // primero por el Home genérico de botones — MiHogar ya funciona
+      // para cualquier residente del hogar, no solo el propietario (el
+      // permiso de EDITAR sigue siendo exclusivo del dueño/Administrador/
+      // Comité, eso no cambió; solo cambió cuál pantalla aparece
+      // primero). El resto de los roles sigue entrando por "Home" como
+      // siempre.
+      initialRouteName={esResidente ? "MiHogar" : undefined}
+    >
       {!token && requiereOnboarding ? (
         // Ronda 37, a pedido explícito del usuario: el administrador le
         // activó el acceso a este residente con un usuario/clave

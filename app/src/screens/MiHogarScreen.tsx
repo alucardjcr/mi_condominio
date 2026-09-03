@@ -21,7 +21,7 @@ import SelectModal, { OpcionSelect } from "../components/SelectModal";
 // viva o no en el depto — puede tenerlo arrendado y administrar a los
 // residentes a distancia. El backend (/mi-depto/*) además valida todo esto
 // por su cuenta, así que esta pantalla nunca es la única barrera.
-export default function MiHogarScreen() {
+export default function MiHogarScreen({ navigation }: any) {
   const { token, guardia } = useAuth();
   const [residentes, setResidentes] = useState<ResidenteAdmin[]>([]);
   const [tiposResidente, setTiposResidente] = useState<TipoResidente[]>([]);
@@ -169,6 +169,27 @@ export default function MiHogarScreen() {
       contentContainerStyle={{ padding: 16, gap: 10 }}
       ListHeaderComponent={
         <View>
+          {/* Ronda 48, a pedido explícito del usuario: "Mi hogar" pasó a
+              ser la primera pantalla que ve un Residente al loguearse —
+              antes de este cambio no hacía falta ningún enlace de salida
+              acá porque siempre se llegaba desde el Home genérico (con
+              todos los botones). Sin esto, un residente quedaría sin
+              forma de llegar a paquetes/reservas/notificaciones. */}
+          <View style={styles.accesosRapidos}>
+            <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("Home")}>
+              <Text style={styles.accesoRapidoTexto}>🏠 Inicio</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("MisPaquetes")}>
+              <Text style={styles.accesoRapidoTexto}>📦 Paquetes</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("ReservasEspacios")}>
+              <Text style={styles.accesoRapidoTexto}>📅 Reservas</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("Notificaciones")}>
+              <Text style={styles.accesoRapidoTexto}>🔔 Avisos</Text>
+            </TouchableOpacity>
+          </View>
+
           <Text style={styles.intro}>
             Acá administras quién vive en {guardia?.nombre_torre ? `${guardia.nombre_torre} · Depto ${guardia.numero_unidad}` : "tu depto"},
             aunque tú no vivas ahí. Puedes agregar personas, cambiar a qué título viven ahí, o darlas de baja.
@@ -312,6 +333,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f6f8" },
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   intro: { color: "#666", fontSize: 13, marginBottom: 12, lineHeight: 18 },
+  accesosRapidos: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
+  accesoRapido: { backgroundColor: "#F0F4FF", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
+  accesoRapidoTexto: { color: "#014BD2", fontSize: 12, fontWeight: "700" },
   form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 12 },
   formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
   input: {
