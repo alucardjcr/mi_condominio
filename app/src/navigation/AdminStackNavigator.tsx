@@ -38,6 +38,7 @@ import QuienVieneHoyScreen from "../screens/QuienVieneHoyScreen";
 import AvisoPrivacidadScreen from "../screens/AvisoPrivacidadScreen";
 import BitacoraScreen from "../screens/BitacoraScreen";
 import MascotasScreen from "../screens/MascotasScreen";
+import MascotaDetalleScreen from "../screens/MascotaDetalleScreen";
 import CrearCondominioScreen from "../screens/CrearCondominioScreen";
 import CambiarCondominioScreen from "../screens/CambiarCondominioScreen";
 import NotificacionesScreen from "../screens/NotificacionesScreen";
@@ -179,6 +180,7 @@ export default function AdminStackNavigator() {
       <Stack.Screen name="CrearCondominio" component={CrearCondominioScreen} options={{ title: "Crear condominio" }} />
       <Stack.Screen name="Bitacora" component={BitacoraScreen} options={{ title: "Bitácora de guardias" }} />
       <Stack.Screen name="Mascotas" component={MascotasScreen} options={{ title: "Mascotas" }} />
+      <Stack.Screen name="MascotaDetalle" component={MascotaDetalleScreen} options={{ title: "Mascota" }} />
       <Stack.Screen name="Notificaciones" component={NotificacionesScreen} options={{ title: "Notificaciones" }} />
     </Stack.Navigator>
   );

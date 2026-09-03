@@ -1,5 +1,16 @@
 import { Router } from "express";
-import { listarMascotasDeUnidad, listarMascotasDelCondominio, crearMascota, actualizarMascota, getUnidadDeMascota, getCondominioDeMascota } from "../services/mascotas.service";
+import {
+  listarMascotasDeUnidad,
+  listarMascotasDelCondominio,
+  crearMascota,
+  actualizarMascota,
+  getUnidadDeMascota,
+  getCondominioDeMascota,
+  listarVacunas,
+  crearVacuna,
+  eliminarVacuna,
+  getMascotaDeVacuna,
+} from "../services/mascotas.service";
 import { requireAuth } from "../middleware/auth";
 import { guardarImagenBase64 } from "../utils/imagenes";
 import { CONDOMINIO_ID_DEFAULT } from "../config";
@@ -99,6 +110,62 @@ mascotasRouter.delete("/:id", async (req, res) => {
       return res.status(403).json({ error: "Solo un residente de esa unidad o Administrador/Comité pueden eliminar esta mascota." });
     }
     await actualizarMascota(id, { flgVigencia: 0 });
+    res.status(204).send();
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Vacunas (ronda 50, a pedido explícito del usuario, con referencia
+// visual). Mismo criterio de permisos que el resto de esta mascota: quien
+// puede editar la mascota puede administrar sus vacunas.
+// ---------------------------------------------------------------------------
+
+mascotasRouter.get("/:id/vacunas", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!(await puedeEditar(req, id))) {
+      return res.status(403).json({ error: "Solo un residente de esa unidad o Administrador/Comité pueden ver las vacunas de esta mascota." });
+    }
+    res.json(await listarVacunas(id));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+mascotasRouter.post("/:id/vacunas", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!(await puedeEditar(req, id))) {
+      return res.status(403).json({ error: "Solo un residente de esa unidad o Administrador/Comité pueden agregar vacunas a esta mascota." });
+    }
+    const { nombre_vacuna, descripcion, fecha_aplicacion, fecha_vencimiento } = req.body;
+    const resultado = await crearVacuna(
+      id,
+      { nombreVacuna: nombre_vacuna, descripcion, fechaAplicacion: fecha_aplicacion, fechaVencimiento: fecha_vencimiento },
+      req.guardia!.id_usuario
+    );
+    res.status(201).json(resultado);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+mascotasRouter.delete("/:id/vacunas/:vacunaId", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!(await puedeEditar(req, id))) {
+      return res.status(403).json({ error: "Solo un residente de esa unidad o Administrador/Comité pueden eliminar vacunas de esta mascota." });
+    }
+    const vacunaId = Number(req.params.vacunaId);
+    // Verificar que la vacuna sea REALMENTE de esta mascota (no de otra) —
+    // mismo criterio IDOR que el resto del sistema.
+    const mascotaDeLaVacuna = await getMascotaDeVacuna(vacunaId);
+    if (mascotaDeLaVacuna !== id) {
+      return res.status(404).json({ error: "No existe esa vacuna para esta mascota." });
+    }
+    await eliminarVacuna(vacunaId);
     res.status(204).send();
   } catch (err: any) {
     res.status(400).json({ error: err.message });

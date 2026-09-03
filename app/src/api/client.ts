@@ -19,6 +19,7 @@ import {
   LoginResponse,
   Mantencion,
   Mascota,
+  VacunaMascota,
   Notificacion,
   Paquete,
   PaquetePendiente,
@@ -805,6 +806,18 @@ export const actualizarMascota = (
 ) => send<Mascota>(`/mascotas/${id}`, "PATCH", token, input);
 
 export const eliminarMascota = (token: string, id: number) => send<void>(`/mascotas/${id}`, "DELETE", token);
+
+// Ronda 50, a pedido explícito del usuario, con referencia visual.
+export const getVacunasMascota = (token: string, mascotaId: number) => get<VacunaMascota[]>(`/mascotas/${mascotaId}/vacunas`, token);
+
+export const crearVacunaMascota = (
+  token: string,
+  mascotaId: number,
+  input: { nombre_vacuna: string; descripcion?: string; fecha_aplicacion: string; fecha_vencimiento?: string }
+) => send<{ id_mascotavacuna: number }>(`/mascotas/${mascotaId}/vacunas`, "POST", token, input);
+
+export const eliminarVacunaMascota = (token: string, mascotaId: number, vacunaId: number) =>
+  send<void>(`/mascotas/${mascotaId}/vacunas/${vacunaId}`, "DELETE", token);
 
 // --- Ronda 27: SuperAdmin — crear Administradores + facturación -------------
 

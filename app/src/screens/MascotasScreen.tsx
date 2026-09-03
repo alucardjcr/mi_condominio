@@ -23,7 +23,7 @@ import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 // de la unidad (no exclusivo del propietario) — Administrador/Comité ve
 // todas las del condominio, con acceso total, igual criterio que el resto
 // del sistema.
-export default function MascotasScreen() {
+export default function MascotasScreen({ navigation }: any) {
   const { token, esAdmin } = useAuth();
   const [mascotas, setMascotas] = useState<Mascota[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,7 +157,7 @@ export default function MascotasScreen() {
       )}
       {mascotas.map((m) => (
         <View key={m.id_mascota} style={styles.card}>
-          <View style={styles.cardHeader}>
+          <TouchableOpacity style={styles.cardHeader} onPress={() => navigation.navigate("MascotaDetalle", { mascota: m })}>
             {m.foto_url ? (
               <Image source={fuenteImagenPrivada(m.foto_url, token)!} style={styles.foto} />
             ) : (
@@ -175,7 +175,8 @@ export default function MascotasScreen() {
               {m.especie && <Text style={styles.detalle}>{m.especie}{m.raza ? ` · ${m.raza}` : ""}</Text>}
               {m.numero_chip && <Text style={styles.detalle}>Chip: {m.numero_chip}</Text>}
             </View>
-          </View>
+            <Text style={{ fontSize: 18, color: "#014BD2" }}>›</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.botonEliminar} onPress={() => handleEliminar(m)}>
             <Text style={styles.botonEliminarTexto}>Eliminar</Text>
           </TouchableOpacity>

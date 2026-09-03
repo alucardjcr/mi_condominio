@@ -380,7 +380,7 @@ export default function MiHogarScreen({ navigation }: any) {
               )}
             </View>
           </View>
-          <TouchableOpacity style={styles.filaEditar} onPress={() => navigation?.navigate("Mascotas")}>
+          <TouchableOpacity style={styles.filaEditar} onPress={() => navigation?.navigate("MascotaDetalle", { mascota: m })}>
             <Text style={styles.enlaceEditar}>✏️ Editar</Text>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>

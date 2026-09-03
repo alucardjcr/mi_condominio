@@ -46,6 +46,7 @@ import EstacionamientosArriendoScreen from "./src/screens/EstacionamientosArrien
 import ConsultaVetadoScreen from "./src/screens/ConsultaVetadoScreen";
 import BitacoraScreen from "./src/screens/BitacoraScreen";
 import MascotasScreen from "./src/screens/MascotasScreen";
+import MascotaDetalleScreen from "./src/screens/MascotaDetalleScreen";
 import JefeGuardiasTurnosScreen from "./src/screens/jefeguardias/JefeGuardiasTurnosScreen";
 import JefeGuardiasGuardiasScreen from "./src/screens/jefeguardias/JefeGuardiasGuardiasScreen";
 
@@ -226,6 +227,7 @@ function AppNavigator() {
                 component={MascotasScreen}
                 options={{ title: "Mis mascotas" }}
               />
+              <Stack.Screen name="MascotaDetalle" component={MascotaDetalleScreen} options={{ title: "Mascota" }} />
               <Stack.Screen
                 name="Notificaciones"
                 component={NotificacionesScreen}

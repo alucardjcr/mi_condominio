@@ -120,4 +120,62 @@ export async function actualizarMascota(
   return db.prepare(`SELECT * FROM mascota WHERE id_mascota = ?`).get(id);
 }
 
+// ---------------------------------------------------------------------------
+// Vacunas (ronda 50, a pedido explícito del usuario, con referencia
+// visual) — ver la nota completa de la regla "Vigente/Vencida" en
+// schema-mysql.sql, sobre la tabla mascota_vacuna.
+// ---------------------------------------------------------------------------
+
+export async function listarVacunas(mascotaId: number) {
+  const filas = (await db
+    .prepare(
+      `SELECT id_mascotavacuna, nombre_vacuna, descripcion, fecha_aplicacion, fecha_vencimiento
+       FROM mascota_vacuna WHERE mascota_id_mascota = ? ORDER BY fecha_aplicacion DESC`
+    )
+    .all(mascotaId)) as {
+    id_mascotavacuna: number;
+    nombre_vacuna: string;
+    descripcion: string | null;
+    fecha_aplicacion: string;
+    fecha_vencimiento: string | null;
+  }[];
+
+  const hoyISO = new Date().toISOString().slice(0, 10);
+  return filas.map((f) => ({
+    ...f,
+    // Sin fecha de vencimiento cargada = se asume vigente (no se inventa
+    // una duración estándar por tipo de vacuna).
+    vigente: !f.fecha_vencimiento || f.fecha_vencimiento >= hoyISO,
+  }));
+}
+
+export async function crearVacuna(
+  mascotaId: number,
+  input: { nombreVacuna: string; descripcion?: string | null; fechaAplicacion: string; fechaVencimiento?: string | null },
+  creadoPorUsuarioId: number
+) {
+  if (!input.nombreVacuna?.trim()) throw new Error("Falta el nombre de la vacuna.");
+  if (!input.fechaAplicacion) throw new Error("Falta la fecha en que se aplicó la vacuna.");
+  const insert = await db
+    .prepare(
+      `INSERT INTO mascota_vacuna (mascota_id_mascota, nombre_vacuna, descripcion, fecha_aplicacion, fecha_vencimiento, creado_por_usuario_id)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(mascotaId, input.nombreVacuna.trim(), input.descripcion?.trim() || null, input.fechaAplicacion, input.fechaVencimiento || null, creadoPorUsuarioId);
+  return { id_mascotavacuna: Number(insert.lastInsertRowid) };
+}
+
+export async function eliminarVacuna(id: number) {
+  await db.prepare(`DELETE FROM mascota_vacuna WHERE id_mascotavacuna = ?`).run(id);
+}
+
+// Para el chequeo de pertenencia en la ruta (¿esta vacuna es de una
+// mascota de este residente/condominio?).
+export async function getMascotaDeVacuna(idVacuna: number): Promise<number | undefined> {
+  const fila = (await db.prepare(`SELECT mascota_id_mascota FROM mascota_vacuna WHERE id_mascotavacuna = ?`).get(idVacuna)) as
+    | { mascota_id_mascota: number }
+    | undefined;
+  return fila?.mascota_id_mascota;
+}
+
 export { getUnidadDeMascota, getCondominioDeMascota };

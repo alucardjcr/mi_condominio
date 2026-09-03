@@ -800,6 +800,16 @@ export interface Mascota {
   nombre_torre?: string;
 }
 
+// Ronda 50, a pedido explícito del usuario, con referencia visual.
+export interface VacunaMascota {
+  id_mascotavacuna: number;
+  nombre_vacuna: string;
+  descripcion: string | null;
+  fecha_aplicacion: string; // 'YYYY-MM-DD'
+  fecha_vencimiento: string | null;
+  vigente: boolean;
+}
+
 // --- Ronda 28: administración de estacionamientos ---------------------------
 
 export interface EstacionamientoAdmin {

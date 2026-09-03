@@ -1499,3 +1499,27 @@ CREATE TABLE IF NOT EXISTS mascota (
     REFERENCES usuario (id_usuario),
   INDEX idx_mascota_unidad (unidad_id_unidad)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ronda 50, a pedido explícito del usuario, con referencia visual: registro
+-- de vacunas por mascota (antes no existía este concepto en el modelo).
+-- "Vigente"/"Vencida" se calcula al vuelo comparando fecha_vencimiento
+-- contra hoy (no se guarda como estado aparte, así nunca queda
+-- desactualizado) — fecha_vencimiento es OPCIONAL: si no se carga (por
+-- ejemplo, alguien no sabe cuándo vence una vacuna puntual), se asume
+-- vigente sin fecha límite conocida, nunca se inventa una duración
+-- estándar por tipo de vacuna (varía según el veterinario/fabricante).
+CREATE TABLE IF NOT EXISTS mascota_vacuna (
+  id_mascotavacuna       INT AUTO_INCREMENT PRIMARY KEY,
+  mascota_id_mascota      INT NOT NULL,
+  nombre_vacuna            VARCHAR(100) NOT NULL, -- 'Antirrábica', 'Séxtuple', etc. — texto libre
+  descripcion               VARCHAR(255) NULL, -- 'Obligatoria', 'Distemper, Parvo...', etc.
+  fecha_aplicacion          DATE NOT NULL,
+  fecha_vencimiento         DATE NULL,
+  creado_por_usuario_id     INT NOT NULL,
+  fecha_creacion            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_mascotavacuna_mascota FOREIGN KEY (mascota_id_mascota)
+    REFERENCES mascota (id_mascota),
+  CONSTRAINT fk_mascotavacuna_creador FOREIGN KEY (creado_por_usuario_id)
+    REFERENCES usuario (id_usuario),
+  INDEX idx_mascotavacuna_mascota (mascota_id_mascota)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
