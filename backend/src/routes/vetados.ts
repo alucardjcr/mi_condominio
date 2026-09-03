@@ -46,7 +46,7 @@ vetadosRouter.get("/", requireRol("Administrador"), async (req, res) => {
 
 vetadosRouter.post("/", requireRol("Administrador"), async (req, res) => {
   try {
-    const { nombre_completo, rut, patente, parentesco, fecha_ingreso, foto_persona, foto_vehiculo, observaciones } = req.body;
+    const { nombre_completo, rut, patente, parentesco, fecha_ingreso, foto_persona, foto_vehiculo, observaciones, unidad_id_unidad } = req.body;
     if (!nombre_completo || !rut || !fecha_ingreso) {
       return res.status(400).json({ error: "Faltan campos: nombre_completo, rut, fecha_ingreso." });
     }
@@ -64,6 +64,7 @@ vetadosRouter.post("/", requireRol("Administrador"), async (req, res) => {
         fotoVehiculoUrl,
         observaciones,
         condominioId,
+        unidadId: unidad_id_unidad ? Number(unidad_id_unidad) : undefined,
       },
       req.guardia!.id_usuario
     );
@@ -75,7 +76,8 @@ vetadosRouter.post("/", requireRol("Administrador"), async (req, res) => {
 
 vetadosRouter.patch("/:id", requireRol("Administrador"), requirePerteneceAlCondominio("vetado", "id_vetado"), async (req, res) => {
   try {
-    const { nombre_completo, rut, patente, parentesco, fecha_ingreso, foto_persona, foto_vehiculo, observaciones, flg_vigencia } = req.body;
+    const { nombre_completo, rut, patente, parentesco, fecha_ingreso, foto_persona, foto_vehiculo, observaciones, flg_vigencia, unidad_id_unidad } =
+      req.body;
     const fotoPersonaUrl = foto_persona ? await guardarImagenBase64(foto_persona, "persona", "vetados") : undefined;
     const fotoVehiculoUrl = foto_vehiculo ? await guardarImagenBase64(foto_vehiculo, "vehiculo", "vetados") : undefined;
     res.json(
@@ -89,6 +91,8 @@ vetadosRouter.patch("/:id", requireRol("Administrador"), requirePerteneceAlCondo
         fotoVehiculoUrl,
         observaciones,
         flgVigencia: flg_vigencia !== undefined ? Number(flg_vigencia) : undefined,
+        unidadId: unidad_id_unidad !== undefined ? (unidad_id_unidad === null ? null : Number(unidad_id_unidad)) : undefined,
+        condominioId: req.guardia?.condominio_id_condominio,
       })
     );
   } catch (err: any) {

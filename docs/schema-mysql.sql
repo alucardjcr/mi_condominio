@@ -1523,3 +1523,22 @@ CREATE TABLE IF NOT EXISTS mascota_vacuna (
     REFERENCES usuario (id_usuario),
   INDEX idx_mascotavacuna_mascota (mascota_id_mascota)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ronda 52, a pedido explícito del usuario (bug real detectado probando la
+-- app): un vetado no tenía ningún vínculo REAL a un depto — solo el campo
+-- de texto libre `parentesco` (ej. "Ex pareja depto 305"), sin estructura,
+-- imposible de filtrar o de mostrar de forma confiable. Cuando el
+-- condominio tiene varias torres/edificios/blocks, hace falta saber
+-- exactamente a qué unidad corresponde el vetado. Tabla aparte (no ALTER
+-- TABLE sobre `vetado`, mismo criterio de siempre en este archivo) — 1 a 1
+-- y OPCIONAL: no todo vetado tiene por qué estar ligado a un depto
+-- puntual (ej. alguien vetado por mal comportamiento general, sin
+-- relación con ningún residente en particular).
+CREATE TABLE IF NOT EXISTS vetado_unidad (
+  vetado_id_vetado INT NOT NULL PRIMARY KEY,
+  unidad_id_unidad  INT NOT NULL,
+  CONSTRAINT fk_vetadounidad_vetado FOREIGN KEY (vetado_id_vetado)
+    REFERENCES vetado (id_vetado),
+  CONSTRAINT fk_vetadounidad_unidad FOREIGN KEY (unidad_id_unidad)
+    REFERENCES unidad (id_unidad)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -12,11 +12,12 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { adminActualizarVetado, adminCrearVetado, adminGetVetados } from "../../api/client";
-import { Vetado } from "../../api/types";
+import { adminActualizarVetado, adminCrearVetado, adminGetVetados, getTorres, getUnidadesPorTorre } from "../../api/client";
+import { Torre, Unidad, Vetado } from "../../api/types";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import FotoCapture from "../../components/FotoCapture";
+import SelectModal, { OpcionSelect } from "../../components/SelectModal";
 import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
 
 function hoyISO() {
@@ -45,6 +46,20 @@ export default function AdminVetadosScreen() {
   const [fotoPersona, setFotoPersona] = useState<string | null>(null);
   const [fotoVehiculo, setFotoVehiculo] = useState<string | null>(null);
 
+  // Ronda 52, a pedido explícito del usuario: a qué depto corresponde el
+  // vetado (opcional) — antes solo existía el campo de texto libre
+  // "parentesco", sin ningún vínculo real a una unidad.
+  const [torres, setTorres] = useState<Torre[]>([]);
+  const [torreSel, setTorreSel] = useState<OpcionSelect | null>(null);
+  const [unidades, setUnidades] = useState<Unidad[]>([]);
+  const [unidadSel, setUnidadSel] = useState<OpcionSelect | null>(null);
+
+  // Edición del depto de un vetado ya existente, directo desde su tarjeta.
+  const [vetadoEditandoDepto, setVetadoEditandoDepto] = useState<number | null>(null);
+  const [torreEditarSel, setTorreEditarSel] = useState<OpcionSelect | null>(null);
+  const [unidadesEditar, setUnidadesEditar] = useState<Unidad[]>([]);
+  const [unidadEditarSel, setUnidadEditarSel] = useState<OpcionSelect | null>(null);
+
   const cargar = useCallback(
     async (mostrarRefresh = false) => {
       if (!token) return;
@@ -67,6 +82,13 @@ export default function AdminVetadosScreen() {
     }, [cargar])
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!token) return;
+      getTorres(token, CONDOMINIO_ID).then(setTorres);
+    }, [token])
+  );
+
   const limpiarFormulario = () => {
     setNombreCompleto("");
     setRut("");
@@ -76,6 +98,15 @@ export default function AdminVetadosScreen() {
     setObservaciones("");
     setFotoPersona(null);
     setFotoVehiculo(null);
+    setTorreSel(null);
+    setUnidadSel(null);
+  };
+
+  const handleSeleccionarTorre = async (opcion: OpcionSelect) => {
+    setTorreSel(opcion);
+    setUnidadSel(null);
+    if (!token) return;
+    setUnidades(await getUnidadesPorTorre(token, opcion.id));
   };
 
   const handleAgregar = async () => {
@@ -95,6 +126,7 @@ export default function AdminVetadosScreen() {
         foto_persona: fotoPersona || undefined,
         foto_vehiculo: fotoVehiculo || undefined,
         condominio_id_condominio: CONDOMINIO_ID,
+        unidad_id_unidad: unidadSel ? unidadSel.id : undefined,
       });
       limpiarFormulario();
       setMostrarForm(false);
@@ -128,6 +160,31 @@ export default function AdminVetadosScreen() {
         },
       ]
     );
+  };
+
+  const handleAbrirEdicionDepto = (v: Vetado) => {
+    setVetadoEditandoDepto(v.id_vetado);
+    setTorreEditarSel(null);
+    setUnidadesEditar([]);
+    setUnidadEditarSel(v.unidad_id_unidad && v.numero_unidad ? { id: v.unidad_id_unidad, label: v.numero_unidad } : null);
+  };
+
+  const handleSeleccionarTorreEditar = async (opcion: OpcionSelect) => {
+    setTorreEditarSel(opcion);
+    setUnidadEditarSel(null);
+    if (!token) return;
+    setUnidadesEditar(await getUnidadesPorTorre(token, opcion.id));
+  };
+
+  const handleGuardarDepto = async (id: number) => {
+    if (!token) return;
+    try {
+      await adminActualizarVetado(token, id, { unidad_id_unidad: unidadEditarSel ? unidadEditarSel.id : null });
+      setVetadoEditandoDepto(null);
+      cargar();
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    }
   };
 
   if (loading) {
@@ -172,6 +229,17 @@ export default function AdminVetadosScreen() {
             placeholder="Ej: Ex pareja del depto 305"
           />
 
+          <Text style={styles.label}>Depto asociado (opcional)</Text>
+          <SelectModal label="Torre" placeholder="Selecciona una torre" opciones={torres.map((t) => ({ id: t.id_torreblock, label: t.nombre_torre }))} valorSeleccionado={torreSel} onSeleccionar={handleSeleccionarTorre} />
+          <SelectModal
+            label="Depto"
+            placeholder={torreSel ? "Selecciona un depto" : "Primero elige la torre"}
+            opciones={unidades.map((u) => ({ id: u.id_unidad, label: u.numero_unidad }))}
+            valorSeleccionado={unidadSel}
+            onSeleccionar={setUnidadSel}
+            disabled={!torreSel}
+          />
+
           <Text style={styles.label}>Fecha de ingreso al listado</Text>
           <TextInput style={styles.input} value={fechaIngreso} onChangeText={setFechaIngreso} placeholder="YYYY-MM-DD" />
 
@@ -205,6 +273,40 @@ export default function AdminVetadosScreen() {
           {v.parentesco && <Text style={styles.detalle}>{v.parentesco}</Text>}
           <Text style={styles.detalle}>Desde: {v.fecha_ingreso}</Text>
           {v.observaciones && <Text style={styles.observaciones}>{v.observaciones}</Text>}
+
+          {vetadoEditandoDepto === v.id_vetado ? (
+            <View style={{ marginTop: 10 }}>
+              <SelectModal
+                label="Torre"
+                placeholder="Selecciona una torre"
+                opciones={torres.map((t) => ({ id: t.id_torreblock, label: t.nombre_torre }))}
+                valorSeleccionado={torreEditarSel}
+                onSeleccionar={handleSeleccionarTorreEditar}
+              />
+              <SelectModal
+                label="Depto"
+                placeholder={torreEditarSel ? "Selecciona un depto" : "Primero elige la torre (o deja vacío para quitar el depto asociado)"}
+                opciones={unidadesEditar.map((u) => ({ id: u.id_unidad, label: u.numero_unidad }))}
+                valorSeleccionado={unidadEditarSel}
+                onSeleccionar={setUnidadEditarSel}
+                disabled={!torreEditarSel}
+              />
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                <TouchableOpacity style={[styles.botonGuardar, { flex: 1, marginTop: 0 }]} onPress={() => handleGuardarDepto(v.id_vetado)}>
+                  <Text style={styles.botonTexto}>Guardar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.botonBaja, { flex: 1, borderTopWidth: 0, paddingTop: 0 }]} onPress={() => setVetadoEditandoDepto(null)}>
+                  <Text style={styles.botonBajaTexto}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={() => handleAbrirEdicionDepto(v)}>
+              <Text style={styles.enlaceDepto}>
+                {v.nombre_torre ? `📍 ${v.nombre_torre} · Depto ${v.numero_unidad}` : "📍 Sin depto asociado — toca para asignar"}
+              </Text>
+            </TouchableOpacity>
+          )}
           <View style={styles.fotosRow}>
             {v.foto_persona_url && <Image source={fuenteImagenPrivada(v.foto_persona_url, token)!} style={styles.foto} />}
             {v.foto_vehiculo_url && <Image source={fuenteImagenPrivada(v.foto_vehiculo_url, token)!} style={styles.foto} />}
@@ -232,6 +334,7 @@ const styles = StyleSheet.create({
   chipInactiva: { fontSize: 11, color: "#999", fontWeight: "700" },
   detalle: { color: "#555", marginTop: 2, fontSize: 13 },
   observaciones: { color: "#888", marginTop: 6, fontSize: 12, fontStyle: "italic" },
+  enlaceDepto: { color: "#014BD2", fontWeight: "700", fontSize: 12, marginTop: 8 },
   fotosRow: { flexDirection: "row", gap: 10, marginTop: 10 },
   foto: { width: 80, height: 80, borderRadius: 8, backgroundColor: "#eee" },
   label: { fontSize: 13, fontWeight: "600", color: "#333", marginTop: 10 },

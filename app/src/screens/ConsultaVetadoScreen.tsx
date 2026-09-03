@@ -59,6 +59,11 @@ export default function ConsultaVetadoScreen() {
           <Text style={styles.cardAlertaDetalle}>RUT: {resultado.rut}</Text>
           {resultado.patente && <Text style={styles.cardAlertaDetalle}>Patente: {resultado.patente}</Text>}
           {resultado.parentesco && <Text style={styles.cardAlertaDetalle}>Motivo/relación: {resultado.parentesco}</Text>}
+          {resultado.nombre_torre && (
+            <Text style={styles.cardAlertaDetalle}>
+              Asociado a: {resultado.nombre_torre} · Depto {resultado.numero_unidad}
+            </Text>
+          )}
           <Text style={styles.cardAlertaNota}>Si se presenta en portería, avisa a administración y/o Carabineros.</Text>
           <View style={styles.fotosRow}>
             {resultado.foto_persona_url && <Image source={fuenteImagenPrivada(resultado.foto_persona_url, token)!} style={styles.foto} />}

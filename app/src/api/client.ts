@@ -690,7 +690,7 @@ export const adminCrearVetado = (token: string, payload: CrearVetadoPayload) =>
 export const adminActualizarVetado = (
   token: string,
   id: number,
-  input: Partial<Omit<CrearVetadoPayload, "condominio_id_condominio">> & { flg_vigencia?: number }
+  input: Partial<Omit<CrearVetadoPayload, "condominio_id_condominio" | "unidad_id_unidad">> & { flg_vigencia?: number; unidad_id_unidad?: number | null }
 ) => send<Vetado>(`/vetados/${id}`, "PATCH", token, input);
 
 // --- Ronda 20: Bitácora de guardias -----------------------------------------

@@ -30,11 +30,15 @@ function normalizarPatente(patente: string): string {
 export async function listarVetados(condominioId: number) {
   return db
     .prepare(
-      `SELECT id_vetado, nombre_completo, rut, patente, parentesco, fecha_ingreso,
-              foto_persona_url, foto_vehiculo_url, observaciones, flg_vigencia
-       FROM vetado
-       WHERE condominio_id_condominio = ?
-       ORDER BY flg_vigencia DESC, nombre_completo`
+      `SELECT v.id_vetado, v.nombre_completo, v.rut, v.patente, v.parentesco, v.fecha_ingreso,
+              v.foto_persona_url, v.foto_vehiculo_url, v.observaciones, v.flg_vigencia,
+              vu.unidad_id_unidad, un.numero_unidad, tb.nombre_torre
+       FROM vetado v
+       LEFT JOIN vetado_unidad vu ON vu.vetado_id_vetado = v.id_vetado
+       LEFT JOIN unidad un ON un.id_unidad = vu.unidad_id_unidad
+       LEFT JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
+       WHERE v.condominio_id_condominio = ?
+       ORDER BY v.flg_vigencia DESC, v.nombre_completo`
     )
     .all(condominioId);
 }
@@ -50,11 +54,20 @@ export async function crearVetado(
     fotoVehiculoUrl?: string;
     observaciones?: string;
     condominioId: number;
+    unidadId?: number | null;
   },
   creadoPorUsuarioId: number
 ) {
   if (!input.nombreCompleto?.trim() || !input.rut?.trim() || !input.fechaIngreso) {
     throw new Error("Faltan campos obligatorios: nombre completo, RUT y fecha de ingreso.");
+  }
+  // Ronda 52, a pedido explícito del usuario: si se indica un depto,
+  // confirma que sea realmente de ESTE condominio (mismo criterio IDOR de
+  // siempre) — sin esto, se podría vincular un vetado a la unidad de otro
+  // condominio con solo adivinar su id.
+  if (input.unidadId) {
+    const unidad = await db.prepare(`SELECT id_unidad FROM unidad WHERE id_unidad = ? AND condominio_id_condominio = ?`).get(input.unidadId, input.condominioId);
+    if (!unidad) throw new Error("El depto indicado no pertenece a este condominio.");
   }
   const insert = await db
     .prepare(
@@ -76,7 +89,11 @@ export async function crearVetado(
       creadoPorUsuarioId,
       formatDateTime(new Date())
     );
-  return db.prepare(`SELECT * FROM vetado WHERE id_vetado = ?`).get(Number(insert.lastInsertRowid));
+  const idVetado = Number(insert.lastInsertRowid);
+  if (input.unidadId) {
+    await db.prepare(`INSERT INTO vetado_unidad (vetado_id_vetado, unidad_id_unidad) VALUES (?, ?)`).run(idVetado, input.unidadId);
+  }
+  return db.prepare(`SELECT * FROM vetado WHERE id_vetado = ?`).get(idVetado);
 }
 
 export async function actualizarVetado(
@@ -91,6 +108,8 @@ export async function actualizarVetado(
     fotoVehiculoUrl?: string;
     observaciones?: string | null;
     flgVigencia?: number;
+    unidadId?: number | null;
+    condominioId?: number; // para validar unidadId, si se manda
   }
 ) {
   if (input.nombreCompleto !== undefined) {
@@ -120,16 +139,46 @@ export async function actualizarVetado(
   if (input.flgVigencia !== undefined) {
     await db.prepare(`UPDATE vetado SET flg_vigencia = ? WHERE id_vetado = ?`).run(input.flgVigencia, id);
   }
-  return db.prepare(`SELECT * FROM vetado WHERE id_vetado = ?`).get(id);
+  // Ronda 52, a pedido explícito del usuario: asignar/cambiar/quitar el
+  // depto asociado — null explícito lo quita, un id lo asigna/reemplaza.
+  if (input.unidadId !== undefined) {
+    if (input.unidadId === null) {
+      await db.prepare(`DELETE FROM vetado_unidad WHERE vetado_id_vetado = ?`).run(id);
+    } else {
+      if (input.condominioId) {
+        const unidad = await db
+          .prepare(`SELECT id_unidad FROM unidad WHERE id_unidad = ? AND condominio_id_condominio = ?`)
+          .get(input.unidadId, input.condominioId);
+        if (!unidad) throw new Error("El depto indicado no pertenece a este condominio.");
+      }
+      await db
+        .prepare(`INSERT INTO vetado_unidad (vetado_id_vetado, unidad_id_unidad) VALUES (?, ?) ON DUPLICATE KEY UPDATE unidad_id_unidad = ?`)
+        .run(id, input.unidadId, input.unidadId);
+    }
+  }
+  return db
+    .prepare(
+      `SELECT v.*, un.numero_unidad, tb.nombre_torre
+       FROM vetado v
+       LEFT JOIN vetado_unidad vu ON vu.vetado_id_vetado = v.id_vetado
+       LEFT JOIN unidad un ON un.id_unidad = vu.unidad_id_unidad
+       LEFT JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
+       WHERE v.id_vetado = ?`
+    )
+    .get(id);
 }
 
 /** Búsqueda proactiva del guardia por RUT (pantalla "Consulta VETADOS"). */
 export async function buscarVetadoPorRut(condominioId: number, rut: string) {
   return db
     .prepare(
-      `SELECT id_vetado, nombre_completo, rut, patente, parentesco, foto_persona_url, foto_vehiculo_url
-       FROM vetado
-       WHERE condominio_id_condominio = ? AND flg_vigencia = 1 AND rut = ?`
+      `SELECT v.id_vetado, v.nombre_completo, v.rut, v.patente, v.parentesco, v.foto_persona_url, v.foto_vehiculo_url,
+              un.numero_unidad, tb.nombre_torre
+       FROM vetado v
+       LEFT JOIN vetado_unidad vu ON vu.vetado_id_vetado = v.id_vetado
+       LEFT JOIN unidad un ON un.id_unidad = vu.unidad_id_unidad
+       LEFT JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
+       WHERE v.condominio_id_condominio = ? AND v.flg_vigencia = 1 AND v.rut = ?`
     )
     .get(condominioId, normalizarRut(rut));
 }
@@ -147,20 +196,24 @@ export async function verificarAlertaVetado(conn: DbLike, condominioId: number, 
   const condiciones: string[] = [];
   const params: any[] = [condominioId];
   if (rut) {
-    condiciones.push("rut = ?");
+    condiciones.push("v.rut = ?");
     params.push(normalizarRut(rut));
   }
   if (patente) {
-    condiciones.push("patente = ?");
+    condiciones.push("v.patente = ?");
     params.push(normalizarPatente(patente));
   }
 
   return (
     (await conn
       .prepare(
-        `SELECT id_vetado, nombre_completo, rut, patente, parentesco
-         FROM vetado
-         WHERE condominio_id_condominio = ? AND flg_vigencia = 1 AND (${condiciones.join(" OR ")})
+        `SELECT v.id_vetado, v.nombre_completo, v.rut, v.patente, v.parentesco,
+                un.numero_unidad, tb.nombre_torre
+         FROM vetado v
+         LEFT JOIN vetado_unidad vu ON vu.vetado_id_vetado = v.id_vetado
+         LEFT JOIN unidad un ON un.id_unidad = vu.unidad_id_unidad
+         LEFT JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
+         WHERE v.condominio_id_condominio = ? AND v.flg_vigencia = 1 AND (${condiciones.join(" OR ")})
          LIMIT 1`
       )
       .get(...params)) ?? null

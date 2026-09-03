@@ -706,6 +706,11 @@ export interface Vetado {
   foto_vehiculo_url: string | null;
   observaciones: string | null;
   flg_vigencia: number;
+  // Ronda 52, a pedido explícito del usuario: a qué depto corresponde,
+  // si se cargó uno — null si no está asociado a ninguno en particular.
+  unidad_id_unidad: number | null;
+  numero_unidad: string | null;
+  nombre_torre: string | null;
 }
 
 export interface AlertaVetado {
@@ -714,6 +719,8 @@ export interface AlertaVetado {
   rut: string;
   patente: string | null;
   parentesco: string | null;
+  numero_unidad: string | null;
+  nombre_torre: string | null;
 }
 
 export interface CrearVetadoPayload {
@@ -726,6 +733,7 @@ export interface CrearVetadoPayload {
   foto_vehiculo?: string; // data URL base64
   observaciones?: string;
   condominio_id_condominio: number;
+  unidad_id_unidad?: number;
 }
 
 // --- Ronda 20: Bitácora de guardias -----------------------------------------

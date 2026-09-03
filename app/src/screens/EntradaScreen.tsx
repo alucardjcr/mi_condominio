@@ -165,6 +165,10 @@ export default function EntradaScreen({ navigation, route }: any) {
             "🚨 PERSONA VETADA",
             `${resultado.alertaVetado.nombre_completo} (RUT ${resultado.alertaVetado.rut}) está en la lista de personas con prohibición de ingreso.${
               resultado.alertaVetado.parentesco ? `\n\nMotivo: ${resultado.alertaVetado.parentesco}` : ""
+            }${
+              resultado.alertaVetado.nombre_torre
+                ? `\n\nAsociado a: ${resultado.alertaVetado.nombre_torre} · Depto ${resultado.alertaVetado.numero_unidad}`
+                : ""
             }\n\nLa entrada ya quedó registrada — avisa a administración y/o Carabineros según corresponda.`
           );
         }
@@ -257,6 +261,10 @@ export default function EntradaScreen({ navigation, route }: any) {
           "🚨 PERSONA VETADA",
           `${resultado.alertaVetado.nombre_completo} (RUT ${resultado.alertaVetado.rut}) está en la lista de personas con prohibición de ingreso.${
             resultado.alertaVetado.parentesco ? `\n\nMotivo: ${resultado.alertaVetado.parentesco}` : ""
+          }${
+            resultado.alertaVetado.nombre_torre
+              ? `\n\nAsociado a: ${resultado.alertaVetado.nombre_torre} · Depto ${resultado.alertaVetado.numero_unidad}`
+              : ""
           }\n\nLa entrada ya quedó registrada — avisa a administración y/o Carabineros según corresponda.`
         );
       }
