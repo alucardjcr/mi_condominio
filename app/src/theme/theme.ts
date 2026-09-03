@@ -3,24 +3,32 @@
 // por botón, sin ningún criterio en común). La idea es que toda pantalla
 // nueva (o que se vaya retocando) importe esto en vez de inventar colores.
 //
-// Ronda 26: color institucional — el ramp "navy" ahora se genera a partir
-// del azul EXACTO del logo oficial "Mi Condominio" (#014BD2, extraído
-// directamente del archivo del logo), no de un navy genérico. Es un azul
-// franco/rey, bastante más saturado que el navy casi-negro que había antes.
-// Fijo siempre igual, independiente de si el celular está en modo oscuro o
-// claro: la app nunca sigue el tema del sistema (no hay useColorScheme en
-// ningún lado — todos los colores están hardcodeados vía este archivo), y
-// app.json fija "userInterfaceStyle": "light" para que tampoco cambien los
-// controles nativos (teclado, etc.).
+// Ronda 26: color institucional — el ramp "navy" se generó originalmente a
+// partir del azul EXACTO del logo oficial "Mi Condominio" (#014BD2).
+//
+// Ronda 54, a pedido explícito del usuario: ese azul, usado como FONDO DE
+// PANTALLA COMPLETA (login, dashboards), resultaba demasiado saturado/
+// vibrante para sesiones largas — más "azul rey llamativo" que el navy
+// sobrio que suelen usar apps de gestión serias (bancos, herramientas de
+// trabajo). El ramp "navy" ahora se basa en un tono más apagado y oscuro
+// (#0A2C6B) para fondo/superficie — el azul vibrante original queda
+// disponible aparte como `azulVivo`, para usarlo puntualmente en acentos
+// (el logo ya lo trae de fábrica, badges destacados, etc.), no como color
+// de fondo dominante.
 export const colors = {
   // Azules institucionales — fondo de pantalla, header, drawer, tarjetas
-  // oscuras. navy900 es el azul exacto del logo; el resto del ramp son
-  // variaciones más oscuras/claras del mismo tono (no colores distintos).
-  navy900: "#014BD2",
-  navy800: "#0140B3",
-  navy700: "#013593",
-  navy600: "#2766D9",
-  navy500: "#4D81E0",
+  // oscuras. Todo el ramp son variaciones más oscuras/claras del mismo
+  // tono sobrio (no colores distintos).
+  navy900: "#0A2C6B",
+  navy800: "#082350",
+  navy700: "#061A3B",
+  navy600: "#2F538F",
+  navy500: "#5478B0",
+
+  // El azul vibrante original del logo — a propósito NO se usa como fondo
+  // de pantalla completa (por eso dejó de ser navy900); queda disponible
+  // para acentos puntuales que sí quieran destacar con energía.
+  azulVivo: "#014BD2",
 
   // Acento — para botones primarios, elementos activos, foco.
   gold: "#D4AF37",
@@ -40,13 +48,12 @@ export const colors = {
 
   // Semánticos — se mantienen consistentes con lo que ya existía
   // (entrada = verde, salida = rojo, etc.) para no romper la asociación
-  // que los guardias ya tienen con estos colores. "info" ahora es el mismo
-  // azul institucional (antes era un azul suelto #1A6FC4 que además estaba
-  // hardcodeado en ~35 pantallas de antes de la ronda 24 — se unificó todo
-  // a este mismo valor).
+  // que los guardias ya tienen con estos colores. "info" sigue el mismo
+  // azul institucional que el resto del ramp (ronda 54: ahora el sobrio,
+  // no el vibrante).
   success: "#1A9D5C",
   danger: "#C0392B",
-  info: "#014BD2",
+  info: "#0A2C6B",
   warning: "#D97706",
 } as const;
 
