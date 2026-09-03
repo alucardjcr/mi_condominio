@@ -1,37 +1,51 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { actualizarResidenteDelHogar, crearResidenteDelHogar, getMisResidentesDelHogar, getTiposResidente } from "../api/client";
-import { ResidenteAdmin, TipoResidente } from "../api/types";
+import {
+  actualizarResidenteDelHogar,
+  crearResidenteDelHogar,
+  getMascotas,
+  getMisResidentesDelHogar,
+  getTiposResidente,
+} from "../api/client";
+import { Mascota, ResidenteAdmin, TipoResidente } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
+import { colors, radius, spacing, typography } from "../theme/theme";
+
+// Ronda 49, a pedido explícito del usuario, con referencia visual: rediseño
+// completo de "Mi hogar" — mismo estilo institucional que el resto de la
+// app (fondo navy, tarjetas claras), pero SOLO con datos que existen de
+// verdad en el modelo. La referencia mostraba algunas cosas que este
+// sistema no guarda (foto real de personas/condominio, email visible,
+// fechas de vacunas de la mascota) — se omiten en vez de inventarse.
+
+const PALETA_AVATAR = ["#DCEBFF", "#FFE8CC", "#E4F7D8", "#FBE0E8", "#EAE0FB", "#FFF3B0"];
+function colorAvatar(id: number) {
+  return PALETA_AVATAR[id % PALETA_AVATAR.length];
+}
+function iniciales(nombre: string) {
+  const partes = nombre.trim().split(/\s+/);
+  return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
+}
 
 // Autoadministración del hogar por el dueño del depto (ronda 15, a pedido
-// explícito del usuario): solo se llega a esta pantalla si guardia
-// .esPropietario es true (ver HomeScreen). El dueño conserva este permiso
-// viva o no en el depto — puede tenerlo arrendado y administrar a los
-// residentes a distancia. El backend (/mi-depto/*) además valida todo esto
+// explícito del usuario): cualquier residente del hogar puede VER esta
+// pantalla (ronda 48, ahora es la pantalla de entrada de todo Residente),
+// pero solo el dueño puede editar — el backend (/mi-depto/*) valida esto
 // por su cuenta, así que esta pantalla nunca es la única barrera.
 export default function MiHogarScreen({ navigation }: any) {
-  const { token, guardia } = useAuth();
+  const { token, guardia, nombreCondominioActual } = useAuth();
   const [residentes, setResidentes] = useState<ResidenteAdmin[]>([]);
+  const [mascotas, setMascotas] = useState<Mascota[]>([]);
   const [tiposResidente, setTiposResidente] = useState<TipoResidente[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [mostrarFormAgregar, setMostrarFormAgregar] = useState(false);
   const [nombre, setNombre] = useState("");
   const [tipoResidenteSel, setTipoResidenteSel] = useState<OpcionSelect | null>(null);
   const [creando, setCreando] = useState(false);
 
-  // Ronda 36, a pedido explícito del usuario: datos adicionales opcionales.
   const [rutNuevo, setRutNuevo] = useState("");
   const [fechaNacimientoNuevo, setFechaNacimientoNuevo] = useState("");
   const [profesionNuevo, setProfesionNuevo] = useState("");
@@ -47,7 +61,9 @@ export default function MiHogarScreen({ navigation }: any) {
   const cargar = useCallback(async () => {
     if (!token) return;
     try {
-      setResidentes(await getMisResidentesDelHogar(token));
+      const [r, m] = await Promise.all([getMisResidentesDelHogar(token), getMascotas(token)]);
+      setResidentes(r);
+      setMascotas(m);
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
@@ -86,6 +102,7 @@ export default function MiHogarScreen({ navigation }: any) {
       setRutNuevo("");
       setFechaNacimientoNuevo("");
       setProfesionNuevo("");
+      setMostrarFormAgregar(false);
       cargar();
     } catch (e: any) {
       Alert.alert("Error", e.message);
@@ -156,96 +173,107 @@ export default function MiHogarScreen({ navigation }: any) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
 
-  return (
-    <FlatList
-      style={styles.container}
-      data={residentes}
-      keyExtractor={(item) => String(item.id_usuario)}
-      contentContainerStyle={{ padding: 16, gap: 10 }}
-      ListHeaderComponent={
-        <View>
-          {/* Ronda 48, a pedido explícito del usuario: "Mi hogar" pasó a
-              ser la primera pantalla que ve un Residente al loguearse —
-              antes de este cambio no hacía falta ningún enlace de salida
-              acá porque siempre se llegaba desde el Home genérico (con
-              todos los botones). Sin esto, un residente quedaría sin
-              forma de llegar a paquetes/reservas/notificaciones. */}
-          <View style={styles.accesosRapidos}>
-            <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("Home")}>
-              <Text style={styles.accesoRapidoTexto}>🏠 Inicio</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("MisPaquetes")}>
-              <Text style={styles.accesoRapidoTexto}>📦 Paquetes</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("ReservasEspacios")}>
-              <Text style={styles.accesoRapidoTexto}>📅 Reservas</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("Notificaciones")}>
-              <Text style={styles.accesoRapidoTexto}>🔔 Avisos</Text>
-            </TouchableOpacity>
-          </View>
+  const activos = residentes.filter((r) => r.flg_vigencia);
 
-          <Text style={styles.intro}>
-            Acá administras quién vive en {guardia?.nombre_torre ? `${guardia.nombre_torre} · Depto ${guardia.numero_unidad}` : "tu depto"},
-            aunque tú no vivas ahí. Puedes agregar personas, cambiar a qué título viven ahí, o darlas de baja.
-          </Text>
-          <View style={styles.form}>
-            <Text style={styles.formTitulo}>Agregar persona</Text>
-            <TextInput style={styles.input} placeholder="Nombre" value={nombre} onChangeText={setNombre} />
-            <SelectModal
-              label="Tipo de residente"
-              placeholder="Ej: Arrendatario, pareja, roomie..."
-              opciones={tiposResidente.map((t) => ({ id: t.id_tiporesidente, label: t.gls_tiporesidente }))}
-              valorSeleccionado={tipoResidenteSel}
-              onSeleccionar={setTipoResidenteSel}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="RUT (opcional)"
-              value={rutNuevo}
-              onChangeText={setRutNuevo}
-              autoCapitalize="characters"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Fecha de nacimiento AAAA-MM-DD (opcional)"
-              value={fechaNacimientoNuevo}
-              onChangeText={setFechaNacimientoNuevo}
-              keyboardType="numbers-and-punctuation"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Profesión (opcional)"
-              value={profesionNuevo}
-              onChangeText={setProfesionNuevo}
-            />
-            <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
-              <Text style={styles.botonCrearTexto}>{creando ? "Agregando..." : "Agregar"}</Text>
-            </TouchableOpacity>
-          </View>
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
+      <View style={styles.filaTitulo}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.tituloPagina}>Mi hogar</Text>
+          <Text style={styles.subtituloPagina}>Integrantes del departamento</Text>
         </View>
-      }
-      ListEmptyComponent={<Text style={styles.vacio}>Todavía no tienes a nadie registrado en tu depto.</Text>}
-      renderItem={({ item }) => (
-        <View style={styles.card}>
+        <TouchableOpacity style={styles.botonAgregar} onPress={() => setMostrarFormAgregar((v) => !v)}>
+          <Text style={styles.botonAgregarTexto}>{mostrarFormAgregar ? "✕ Cerrar" : "+ Agregar integrante"}</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.cardResumen}>
+        <Text style={styles.cardResumenTitulo}>{nombreCondominioActual ?? "Mi condominio"}</Text>
+        <Text style={styles.cardResumenSubtitulo}>
+          {guardia?.nombre_torre ? `${guardia.nombre_torre} | Departamento ${guardia.numero_unidad}` : "Sin depto asociado"}
+        </Text>
+        <View style={styles.filaStats}>
+          <Text style={styles.statTexto}>🏠 {activos.length} personas</Text>
+          <Text style={styles.statTexto}>🐾 {mascotas.length} mascota{mascotas.length === 1 ? "" : "s"}</Text>
+        </View>
+      </View>
+
+      {mostrarFormAgregar && (
+        <View style={styles.form}>
+          <Text style={styles.formTitulo}>Agregar persona</Text>
+          <TextInput style={styles.input} placeholder="Nombre" placeholderTextColor={colors.textMuted} value={nombre} onChangeText={setNombre} />
+          <SelectModal
+            label="Tipo de residente"
+            placeholder="Ej: Cónyuge, hijo/a, arrendatario..."
+            opciones={tiposResidente.map((t) => ({ id: t.id_tiporesidente, label: t.gls_tiporesidente }))}
+            valorSeleccionado={tipoResidenteSel}
+            onSeleccionar={setTipoResidenteSel}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="RUT (opcional)"
+            placeholderTextColor={colors.textMuted}
+            value={rutNuevo}
+            onChangeText={setRutNuevo}
+            autoCapitalize="characters"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Fecha de nacimiento AAAA-MM-DD (opcional)"
+            placeholderTextColor={colors.textMuted}
+            value={fechaNacimientoNuevo}
+            onChangeText={setFechaNacimientoNuevo}
+            keyboardType="numbers-and-punctuation"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Profesión (opcional)"
+            placeholderTextColor={colors.textMuted}
+            value={profesionNuevo}
+            onChangeText={setProfesionNuevo}
+          />
+          <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
+            <Text style={styles.botonCrearTexto}>{creando ? "Agregando..." : "Agregar"}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <Text style={styles.seccionTitulo}>Personas del hogar</Text>
+      {residentes.length === 0 && <Text style={styles.vacio}>Todavía no tienes a nadie registrado en tu depto.</Text>}
+      {residentes.map((item) => (
+        <View key={item.id_usuario} style={styles.card}>
           <View style={styles.cardHeader}>
+            <View style={[styles.avatar, { backgroundColor: colorAvatar(item.id_usuario) }]}>
+              <Text style={styles.avatarTexto}>{iniciales(item.nombre_usuario)}</Text>
+            </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.nombreItem}>
+              <Text style={styles.nombreItem} numberOfLines={1}>
                 {item.nombre_usuario}
                 {item.id_usuario === guardia?.id_usuario ? " (tú)" : ""}
               </Text>
-              <Text style={styles.detalle}>{item.flg_vigencia ? "Activo" : "Inactivo"}</Text>
-              {!!item.flg_propietario && <Text style={styles.propietarioTexto}>🏠 Dueño del depto</Text>}
-              {tipoEnEdicion !== item.id_usuario && (
+              <View style={styles.filaBadges}>
+                {!!item.flg_propietario && (
+                  <View style={[styles.badge, { backgroundColor: "#DBEAFE" }]}>
+                    <Text style={styles.badgeTexto}>Propietario/a</Text>
+                  </View>
+                )}
                 <TouchableOpacity onPress={() => setTipoEnEdicion(item.id_usuario)}>
-                  <Text style={styles.tipoTexto}>🪪 {item.gls_tiporesidente ?? "Sin tipo de residente asignado"}</Text>
+                  <View style={[styles.badge, { backgroundColor: "#E4F7D8" }]}>
+                    <Text style={styles.badgeTexto}>{item.gls_tiporesidente ?? "Sin tipo asignado"}</Text>
+                  </View>
                 </TouchableOpacity>
-              )}
+                {!item.flg_vigencia && (
+                  <View style={[styles.badge, { backgroundColor: "#FEE2E2" }]}>
+                    <Text style={styles.badgeTexto}>Inactivo</Text>
+                  </View>
+                )}
+              </View>
+              {item.rut && <Text style={styles.detalle}>👤 {item.rut}</Text>}
             </View>
             {item.id_usuario !== guardia?.id_usuario && (
               <TouchableOpacity
@@ -258,7 +286,7 @@ export default function MiHogarScreen({ navigation }: any) {
           </View>
 
           {tipoEnEdicion === item.id_usuario && (
-            <View style={styles.tipoForm}>
+            <View style={styles.subForm}>
               <SelectModal
                 label="Tipo de residente"
                 placeholder="Selecciona un tipo"
@@ -277,10 +305,11 @@ export default function MiHogarScreen({ navigation }: any) {
           )}
 
           {perfilEnEdicion === item.id_usuario ? (
-            <View style={styles.tipoForm}>
+            <View style={styles.subForm}>
               <TextInput
                 style={styles.input}
                 placeholder="RUT (opcional)"
+                placeholderTextColor={colors.textMuted}
                 value={rutEditar}
                 onChangeText={setRutEditar}
                 autoCapitalize="characters"
@@ -288,6 +317,7 @@ export default function MiHogarScreen({ navigation }: any) {
               <TextInput
                 style={styles.input}
                 placeholder="Fecha de nacimiento AAAA-MM-DD (opcional)"
+                placeholderTextColor={colors.textMuted}
                 value={fechaNacimientoEditar}
                 onChangeText={setFechaNacimientoEditar}
                 keyboardType="numbers-and-punctuation"
@@ -295,6 +325,7 @@ export default function MiHogarScreen({ navigation }: any) {
               <TextInput
                 style={styles.input}
                 placeholder="Profesión (opcional)"
+                placeholderTextColor={colors.textMuted}
                 value={profesionEditar}
                 onChangeText={setProfesionEditar}
               />
@@ -315,50 +346,140 @@ export default function MiHogarScreen({ navigation }: any) {
               </View>
             </View>
           ) : (
-            <TouchableOpacity onPress={() => handleAbrirPerfil(item)}>
-              <Text style={styles.tipoTexto}>
-                {item.rut || item.fecha_nacimiento || item.profesion
-                  ? `RUT ${item.rut ?? "—"} · Nac. ${item.fecha_nacimiento ?? "—"} · ${item.profesion ?? "Sin profesión"}`
-                  : "+ Agregar RUT / fecha de nacimiento / profesión"}
-              </Text>
+            <TouchableOpacity style={styles.filaEditar} onPress={() => handleAbrirPerfil(item)}>
+              <Text style={styles.enlaceEditar}>✏️ Editar</Text>
+              <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
           )}
         </View>
-      )}
-    />
+      ))}
+
+      <Text style={styles.seccionTitulo}>Mascotas del hogar</Text>
+      {mascotas.length === 0 && <Text style={styles.vacio}>Todavía no tienes mascotas registradas.</Text>}
+      {mascotas.map((m) => (
+        <View key={m.id_mascota} style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.avatar, { backgroundColor: colorAvatar(m.id_mascota) }]}>
+              <Text style={styles.avatarTexto}>🐾</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.nombreItem}>{m.nombre}</Text>
+              <View style={styles.filaBadges}>
+                {m.especie && (
+                  <View style={[styles.badge, { backgroundColor: "#FFE8CC" }]}>
+                    <Text style={styles.badgeTexto}>{m.especie}</Text>
+                  </View>
+                )}
+              </View>
+              {(m.raza || m.numero_chip) && (
+                <Text style={styles.detalle}>
+                  {m.raza ?? ""}
+                  {m.raza && m.numero_chip ? " · " : ""}
+                  {m.numero_chip ? `Chip: ${m.numero_chip}` : ""}
+                </Text>
+              )}
+            </View>
+          </View>
+          <TouchableOpacity style={styles.filaEditar} onPress={() => navigation?.navigate("Mascotas")}>
+            <Text style={styles.enlaceEditar}>✏️ Editar</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+
+      <View style={styles.banner}>
+        <Text style={styles.bannerTexto}>
+          ℹ️ Cada persona del hogar puede tener su propio usuario para entrar a la app — pídele al Administrador que
+          le active el acceso.
+        </Text>
+      </View>
+
+      <View style={styles.accesosRapidos}>
+        <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("Home")}>
+          <Text style={styles.accesoRapidoTexto}>🏠 Inicio</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("MisPaquetes")}>
+          <Text style={styles.accesoRapidoTexto}>📦 Paquetes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("ReservasEspacios")}>
+          <Text style={styles.accesoRapidoTexto}>📅 Reservas</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.accesoRapido} onPress={() => navigation?.navigate("Notificaciones")}>
+          <Text style={styles.accesoRapidoTexto}>🔔 Avisos</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  intro: { color: "#666", fontSize: 13, marginBottom: 12, lineHeight: 18 },
-  accesosRapidos: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
-  accesoRapido: { backgroundColor: "#F0F4FF", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
-  accesoRapidoTexto: { color: "#014BD2", fontSize: 12, fontWeight: "700" },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 12 },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+
+  filaTitulo: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
+  tituloPagina: { ...typography.title, color: colors.textOnNavy },
+  subtituloPagina: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
+  botonAgregar: { backgroundColor: colors.white, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 10 },
+  botonAgregarTexto: { color: colors.navy900, fontWeight: "800", fontSize: 12 },
+
+  cardResumen: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
+  cardResumenTitulo: { ...typography.heading, color: colors.textDark },
+  cardResumenSubtitulo: { ...typography.small, color: colors.textMuted, marginTop: 2 },
+  filaStats: { flexDirection: "row", gap: spacing.lg, marginTop: spacing.sm },
+  statTexto: { ...typography.small, color: colors.textDark, fontWeight: "700" },
+
+  seccionTitulo: { ...typography.heading, color: colors.textOnNavy, marginTop: spacing.sm, fontSize: 16 },
+  vacio: { color: colors.textMutedOnNavy, fontStyle: "italic" },
+
+  form: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
+  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textDark },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
     padding: 12,
-    fontSize: 16,
+    fontSize: 15,
     marginBottom: 10,
+    color: colors.textDark,
+    backgroundColor: colors.offWhite,
   },
-  botonCrear: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
+  botonCrear: { backgroundColor: colors.success, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: 4 },
   botonCrearTexto: { color: "#fff", fontWeight: "700" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14 },
-  cardHeader: { flexDirection: "row", alignItems: "center" },
-  nombreItem: { fontSize: 16, fontWeight: "700" },
-  detalle: { color: "#666", marginTop: 2, fontSize: 13 },
-  propietarioTexto: { color: "#014BD2", marginTop: 4, fontSize: 12, fontWeight: "600" },
-  tipoTexto: { color: "#b0730a", marginTop: 4, fontSize: 12, fontWeight: "600" },
-  enlaceCerrar: { color: "#014BD2", fontSize: 12, fontWeight: "600" },
-  tipoForm: { marginTop: 10 },
-  botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  botonActivar: { backgroundColor: "#1a9d5c" },
-  botonDesactivar: { backgroundColor: "#c0392b" },
+
+  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
+  avatarTexto: { fontWeight: "800", fontSize: 16, color: colors.navy900 },
+  nombreItem: { fontSize: 15, fontWeight: "700", color: colors.textDark },
+  filaBadges: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
+  badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
+  badgeTexto: { fontSize: 11, fontWeight: "700", color: colors.textDark },
+  detalle: { color: colors.textMuted, marginTop: 4, fontSize: 12 },
+
+  botonToggle: { borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 8 },
+  botonActivar: { backgroundColor: colors.success },
+  botonDesactivar: { backgroundColor: colors.danger },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12 },
+
+  subForm: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
+  enlaceCerrar: { color: colors.info, fontSize: 12, fontWeight: "600" },
+  filaEditar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 4,
+    marginTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.sm,
+  },
+  enlaceEditar: { color: colors.info, fontSize: 13, fontWeight: "700" },
+  chevron: { color: colors.info, fontSize: 16, fontWeight: "700" },
+
+  banner: { backgroundColor: colors.navy700, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.sm },
+  bannerTexto: { color: colors.textOnNavy, fontSize: 12, lineHeight: 18 },
+
+  accesosRapidos: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: spacing.md, marginBottom: spacing.lg },
+  accesoRapido: { backgroundColor: colors.navy700, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 8 },
+  accesoRapidoTexto: { color: colors.textOnNavy, fontSize: 12, fontWeight: "700" },
 });

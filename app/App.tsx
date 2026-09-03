@@ -214,7 +214,7 @@ function AppNavigator() {
               <Stack.Screen
                 name="MiHogar"
                 component={MiHogarScreen}
-                options={{ title: "Mi hogar" }}
+                options={{ title: "Mi Condominio" }}
               />
               <Stack.Screen
                 name="EstacionamientosArriendo"
