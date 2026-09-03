@@ -1,8 +1,10 @@
 import React, { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
+import * as Clipboard from "expo-clipboard";
 import {
   actualizarMascota,
+  actualizarVacunaMascota,
   crearVacunaMascota,
   eliminarVacunaMascota,
   getMascotas,
@@ -37,6 +39,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
 
   const [mostrarFormVacuna, setMostrarFormVacuna] = useState(false);
+  const [vacunaEditandoId, setVacunaEditandoId] = useState<number | null>(null);
   const [nombreVacuna, setNombreVacuna] = useState("");
   const [descripcionVacuna, setDescripcionVacuna] = useState("");
   const [fechaAplicacion, setFechaAplicacion] = useState(new Date().toISOString().slice(0, 10));
@@ -100,30 +103,53 @@ export default function MascotaDetalleScreen({ navigation }: any) {
     }
   };
 
-  const handleAgregarVacuna = async () => {
+  const limpiarFormVacuna = () => {
+    setNombreVacuna("");
+    setDescripcionVacuna("");
+    setFechaAplicacion(new Date().toISOString().slice(0, 10));
+    setFechaVencimiento("");
+    setVacunaEditandoId(null);
+    setMostrarFormVacuna(false);
+  };
+
+  const handleGuardarVacuna = async () => {
     if (!token || !nombreVacuna.trim() || !fechaAplicacion.trim()) {
       Alert.alert("Faltan datos", "El nombre de la vacuna y la fecha de aplicación son obligatorios.");
       return;
     }
     setGuardandoVacuna(true);
     try {
-      await crearVacunaMascota(token, mascota.id_mascota, {
-        nombre_vacuna: nombreVacuna.trim(),
-        descripcion: descripcionVacuna.trim() || undefined,
-        fecha_aplicacion: fechaAplicacion.trim(),
-        fecha_vencimiento: fechaVencimiento.trim() || undefined,
-      });
-      setNombreVacuna("");
-      setDescripcionVacuna("");
-      setFechaAplicacion(new Date().toISOString().slice(0, 10));
-      setFechaVencimiento("");
-      setMostrarFormVacuna(false);
+      if (vacunaEditandoId) {
+        await actualizarVacunaMascota(token, mascota.id_mascota, vacunaEditandoId, {
+          nombre_vacuna: nombreVacuna.trim(),
+          descripcion: descripcionVacuna.trim() || null,
+          fecha_aplicacion: fechaAplicacion.trim(),
+          fecha_vencimiento: fechaVencimiento.trim() || null,
+        });
+      } else {
+        await crearVacunaMascota(token, mascota.id_mascota, {
+          nombre_vacuna: nombreVacuna.trim(),
+          descripcion: descripcionVacuna.trim() || undefined,
+          fecha_aplicacion: fechaAplicacion.trim(),
+          fecha_vencimiento: fechaVencimiento.trim() || undefined,
+        });
+      }
+      limpiarFormVacuna();
       cargar();
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
       setGuardandoVacuna(false);
     }
+  };
+
+  const handleAbrirEdicionVacuna = (v: VacunaMascota) => {
+    setVacunaEditandoId(v.id_mascotavacuna);
+    setNombreVacuna(v.nombre_vacuna);
+    setDescripcionVacuna(v.descripcion ?? "");
+    setFechaAplicacion(v.fecha_aplicacion);
+    setFechaVencimiento(v.fecha_vencimiento ?? "");
+    setMostrarFormVacuna(true);
   };
 
   const handleEliminarVacuna = (v: VacunaMascota) => {
@@ -145,8 +171,21 @@ export default function MascotaDetalleScreen({ navigation }: any) {
     ]);
   };
 
-  const handleCopiarChip = () => {
-    Alert.alert("N° de chip", mascota.numero_chip ?? "", [{ text: "Cerrar" }]);
+  // Ronda 51, a pedido explícito del usuario: menú "⋮" por vacuna (antes
+  // solo se podía eliminar manteniendo presionado, y no existía forma de
+  // editar una vacuna ya cargada).
+  const handleOpcionesVacuna = (v: VacunaMascota) => {
+    Alert.alert(v.nombre_vacuna, "¿Qué quieres hacer con esta vacuna?", [
+      { text: "Editar", onPress: () => handleAbrirEdicionVacuna(v) },
+      { text: "Eliminar", style: "destructive", onPress: () => handleEliminarVacuna(v) },
+      { text: "Cancelar", style: "cancel" },
+    ]);
+  };
+
+  const handleCopiarChip = async () => {
+    if (!mascota.numero_chip) return;
+    await Clipboard.setStringAsync(mascota.numero_chip);
+    Alert.alert("Copiado", "El N° de chip se copió al portapapeles.");
   };
 
   return (
@@ -237,13 +276,17 @@ export default function MascotaDetalleScreen({ navigation }: any) {
       <View style={styles.cardVacunas}>
         <View style={styles.filaSeccionVacunas}>
           <Text style={styles.seccionVacunasTitulo}>💉 Vacunas</Text>
-          <TouchableOpacity style={styles.botonAgregarVacuna} onPress={() => setMostrarFormVacuna((v) => !v)}>
+          <TouchableOpacity
+            style={styles.botonAgregarVacuna}
+            onPress={() => (mostrarFormVacuna ? limpiarFormVacuna() : setMostrarFormVacuna(true))}
+          >
             <Text style={styles.botonAgregarVacunaTexto}>{mostrarFormVacuna ? "✕ Cerrar" : "+ Agregar vacuna"}</Text>
           </TouchableOpacity>
         </View>
 
         {mostrarFormVacuna && (
           <View style={styles.formVacuna}>
+            <Text style={styles.formVacunaTitulo}>{vacunaEditandoId ? "Editar vacuna" : "Nueva vacuna"}</Text>
             <TextInput
               style={styles.input}
               placeholder="Nombre de la vacuna (ej: Antirrábica)"
@@ -262,8 +305,10 @@ export default function MascotaDetalleScreen({ navigation }: any) {
             <TextInput style={styles.input} placeholder="AAAA-MM-DD" value={fechaAplicacion} onChangeText={setFechaAplicacion} />
             <Text style={styles.label}>Fecha de vencimiento (opcional)</Text>
             <TextInput style={styles.input} placeholder="AAAA-MM-DD" value={fechaVencimiento} onChangeText={setFechaVencimiento} />
-            <TouchableOpacity style={styles.botonGuardar} onPress={handleAgregarVacuna} disabled={guardandoVacuna}>
-              <Text style={styles.botonGuardarTexto}>{guardandoVacuna ? "Guardando..." : "Guardar vacuna"}</Text>
+            <TouchableOpacity style={styles.botonGuardar} onPress={handleGuardarVacuna} disabled={guardandoVacuna}>
+              <Text style={styles.botonGuardarTexto}>
+                {guardandoVacuna ? "Guardando..." : vacunaEditandoId ? "Guardar cambios" : "Guardar vacuna"}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -274,7 +319,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
           <Text style={styles.sinDato}>Todavía no hay vacunas registradas.</Text>
         ) : (
           vacunas.map((v) => (
-            <TouchableOpacity key={v.id_mascotavacuna} style={styles.filaVacuna} onLongPress={() => handleEliminarVacuna(v)}>
+            <View key={v.id_mascotavacuna} style={styles.filaVacuna}>
               <Text style={styles.infoIcono}>🐾</Text>
               <View style={{ flex: 1 }}>
                 <Text style={styles.vacunaNombre}>{v.nombre_vacuna}</Text>
@@ -292,7 +337,10 @@ export default function MascotaDetalleScreen({ navigation }: any) {
                   </Text>
                 </View>
               </View>
-            </TouchableOpacity>
+              <TouchableOpacity style={styles.botonOpciones} onPress={() => handleOpcionesVacuna(v)} hitSlop={10}>
+                <Text style={styles.botonOpcionesTexto}>⋮</Text>
+              </TouchableOpacity>
+            </View>
           ))
         )}
       </View>
@@ -302,8 +350,6 @@ export default function MascotaDetalleScreen({ navigation }: any) {
           ℹ️ Recuerda mantener las vacunas de tu mascota al día. Es parte de una convivencia segura para todos.
         </Text>
       </View>
-
-      <Text style={styles.ayudaEliminar}>Mantén presionada una vacuna para eliminarla.</Text>
     </ScrollView>
   );
 }
@@ -368,6 +414,7 @@ const styles = StyleSheet.create({
   botonAgregarVacuna: { backgroundColor: "#DBEAFE", borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 8 },
   botonAgregarVacunaTexto: { color: colors.navy900, fontWeight: "700", fontSize: 12 },
   formVacuna: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
+  formVacunaTitulo: { fontSize: 14, fontWeight: "800", color: colors.textDark, marginBottom: 4 },
 
   filaVacuna: {
     flexDirection: "row",
@@ -386,5 +433,6 @@ const styles = StyleSheet.create({
 
   banner: { backgroundColor: colors.navy700, borderRadius: radius.md, padding: spacing.md },
   bannerTexto: { color: colors.textOnNavy, fontSize: 12, lineHeight: 18 },
-  ayudaEliminar: { color: colors.textMutedOnNavy, fontSize: 11, textAlign: "center", fontStyle: "italic" },
+  botonOpciones: { paddingHorizontal: 4, paddingVertical: 4, marginLeft: 4 },
+  botonOpcionesTexto: { color: colors.textMuted, fontSize: 20, fontWeight: "800" },
 });

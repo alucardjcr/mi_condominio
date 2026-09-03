@@ -816,6 +816,13 @@ export const crearVacunaMascota = (
   input: { nombre_vacuna: string; descripcion?: string; fecha_aplicacion: string; fecha_vencimiento?: string }
 ) => send<{ id_mascotavacuna: number }>(`/mascotas/${mascotaId}/vacunas`, "POST", token, input);
 
+export const actualizarVacunaMascota = (
+  token: string,
+  mascotaId: number,
+  vacunaId: number,
+  input: { nombre_vacuna?: string; descripcion?: string | null; fecha_aplicacion?: string; fecha_vencimiento?: string | null }
+) => send<{ ok: boolean }>(`/mascotas/${mascotaId}/vacunas/${vacunaId}`, "PATCH", token, input);
+
 export const eliminarVacunaMascota = (token: string, mascotaId: number, vacunaId: number) =>
   send<void>(`/mascotas/${mascotaId}/vacunas/${vacunaId}`, "DELETE", token);
 

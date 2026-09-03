@@ -165,6 +165,36 @@ export async function crearVacuna(
   return { id_mascotavacuna: Number(insert.lastInsertRowid) };
 }
 
+export async function actualizarVacuna(
+  id: number,
+  input: { nombreVacuna?: string; descripcion?: string | null; fechaAplicacion?: string; fechaVencimiento?: string | null }
+) {
+  const campos: string[] = [];
+  const valores: unknown[] = [];
+  if (input.nombreVacuna !== undefined) {
+    if (!input.nombreVacuna.trim()) throw new Error("El nombre de la vacuna no puede quedar vacío.");
+    campos.push("nombre_vacuna = ?");
+    valores.push(input.nombreVacuna.trim());
+  }
+  if (input.descripcion !== undefined) {
+    campos.push("descripcion = ?");
+    valores.push(input.descripcion?.trim() || null);
+  }
+  if (input.fechaAplicacion !== undefined) {
+    if (!input.fechaAplicacion) throw new Error("La fecha de aplicación no puede quedar vacía.");
+    campos.push("fecha_aplicacion = ?");
+    valores.push(input.fechaAplicacion);
+  }
+  if (input.fechaVencimiento !== undefined) {
+    campos.push("fecha_vencimiento = ?");
+    valores.push(input.fechaVencimiento || null);
+  }
+  if (campos.length > 0) {
+    valores.push(id);
+    await db.prepare(`UPDATE mascota_vacuna SET ${campos.join(", ")} WHERE id_mascotavacuna = ?`).run(...valores);
+  }
+}
+
 export async function eliminarVacuna(id: number) {
   await db.prepare(`DELETE FROM mascota_vacuna WHERE id_mascotavacuna = ?`).run(id);
 }

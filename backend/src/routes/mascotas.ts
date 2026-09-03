@@ -8,6 +8,7 @@ import {
   getCondominioDeMascota,
   listarVacunas,
   crearVacuna,
+  actualizarVacuna,
   eliminarVacuna,
   getMascotaDeVacuna,
 } from "../services/mascotas.service";
@@ -147,6 +148,30 @@ mascotasRouter.post("/:id/vacunas", async (req, res) => {
       req.guardia!.id_usuario
     );
     res.status(201).json(resultado);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+mascotasRouter.patch("/:id/vacunas/:vacunaId", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!(await puedeEditar(req, id))) {
+      return res.status(403).json({ error: "Solo un residente de esa unidad o Administrador/Comité pueden editar vacunas de esta mascota." });
+    }
+    const vacunaId = Number(req.params.vacunaId);
+    const mascotaDeLaVacuna = await getMascotaDeVacuna(vacunaId);
+    if (mascotaDeLaVacuna !== id) {
+      return res.status(404).json({ error: "No existe esa vacuna para esta mascota." });
+    }
+    const { nombre_vacuna, descripcion, fecha_aplicacion, fecha_vencimiento } = req.body;
+    await actualizarVacuna(vacunaId, {
+      nombreVacuna: nombre_vacuna,
+      descripcion,
+      fechaAplicacion: fecha_aplicacion,
+      fechaVencimiento: fecha_vencimiento,
+    });
+    res.json({ ok: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
