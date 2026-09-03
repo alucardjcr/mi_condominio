@@ -22,16 +22,49 @@ async function getIdByGls(table: string, idColumn: string, glsColumn: string, va
 export async function listarGuardias(condominioId: number) {
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, gp.rut, gp.telefono
        FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
+       LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario
        WHERE tu.gls_tipousuario = 'Guardia' AND u.condominio_id_condominio = ?
        ORDER BY u.nombre_usuario`
     )
     .all(condominioId);
 }
 
-export async function crearGuardia(input: { nombre_usuario: string; usuariocol: string; password: string; condominio_id_condominio: number }) {
+async function upsertGuardiaPerfil(usuarioId: number, rut?: string | null, telefono?: string | null) {
+  if (rut === undefined && telefono === undefined) return;
+  const existente = await db.prepare(`SELECT id_guardiaperfil FROM guardia_perfil WHERE usuario_id_usuario = ?`).get(usuarioId);
+  if (existente) {
+    const campos: string[] = [];
+    const valores: unknown[] = [];
+    if (rut !== undefined) {
+      campos.push("rut = ?");
+      valores.push(rut?.trim() || null);
+    }
+    if (telefono !== undefined) {
+      campos.push("telefono = ?");
+      valores.push(telefono?.trim() || null);
+    }
+    if (campos.length > 0) {
+      valores.push(usuarioId);
+      await db.prepare(`UPDATE guardia_perfil SET ${campos.join(", ")} WHERE usuario_id_usuario = ?`).run(...valores);
+    }
+  } else {
+    await db
+      .prepare(`INSERT INTO guardia_perfil (usuario_id_usuario, rut, telefono) VALUES (?, ?, ?)`)
+      .run(usuarioId, rut?.trim() || null, telefono?.trim() || null);
+  }
+}
+
+export async function crearGuardia(input: {
+  nombre_usuario: string;
+  usuariocol: string;
+  password: string;
+  condominio_id_condominio: number;
+  rut?: string;
+  telefono?: string;
+}) {
   const tipoGuardiaId = await getIdByGls("tipo_usuario", "id_tipousuario", "gls_tipousuario", "Guardia");
   const passwordHash = bcrypt.hashSync(input.password, 10);
   const insert = await db
@@ -44,10 +77,18 @@ export async function crearGuardia(input: { nombre_usuario: string; usuariocol: 
   // Ronda 26 (fase 2): sin esto, un Guardia recién creado no tendría
   // ninguna membresía y no podría loguearse (ver auth.service.ts -> login).
   await sincronizarMembresiaPrincipal(id);
-  return db.prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia FROM usuario WHERE id_usuario = ?`).get(id);
+  if (input.rut || input.telefono) {
+    await upsertGuardiaPerfil(id, input.rut, input.telefono);
+  }
+  return db
+    .prepare(
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, gp.rut, gp.telefono
+       FROM usuario u LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
+    )
+    .get(id);
 }
 
-export async function actualizarGuardia(id: number, input: { nombre_usuario?: string; password?: string; flg_vigencia?: number }) {
+export async function actualizarGuardia(id: number, input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; rut?: string | null; telefono?: string | null }) {
   if (input.nombre_usuario !== undefined) {
     await db.prepare(`UPDATE usuario SET nombre_usuario = ? WHERE id_usuario = ?`).run(input.nombre_usuario, id);
   }
@@ -58,8 +99,14 @@ export async function actualizarGuardia(id: number, input: { nombre_usuario?: st
   if (input.flg_vigencia !== undefined) {
     await db.prepare(`UPDATE usuario SET flg_vigencia = ? WHERE id_usuario = ?`).run(input.flg_vigencia, id);
   }
+  await upsertGuardiaPerfil(id, input.rut, input.telefono);
   await sincronizarMembresiaPrincipal(id);
-  return db.prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia FROM usuario WHERE id_usuario = ?`).get(id);
+  return db
+    .prepare(
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, gp.rut, gp.telefono
+       FROM usuario u LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
+    )
+    .get(id);
 }
 
 // ---------------------------------------------------------------------------

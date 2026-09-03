@@ -213,6 +213,9 @@ export interface Guardia {
   nombre_usuario: string;
   usuariocol: string;
   flg_vigencia: number;
+  // Ronda 53, a pedido explícito del usuario, con referencia visual.
+  rut?: string | null;
+  telefono?: string | null;
 }
 
 export interface ResidenteAdmin {
@@ -1116,3 +1119,13 @@ export interface ActividadRecienteItem {
   nombre_usuario: string;
 }
 
+// --- Ronda 53: dashboard del Home de JefeGuardias --------------------------
+
+export interface ResumenTurnoGuardia {
+  guardia_usuario_id: number;
+  id_turnobloque: number;
+  gls_turnobloque: string;
+  hora_inicio: string;
+  hora_termino: string;
+  cantidad: number;
+}

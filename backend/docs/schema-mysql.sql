@@ -1542,3 +1542,16 @@ CREATE TABLE IF NOT EXISTS vetado_unidad (
   CONSTRAINT fk_vetadounidad_unidad FOREIGN KEY (unidad_id_unidad)
     REFERENCES unidad (id_unidad)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ronda 53, a pedido explícito del usuario, con referencia visual: RUT y
+-- teléfono de contacto de cada guardia (antes no existía ningún dato de
+-- contacto). Tabla aparte (mismo criterio de siempre en este proyecto,
+-- nunca ALTER TABLE) — 1 a 1 con usuario, todos los campos opcionales.
+CREATE TABLE IF NOT EXISTS guardia_perfil (
+  id_guardiaperfil   INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id_usuario  INT NOT NULL UNIQUE,
+  rut                  VARCHAR(15) NULL,
+  telefono              VARCHAR(20) NULL,
+  CONSTRAINT fk_guardiaperfil_usuario FOREIGN KEY (usuario_id_usuario)
+    REFERENCES usuario (id_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

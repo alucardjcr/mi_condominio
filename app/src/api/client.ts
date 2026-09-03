@@ -48,6 +48,7 @@ import {
   TareaPersonal,
   TurnoAsignado,
   TurnoBloque,
+  ResumenTurnoGuardia,
   PersonalTurno,
   DuplaPatronInput,
   ResultadoGenerarPatron,
@@ -778,14 +779,21 @@ export const jefeGetGuardias = (token: string) => get<Guardia[]>(`/jefe-guardias
 
 export const jefeCrearGuardia = (
   token: string,
-  input: { nombre_usuario: string; usuariocol: string; password: string }
+  input: { nombre_usuario: string; usuariocol: string; password: string; rut?: string; telefono?: string }
 ) => send<Guardia>(`/jefe-guardias/guardias`, "POST", token, input);
 
 export const jefeActualizarGuardia = (
   token: string,
   id: number,
-  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number }
+  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; rut?: string; telefono?: string }
 ) => send<Guardia>(`/jefe-guardias/guardias/${id}`, "PATCH", token, input);
+
+// Ronda 53, a pedido explícito del usuario, con referencia visual.
+export const jefeGetResumenTurnosMes = (token: string, condominioId: number, fechaInicio: string, fechaTermino: string) =>
+  get<ResumenTurnoGuardia[]>(
+    `/jefe-guardias/turnos/resumen-mes?condominio_id=${condominioId}&fecha_inicio=${fechaInicio}&fecha_termino=${fechaTermino}`,
+    token
+  );
 
 // --- Ronda 20: Mascotas ------------------------------------------------------
 // Sin argumentos trae las de mi propia unidad (Residente); con condominioId

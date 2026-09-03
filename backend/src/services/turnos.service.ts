@@ -398,3 +398,23 @@ export async function verificarTurnoParaLogin(usuarioId: number, condominioId: n
   }
   return { permitido: true };
 }
+
+// ---------------------------------------------------------------------------
+// Ronda 53, a pedido explícito del usuario, con referencia visual: resumen
+// de cuántos turnos de cada bloque tiene asignado cada guardia en un rango
+// (para el dashboard del JefeGuardias — "Turnos septiembre: 07:00-15:00
+// x8, 23:00-07:00 x7"). Dato 100% real, agregado directo de
+// turno_asignado_guardia — no es una proyección ni un promedio.
+// ---------------------------------------------------------------------------
+export async function resumenTurnosDelMes(condominioId: number, fechaInicio: string, fechaTermino: string) {
+  return db
+    .prepare(
+      `SELECT ta.guardia_usuario_id, tb.id_turnobloque, tb.gls_turnobloque, tb.hora_inicio, tb.hora_termino, COUNT(*) AS cantidad
+       FROM turno_asignado_guardia ta
+       JOIN turno_bloque tb ON tb.id_turnobloque = ta.turno_bloque_id_turnobloque
+       WHERE ta.condominio_id_condominio = ? AND ta.fecha BETWEEN ? AND ?
+       GROUP BY ta.guardia_usuario_id, tb.id_turnobloque
+       ORDER BY tb.hora_inicio`
+    )
+    .all(condominioId, fechaInicio, fechaTermino);
+}

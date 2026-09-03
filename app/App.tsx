@@ -49,6 +49,7 @@ import MascotasScreen from "./src/screens/MascotasScreen";
 import MascotaDetalleScreen from "./src/screens/MascotaDetalleScreen";
 import JefeGuardiasTurnosScreen from "./src/screens/jefeguardias/JefeGuardiasTurnosScreen";
 import JefeGuardiasGuardiasScreen from "./src/screens/jefeguardias/JefeGuardiasGuardiasScreen";
+import JefeGuardiasHomeScreen from "./src/screens/jefeguardias/JefeGuardiasHomeScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -100,7 +101,12 @@ function AppNavigator() {
       // Comité, eso no cambió; solo cambió cuál pantalla aparece
       // primero). El resto de los roles sigue entrando por "Home" como
       // siempre.
-      initialRouteName={esResidente ? "MiHogar" : undefined}
+      // A pedido explícito del usuario: un Residente entra directo a "Mi
+      // hogar" (ronda 48); ahora también un JefeGuardias entra directo a
+      // su dashboard (ronda 53) en vez del Home genérico de botones. Usa
+      // la misma `key` de arriba, que ya fuerza el remount correcto del
+      // navigator al cambiar de rol.
+      initialRouteName={esResidente ? "MiHogar" : esJefeGuardias ? "JefeGuardiasHome" : undefined}
     >
       {!token && requiereOnboarding ? (
         // Ronda 37, a pedido explícito del usuario: el administrador le
@@ -249,6 +255,11 @@ function AppNavigator() {
             </>
           ) : esJefeGuardias ? (
             <>
+              <Stack.Screen
+                name="JefeGuardiasHome"
+                component={JefeGuardiasHomeScreen}
+                options={{ title: "Mi Condominio" }}
+              />
               <Stack.Screen
                 name="JefeGuardiasTurnos"
                 component={JefeGuardiasTurnosScreen}

@@ -46,9 +46,13 @@ type Vista = "calendario" | "patron" | "bloques";
 // automático, y que el JefeGuardias también pueda aparecer en el roster
 // (antes solo se le podía asignar turno a un Guardia). Toda la lógica de
 // negocio vive en turnos.service.ts — acá solo la interfaz.
-export default function JefeGuardiasTurnosScreen() {
+export default function JefeGuardiasTurnosScreen({ route }: any) {
   const { token } = useAuth();
-  const [vista, setVista] = useState<Vista>("calendario");
+  // Ronda 53, a pedido explícito del usuario: el botón "Generar turnos"
+  // del nuevo dashboard de JefeGuardiasHomeScreen puede abrir esta
+  // pantalla directo en la pestaña de generar patrón, en vez de siempre
+  // arrancar en el calendario.
+  const [vista, setVista] = useState<Vista>(route?.params?.vistaInicial ?? "calendario");
 
   const [bloques, setBloques] = useState<TurnoBloque[]>([]);
   const [personal, setPersonal] = useState<PersonalTurno[]>([]);

@@ -97,12 +97,12 @@ adminRouter.get("/guardias", async (req, res) => {
 
 adminRouter.post("/guardias", async (req, res) => {
   try {
-    const { nombre_usuario, usuariocol, password } = req.body;
+    const { nombre_usuario, usuariocol, password, rut, telefono } = req.body;
     if (!nombre_usuario || !usuariocol || !password) {
       return res.status(400).json({ error: "Faltan campos: nombre_usuario, usuariocol, password." });
     }
     const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
-    res.status(201).json(await crearGuardia({ nombre_usuario, usuariocol, password, condominio_id_condominio: condominioId }));
+    res.status(201).json(await crearGuardia({ nombre_usuario, usuariocol, password, condominio_id_condominio: condominioId, rut, telefono }));
   } catch (err: any) {
     res.status(400).json({ error: esDuplicado(err) ? "Ese nombre de usuario ya existe." : err.message });
   }
@@ -110,12 +110,14 @@ adminRouter.post("/guardias", async (req, res) => {
 
 adminRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
-    const { nombre_usuario, password, flg_vigencia } = req.body;
+    const { nombre_usuario, password, flg_vigencia, rut, telefono } = req.body;
     res.json(
       await actualizarGuardia(Number(req.params.id), {
         nombre_usuario,
         password,
         flg_vigencia: flg_vigencia !== undefined ? Number(flg_vigencia) : undefined,
+        rut,
+        telefono,
       })
     );
   } catch (err: any) {
