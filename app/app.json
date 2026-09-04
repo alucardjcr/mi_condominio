@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Valles de Varoli",
+    "name": "Mi Condominio",
     "slug": "valles-de-varoli-estacionamientos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#ffffff",
+    "backgroundColor": "#0A2C6B",
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -32,7 +32,16 @@
           "cameraPermission": "Se usa la cámara para fotografiar los paquetes que llegan a conserjería y a quien los retira."
         }
       ],
-      ["expo-notifications", {}]
+      ["expo-notifications", {}],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#0A2C6B"
+        }
+      ]
     ]
   }
 }
