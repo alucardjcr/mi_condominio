@@ -16,6 +16,14 @@ import { EstructuraCondominio } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
+// Ronda 55, a pedido explícito del usuario: "Condominio de Parcelas" —
+// estructuralmente es EXACTAMENTE lo mismo que "casas" en el backend (sin
+// torres ni pisos, solo una lista de unidades) — así que se maneja como
+// una opción de UI aparte, con sus propios textos/placeholders para que
+// tenga sentido en un contexto rural, pero mandando `estructura: "casas"`
+// al backend (no se duplicó ninguna lógica ahí).
+type EstructuraUI = EstructuraCondominio | "parcelas";
+
 interface TorreArmada {
   nombre_torre: string;
   cantidad_pisos?: number;
@@ -49,7 +57,7 @@ function generarPorPatron(pisos: number, deptosPorPiso: number): string[] {
   return resultado;
 }
 
-const OPCIONES_ESTRUCTURA: { valor: EstructuraCondominio; titulo: string; ayuda: string }[] = [
+const OPCIONES_ESTRUCTURA: { valor: EstructuraUI; titulo: string; ayuda: string }[] = [
   {
     valor: "torres",
     titulo: "Varias torres o blocks",
@@ -65,6 +73,11 @@ const OPCIONES_ESTRUCTURA: { valor: EstructuraCondominio; titulo: string; ayuda:
     titulo: "Condominio de casas",
     ayuda: "Sin pisos ni torres — solo el número o nombre de cada casa.",
   },
+  {
+    valor: "parcelas",
+    titulo: "Condominio de parcelas",
+    ayuda: "Sin pisos ni torres — solo el número o nombre de cada parcela.",
+  },
 ];
 
 // Ronda 26: asistente de creación de condominio. Se llega acá desde
@@ -79,7 +92,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
 
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [nombreCondominio, setNombreCondominio] = useState("");
-  const [estructura, setEstructura] = useState<EstructuraCondominio | null>(null);
+  const [estructura, setEstructura] = useState<EstructuraUI | null>(null);
 
   // --- estructura = "torres": una o más torres, se arman de a una ---
   const [torresAgregadas, setTorresAgregadas] = useState<TorreArmada[]>([]);
@@ -95,6 +108,9 @@ export default function CrearCondominioScreen({ navigation }: any) {
 
   // --- estructura = "casas" ---
   const [casasTexto, setCasasTexto] = useState("");
+
+  // --- estructura = "parcelas" (mismo manejo que "casas" en el backend) ---
+  const [parcelasTexto, setParcelasTexto] = useState("");
 
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -169,13 +185,22 @@ export default function CrearCondominioScreen({ navigation }: any) {
         estructura,
         edificio: { cantidad_pisos: Number(pisosEdificio) || undefined, numeros_unidad: numeros },
       };
-    } else {
+    } else if (estructura === "casas") {
       const numeros = parsearNumeros(casasTexto);
       if (numeros.length === 0) {
         setError("Agrega al menos un número o nombre de casa.");
         return;
       }
-      payload = { nombre_condominio: nombreCondominio.trim(), estructura, numeros_unidad_casas: numeros };
+      payload = { nombre_condominio: nombreCondominio.trim(), estructura: "casas", numeros_unidad_casas: numeros };
+    } else {
+      // estructura === "parcelas" — mismo payload que "casas" para el
+      // backend (ver la nota en EstructuraUI, arriba).
+      const numeros = parsearNumeros(parcelasTexto);
+      if (numeros.length === 0) {
+        setError("Agrega al menos un número o nombre de parcela.");
+        return;
+      }
+      payload = { nombre_condominio: nombreCondominio.trim(), estructura: "casas", numeros_unidad_casas: numeros };
     }
 
     setEnviando(true);
@@ -189,14 +214,34 @@ export default function CrearCondominioScreen({ navigation }: any) {
         return;
       }
 
-      // Ya había una sesión completa (se creó desde el menú de un admin
-      // logeado en otro condominio) — pregunta si quiere pasarse ahora.
+      // Ronda 55, a pedido explícito del usuario (bug reportado: "Entrar
+      // ahora" no funciona): confirmado con una prueba directa contra el
+      // backend que el cambio de sesión SÍ funcionaba de verdad (200,
+      // token nuevo, condominio correcto) — el problema real era que acá
+      // nunca se navegaba a ningún lado después. cambiarCondominio()
+      // actualiza el contexto de sesión (nuevo token, nuevo condominio),
+      // pero el usuario seguía viendo esta misma pantalla de "Crear
+      // condominio" sin ningún cambio visible — parecía que el botón no
+      // hacía nada, aunque por dentro sí había cambiado de condominio.
+      // También le faltaba manejo de errores: si algo fallaba (sesión
+      // vencida, sin conexión), la promesa quedaba sin atrapar y no se
+      // veía ningún aviso.
       Alert.alert(
         "Condominio creado",
         `"${resultado.nombre}" quedó creado con ${resultado.unidades_creadas} unidad(es). ¿Quieres entrar a administrarlo ahora?`,
         [
           { text: "Más tarde", style: "cancel", onPress: () => navigation.goBack() },
-          { text: "Entrar ahora", onPress: () => cambiarCondominio(resultado.id_condominio) },
+          {
+            text: "Entrar ahora",
+            onPress: async () => {
+              try {
+                await cambiarCondominio(resultado.id_condominio);
+                navigation.navigate("Home");
+              } catch (e: any) {
+                Alert.alert("Error", e.message ?? "No se pudo cambiar de condominio. Vuelve a intentar.");
+              }
+            },
+          },
         ]
       );
     } catch (e: any) {
@@ -426,6 +471,39 @@ export default function CrearCondominioScreen({ navigation }: any) {
               value={casasTexto}
               onChangeText={setCasasTexto}
               placeholder={"Casa 1, Casa 2, Casa 3..."}
+              placeholderTextColor={colors.textMuted}
+              multiline
+            />
+
+            {error && <Text style={styles.error}>{error}</Text>}
+
+            <TouchableOpacity
+              style={[styles.boton, enviando && styles.botonDeshabilitado]}
+              onPress={handleEnviar}
+              disabled={enviando}
+              activeOpacity={0.85}
+            >
+              {enviando ? (
+                <ActivityIndicator color={colors.navy900} />
+              ) : (
+                <Text style={styles.botonTexto}>Crear condominio</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {paso === 3 && estructura === "parcelas" && (
+          <View style={styles.card}>
+            <Text style={styles.label}>Números o nombres de las parcelas</Text>
+            <Text style={styles.ayuda}>
+              Separados por coma o uno por línea (puedes pegar una lista, ej. desde Excel). ej: Parcela 1, Parcela
+              2... o 1, 2, 3...
+            </Text>
+            <TextInput
+              style={[styles.input, styles.inputMultilinea]}
+              value={parcelasTexto}
+              onChangeText={setParcelasTexto}
+              placeholder={"Parcela 1, Parcela 2, Parcela 3..."}
               placeholderTextColor={colors.textMuted}
               multiline
             />
