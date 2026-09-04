@@ -67,6 +67,14 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
   if (!nombre) {
     throw new Error("Falta el nombre del condominio.");
   }
+  // Ronda 59, a pedido explícito del usuario: región y comuna pasan a ser
+  // obligatorias, igual que el nombre (antes eran opcionales).
+  if (!input.region?.trim()) {
+    throw new Error("Falta la región del condominio.");
+  }
+  if (!input.comuna?.trim()) {
+    throw new Error("Falta la comuna del condominio.");
+  }
 
   if (input.estructura === "torres") {
     if (!input.torres || input.torres.length === 0) {
@@ -195,13 +203,24 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
 }
 
 // ---------------------------------------------------------------------------
-// Ronda 56, a pedido explícito del usuario: permitir deshacer un
+// Ronda 56/59, a pedido explícito del usuario: permitir deshacer un
 // condominio creado por error (ej. nombre mal escrito), pero SOLO si
 // todavía no se agregó nada real — ni un residente, guardia, personal,
-// vetado o mascota. La idea es cubrir exactamente el caso de "me
-// equivoqué en el nombre, quiero rehacerlo de cero" sin abrir la puerta a
-// borrar un condominio que ya tiene datos reales de gente (para eso, dar
-// de baja el condominio es otra conversación — no se implementa acá).
+// vetado, mascota, patente, pago, incidente, solicitud ARCO, o bitácora
+// real de guardia. La idea es cubrir exactamente el caso de "me equivoqué
+// en el nombre, quiero rehacerlo de cero" sin abrir la puerta a borrar un
+// condominio que ya tiene datos reales de gente (para eso, dar de baja el
+// condominio es otra conversación — no se implementa acá).
+//
+// Ronda 59: encontrado un bug real probando la eliminación — la primera
+// versión de esta función no contemplaba `log_auditoria` (se registra
+// automáticamente con CUALQUIER request, incluso solo mirar la pantalla
+// del condominio, sin que el admin haga nada) — daba error de FK
+// constraint al intentar borrar. Se revisaron TODAS las tablas con FK a
+// `condominio` en el schema para no toparse con otra sorpresa después:
+// separadas en "datos reales de gente" (bloquean el borrado) vs.
+// "configuración/catálogos/logs del sistema" (se limpian solas, sin
+// bloquear nada, porque no son datos de terceros).
 // ---------------------------------------------------------------------------
 export async function eliminarCondominioVacio(condominioId: number, solicitanteUsuarioId: number) {
   return withTransaction(async (tx) => {
@@ -215,30 +234,57 @@ export async function eliminarCondominioVacio(condominioId: number, solicitanteU
       throw new Error("No tienes acceso a ese condominio.");
     }
 
-    const [otrasMembresias, vetados, mascotas] = await Promise.all([
+    // --- Datos REALES de gente — si hay algo acá, no se puede borrar. ---
+    const tablasBloqueantes = [
+      "vetado",
+      "mascota",
+      "patente_condominio",
+      "pago_condominio",
+      "incidente_seguridad",
+      "solicitud_arco",
+      "bitacora_guardia",
+      "turno_asignado_guardia",
+      "condominio_facturacion",
+    ];
+    const conteos = await Promise.all([
       tx
         .prepare(`SELECT COUNT(*) AS n FROM membresia WHERE condominio_id_condominio = ? AND usuario_id_usuario != ?`)
         .get(condominioId, solicitanteUsuarioId) as Promise<{ n: number }>,
-      tx.prepare(`SELECT COUNT(*) AS n FROM vetado WHERE condominio_id_condominio = ?`).get(condominioId) as Promise<{ n: number }>,
-      tx.prepare(`SELECT COUNT(*) AS n FROM mascota WHERE condominio_id_condominio = ?`).get(condominioId) as Promise<{ n: number }>,
+      ...tablasBloqueantes.map(
+        (tabla) => tx.prepare(`SELECT COUNT(*) AS n FROM ${tabla} WHERE condominio_id_condominio = ?`).get(condominioId) as Promise<{ n: number }>
+      ),
     ]);
-
-    if (otrasMembresias.n > 0 || vetados.n > 0 || mascotas.n > 0) {
+    if (conteos.some((c) => c.n > 0)) {
       throw new Error(
-        "Este condominio ya no se puede eliminar — tiene residentes, guardias, personal, vetados o mascotas cargados. Si te equivocaste en el nombre, puedes cambiarlo desde Ajustes en vez de borrar el condominio."
+        "Este condominio ya no se puede eliminar — tiene residentes, guardias, personal, vetados, mascotas u otros datos reales cargados. Si te equivocaste en el nombre, puedes cambiarlo desde Ajustes en vez de borrar el condominio."
       );
     }
 
-    // Nada más que la estructura inicial y los catálogos por defecto —
-    // seguro de borrar por completo, en el orden correcto por las FK.
-    await tx.prepare(`DELETE FROM membresia WHERE condominio_id_condominio = ?`).run(condominioId);
-    await tx.prepare(`DELETE FROM tipo_multa WHERE condominio_id_condominio = ?`).run(condominioId);
-    await tx.prepare(`DELETE FROM tipo_amonestacion WHERE condominio_id_condominio = ?`).run(condominioId);
-    await tx.prepare(`DELETE FROM tipo_notificacion WHERE condominio_id_condominio = ?`).run(condominioId);
-    await tx.prepare(`DELETE FROM unidad WHERE condominio_id_condominio = ?`).run(condominioId);
-    await tx.prepare(`DELETE FROM torre_block WHERE condominio_id_condominio = ?`).run(condominioId);
-    await tx.prepare(`DELETE FROM condominio_detalle WHERE condominio_id_condominio = ?`).run(condominioId);
-    await tx.prepare(`DELETE FROM condominio_region WHERE condominio_id_condominio = ?`).run(condominioId);
+    // --- Configuración/catálogos/logs del sistema — se limpian solos,
+    //     sin bloquear nada (no son datos de otras personas). ---
+    const tablasParaLimpiar = [
+      "membresia", // la propia del solicitante, la única que puede quedar
+      "tipo_multa",
+      "tipo_amonestacion",
+      "tipo_notificacion",
+      "tipo_elemento_mantencion",
+      "tipo_espaciocomun",
+      "tipo_paquete",
+      "estado_paquete",
+      "tipo_personal",
+      "turno_bloque",
+      "turno_personal",
+      "politica_retencion",
+      "log_auditoria",
+      "usuario_condominio", // tabla vieja, previa a `membresia` (ronda 26 fase 2)
+      "unidad",
+      "torre_block",
+      "condominio_detalle",
+      "condominio_region",
+    ];
+    for (const tabla of tablasParaLimpiar) {
+      await tx.prepare(`DELETE FROM ${tabla} WHERE condominio_id_condominio = ?`).run(condominioId);
+    }
     await tx.prepare(`DELETE FROM condominio WHERE id_condominio = ?`).run(condominioId);
   });
 }

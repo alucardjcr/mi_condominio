@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -161,10 +161,31 @@ export default function CrearCondominioScreen({ navigation }: any) {
     setTorresAgregadas((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Ronda 59, a pedido explícito del usuario (encontró un condominio
+  // duplicado 3 veces en la base — probablemente por reintentar tocando
+  // "Crear condominio" al no ver ningún cambio visible, un bug ya
+  // corregido en la ronda 55, pero se agrega esta protección extra de
+  // todos modos): `enviando` (estado de React) no alcanza por sí solo
+  // para bloquear un doble-toque MUY rápido, porque el estado recién se
+  // actualiza en el siguiente render — un `ref` se actualiza al instante,
+  // sin esperar ningún render.
+  const enviandoRef = useRef(false);
+
   const handleEnviar = async () => {
+    if (enviandoRef.current) return;
     setError(null);
     if (!nombreCondominio.trim()) {
       setError("Falta el nombre del condominio.");
+      setPaso(1);
+      return;
+    }
+    if (!regionSel) {
+      setError("Falta la región del condominio.");
+      setPaso(1);
+      return;
+    }
+    if (!comunaSel) {
+      setError("Falta la comuna del condominio.");
       setPaso(1);
       return;
     }
@@ -220,6 +241,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
       payload.region = regionSel.label;
     }
 
+    enviandoRef.current = true;
     setEnviando(true);
     try {
       const resultado = await crearCondominio(tokenApi, payload);
@@ -264,6 +286,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
     } catch (e: any) {
       setError(e.message);
     } finally {
+      enviandoRef.current = false;
       setEnviando(false);
     }
   };
@@ -283,7 +306,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               placeholder="ej: Altos de San Miguel"
               placeholderTextColor={colors.textMuted}
             />
-            <Text style={styles.label}>Región (opcional)</Text>
+            <Text style={styles.label}>Región</Text>
             <SelectModal
               label="Región"
               placeholder="Selecciona una región"
@@ -291,7 +314,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               valorSeleccionado={regionSel}
               onSeleccionar={handleSeleccionarRegion}
             />
-            <Text style={styles.label}>Comuna (opcional)</Text>
+            <Text style={styles.label}>Comuna</Text>
             <SelectModal
               label="Comuna"
               placeholder={regionSel ? "Selecciona una comuna" : "Primero elige la región"}
@@ -305,6 +328,14 @@ export default function CrearCondominioScreen({ navigation }: any) {
               onPress={() => {
                 if (!nombreCondominio.trim()) {
                   setError("Falta el nombre del condominio.");
+                  return;
+                }
+                if (!regionSel) {
+                  setError("Falta la región del condominio.");
+                  return;
+                }
+                if (!comunaSel) {
+                  setError("Falta la comuna del condominio.");
                   return;
                 }
                 setError(null);
