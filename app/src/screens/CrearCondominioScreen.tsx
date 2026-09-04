@@ -14,6 +14,8 @@ import {
 import { crearCondominio } from "../api/client";
 import { EstructuraCondominio } from "../api/types";
 import { useAuth } from "../context/AuthContext";
+import SelectModal, { OpcionSelect } from "../components/SelectModal";
+import { REGIONES_CHILE } from "../data/chileRegiones";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
 // Ronda 55, a pedido explícito del usuario: "Condominio de Parcelas" —
@@ -92,8 +94,14 @@ export default function CrearCondominioScreen({ navigation }: any) {
 
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [nombreCondominio, setNombreCondominio] = useState("");
-  const [comuna, setComuna] = useState("");
-  const [region, setRegion] = useState("");
+  const [regionSel, setRegionSel] = useState<OpcionSelect | null>(null);
+  const [comunaSel, setComunaSel] = useState<OpcionSelect | null>(null);
+  const comunasDisponibles = regionSel ? REGIONES_CHILE.find((r) => r.nombre === regionSel.label)?.comunas ?? [] : [];
+
+  const handleSeleccionarRegion = (opcion: OpcionSelect) => {
+    setRegionSel(opcion);
+    setComunaSel(null); // la comuna se resetea, ya no corresponde a la región nueva
+  };
   const [estructura, setEstructura] = useState<EstructuraUI | null>(null);
 
   // --- estructura = "torres": una o más torres, se arman de a una ---
@@ -205,11 +213,11 @@ export default function CrearCondominioScreen({ navigation }: any) {
       payload = { nombre_condominio: nombreCondominio.trim(), estructura: "casas", numeros_unidad_casas: numeros };
     }
 
-    if (comuna.trim()) {
-      payload.comuna = comuna.trim();
+    if (comunaSel) {
+      payload.comuna = comunaSel.label;
     }
-    if (region.trim()) {
-      payload.region = region.trim();
+    if (regionSel) {
+      payload.region = regionSel.label;
     }
 
     setEnviando(true);
@@ -275,21 +283,22 @@ export default function CrearCondominioScreen({ navigation }: any) {
               placeholder="ej: Altos de San Miguel"
               placeholderTextColor={colors.textMuted}
             />
-            <Text style={styles.label}>Comuna (opcional)</Text>
-            <TextInput
-              style={styles.input}
-              value={comuna}
-              onChangeText={setComuna}
-              placeholder="ej: Talca"
-              placeholderTextColor={colors.textMuted}
-            />
             <Text style={styles.label}>Región (opcional)</Text>
-            <TextInput
-              style={styles.input}
-              value={region}
-              onChangeText={setRegion}
-              placeholder="ej: Región del Maule"
-              placeholderTextColor={colors.textMuted}
+            <SelectModal
+              label="Región"
+              placeholder="Selecciona una región"
+              opciones={REGIONES_CHILE.map((r, i) => ({ id: i, label: r.nombre }))}
+              valorSeleccionado={regionSel}
+              onSeleccionar={handleSeleccionarRegion}
+            />
+            <Text style={styles.label}>Comuna (opcional)</Text>
+            <SelectModal
+              label="Comuna"
+              placeholder={regionSel ? "Selecciona una comuna" : "Primero elige la región"}
+              opciones={comunasDisponibles.map((c, i) => ({ id: i, label: c }))}
+              valorSeleccionado={comunaSel}
+              onSeleccionar={setComunaSel}
+              disabled={!regionSel}
             />
             <TouchableOpacity
               style={styles.boton}
