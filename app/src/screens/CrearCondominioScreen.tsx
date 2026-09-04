@@ -327,7 +327,6 @@ export default function CrearCondominioScreen({ navigation }: any) {
               placeholder="ej: Altos de San Miguel"
               placeholderTextColor={colors.textMuted}
             />
-            <Text style={styles.label}>Región</Text>
             <SelectModal
               label="Región"
               placeholder="Selecciona una región"
@@ -335,7 +334,6 @@ export default function CrearCondominioScreen({ navigation }: any) {
               valorSeleccionado={regionSel}
               onSeleccionar={handleSeleccionarRegion}
             />
-            <Text style={styles.label}>Comuna</Text>
             <SelectModal
               label="Comuna"
               placeholder={regionSel ? "Selecciona una comuna" : "Primero elige la región"}
