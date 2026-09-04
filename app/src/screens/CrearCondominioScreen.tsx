@@ -104,17 +104,25 @@ export default function CrearCondominioScreen({ navigation }: any) {
   };
   const [estructura, setEstructura] = useState<EstructuraUI | null>(null);
 
-  // --- estructura = "torres": una o más torres, se arman de a una ---
+  // Ronda 59, a pedido explícito del usuario: rediseño del flujo de
+  // torres/blocks — antes se pedía nombre + generación opcional + lista
+  // editable de números de depto, todo junto en una sola pantalla densa
+  // por torre. Nuevo flujo: 1) elegir la palabra (Torre/Block), 2)
+  // cuántas hay en total, 3) un paso POR CADA torre pidiendo solo pisos +
+  // deptos por piso (sin mostrar/editar la lista de números — se genera
+  // sola con el mismo patrón de siempre). Va creando la Torre 1, luego la
+  // 2, etc., hasta completar la cantidad indicada.
   const [torresAgregadas, setTorresAgregadas] = useState<TorreArmada[]>([]);
-  const [nombreTorre, setNombreTorre] = useState("");
+  const [etiquetaTorreBlock, setEtiquetaTorreBlock] = useState<"Torre" | "Block" | null>(null);
+  const [cantidadTorresTexto, setCantidadTorresTexto] = useState("");
+  const [cantidadTorresConfirmada, setCantidadTorresConfirmada] = useState<number | null>(null);
+  const [torreIndiceActual, setTorreIndiceActual] = useState(1);
   const [pisosTorre, setPisosTorre] = useState("");
   const [deptosPorPisoTorre, setDeptosPorPisoTorre] = useState("");
-  const [numerosTorreTexto, setNumerosTorreTexto] = useState("");
 
   // --- estructura = "edificio": un solo bloque de pisos/deptos ---
   const [pisosEdificio, setPisosEdificio] = useState("");
   const [deptosPorPisoEdificio, setDeptosPorPisoEdificio] = useState("");
-  const [numerosEdificioTexto, setNumerosEdificioTexto] = useState("");
 
   // --- estructura = "casas" ---
   const [casasTexto, setCasasTexto] = useState("");
@@ -125,40 +133,52 @@ export default function CrearCondominioScreen({ navigation }: any) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGenerarPatron = (pisos: string, deptosPorPiso: string, setTexto: (t: string) => void) => {
-    const p = Number(pisos);
-    const d = Number(deptosPorPiso);
-    if (!p || !d) {
-      setError("Ingresa cuántos pisos y cuántos deptos por piso para generar la lista.");
+  // Ronda 59: confirma cuántas torres/blocks hay en total y arranca el
+  // asistente en la Torre/Block N°1.
+  const handleConfirmarCantidadTorres = () => {
+    const n = Number(cantidadTorresTexto);
+    if (!n || n < 1) {
+      setError("Ingresa cuántas torres o blocks tiene el condominio.");
       return;
     }
     setError(null);
-    setTexto(generarPorPatron(p, d).join(", "));
+    setCantidadTorresConfirmada(n);
+    setTorreIndiceActual(1);
   };
 
-  const handleAgregarTorre = () => {
+  // Agrega la torre actual (con el patrón pisos x deptos-por-piso, sin
+  // pedirle al usuario la lista de números) y avanza a la siguiente, o
+  // termina si ya era la última.
+  const handleAgregarTorreActualYSeguir = () => {
+    const pisos = Number(pisosTorre);
+    const deptosPorPiso = Number(deptosPorPisoTorre);
+    if (!pisos || pisos < 1 || !deptosPorPiso || deptosPorPiso < 1) {
+      setError("Ingresa cuántos pisos tiene y cuántos deptos por piso.");
+      return;
+    }
     setError(null);
-    if (!nombreTorre.trim()) {
-      setError("Ponle un nombre a la torre o block (ej: Torre A, Block 1).");
-      return;
-    }
-    const numeros = parsearNumeros(numerosTorreTexto);
-    if (numeros.length === 0) {
-      setError("Agrega los números de depto de esta torre (generados o escritos a mano).");
-      return;
-    }
-    setTorresAgregadas((prev) => [
-      ...prev,
-      { nombre_torre: nombreTorre.trim(), cantidad_pisos: Number(pisosTorre) || undefined, numeros_unidad: numeros },
-    ]);
-    setNombreTorre("");
+    const nombre = `${etiquetaTorreBlock} ${torreIndiceActual}`;
+    setTorresAgregadas((prev) => [...prev, { nombre_torre: nombre, cantidad_pisos: pisos, numeros_unidad: generarPorPatron(pisos, deptosPorPiso) }]);
     setPisosTorre("");
     setDeptosPorPisoTorre("");
-    setNumerosTorreTexto("");
+    setTorreIndiceActual((i) => i + 1);
   };
 
   const handleQuitarTorre = (index: number) => {
     setTorresAgregadas((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Vuelve a empezar el asistente de torres desde cero (por si se
+  // equivocó eligiendo Torre/Block o la cantidad).
+  const handleReiniciarAsistenteTorres = () => {
+    setEtiquetaTorreBlock(null);
+    setCantidadTorresTexto("");
+    setCantidadTorresConfirmada(null);
+    setTorreIndiceActual(1);
+    setTorresAgregadas([]);
+    setPisosTorre("");
+    setDeptosPorPisoTorre("");
+    setError(null);
   };
 
   // Ronda 59, a pedido explícito del usuario (encontró un condominio
@@ -206,15 +226,16 @@ export default function CrearCondominioScreen({ navigation }: any) {
       }
       payload = { nombre_condominio: nombreCondominio.trim(), estructura, torres: torresAgregadas };
     } else if (estructura === "edificio") {
-      const numeros = parsearNumeros(numerosEdificioTexto);
-      if (numeros.length === 0) {
-        setError("Agrega los números de depto del edificio.");
+      const pisos = Number(pisosEdificio);
+      const deptosPorPiso = Number(deptosPorPisoEdificio);
+      if (!pisos || pisos < 1 || !deptosPorPiso || deptosPorPiso < 1) {
+        setError("Ingresa cuántos pisos tiene el edificio y cuántos deptos por piso.");
         return;
       }
       payload = {
         nombre_condominio: nombreCondominio.trim(),
         estructura,
-        edificio: { cantidad_pisos: Number(pisosEdificio) || undefined, numeros_unidad: numeros },
+        edificio: { cantidad_pisos: pisos, numeros_unidad: generarPorPatron(pisos, deptosPorPiso) },
       };
     } else if (estructura === "casas") {
       const numeros = parsearNumeros(casasTexto);
@@ -379,133 +400,144 @@ export default function CrearCondominioScreen({ navigation }: any) {
 
         {paso === 3 && estructura === "torres" && (
           <View style={styles.card}>
-            {torresAgregadas.map((t, i) => (
-              <View key={i} style={styles.torreResumen}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.torreResumenNombre}>{t.nombre_torre}</Text>
-                  <Text style={styles.torreResumenDetalle}>{t.numeros_unidad.length} unidad(es)</Text>
+            {/* Sub-pantalla A: elegir la palabra (Torre / Block) */}
+            {!etiquetaTorreBlock && (
+              <>
+                <Text style={styles.label}>¿Cómo se llaman las unidades de este condominio?</Text>
+                <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm }}>
+                  {(["Torre", "Block"] as const).map((opcion) => (
+                    <TouchableOpacity
+                      key={opcion}
+                      style={[styles.opcionLarga, { flex: 1 }]}
+                      onPress={() => setEtiquetaTorreBlock(opcion)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.opcionLargaTitulo}>{opcion}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-                <TouchableOpacity onPress={() => handleQuitarTorre(i)}>
-                  <Text style={styles.quitarTexto}>Quitar</Text>
+              </>
+            )}
+
+            {/* Sub-pantalla B: cuántas torres/blocks hay en total */}
+            {etiquetaTorreBlock && cantidadTorresConfirmada === null && (
+              <>
+                <Text style={styles.label}>¿Cuántas {etiquetaTorreBlock === "Torre" ? "torres" : "blocks"} tiene el condominio?</Text>
+                <TextInput
+                  style={styles.input}
+                  value={cantidadTorresTexto}
+                  onChangeText={setCantidadTorresTexto}
+                  placeholder="ej: 3"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="number-pad"
+                />
+                {error && <Text style={styles.error}>{error}</Text>}
+                <TouchableOpacity style={styles.botonSecundario} onPress={handleReiniciarAsistenteTorres} activeOpacity={0.7}>
+                  <Text style={styles.botonSecundarioTexto}>‹ Cambiar Torre/Block</Text>
                 </TouchableOpacity>
-              </View>
-            ))}
+                <TouchableOpacity style={styles.boton} onPress={handleConfirmarCantidadTorres} activeOpacity={0.85}>
+                  <Text style={styles.botonTexto}>Continuar</Text>
+                </TouchableOpacity>
+              </>
+            )}
 
-            <Text style={styles.subtitulo}>
-              {torresAgregadas.length > 0 ? "Agregar otra torre/block" : "Agrega la primera torre/block"}
-            </Text>
+            {/* Sub-pantalla C: un paso por cada torre/block, pidiendo solo
+                pisos + deptos por piso — la numeración se genera sola. */}
+            {etiquetaTorreBlock && cantidadTorresConfirmada !== null && torreIndiceActual <= cantidadTorresConfirmada && (
+              <>
+                <Text style={styles.subtitulo}>
+                  {etiquetaTorreBlock} {torreIndiceActual} de {cantidadTorresConfirmada}
+                </Text>
+                <Text style={styles.label}>Pisos</Text>
+                <TextInput
+                  style={styles.input}
+                  value={pisosTorre}
+                  onChangeText={setPisosTorre}
+                  placeholder="ej: 5"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="number-pad"
+                />
+                <Text style={styles.label}>Deptos por piso</Text>
+                <TextInput
+                  style={styles.input}
+                  value={deptosPorPisoTorre}
+                  onChangeText={setDeptosPorPisoTorre}
+                  placeholder="ej: 4"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="number-pad"
+                />
+                <Text style={styles.ayuda}>
+                  Los números de depto (101, 102... 201, 202...) se generan solos — si necesitas números distintos
+                  (irregulares, saltados, con letra), lo ajustas después desde la administración del condominio.
+                </Text>
+                {error && <Text style={styles.error}>{error}</Text>}
+                <TouchableOpacity style={styles.boton} onPress={handleAgregarTorreActualYSeguir} activeOpacity={0.85}>
+                  <Text style={styles.botonTexto}>
+                    {torreIndiceActual < cantidadTorresConfirmada ? "Guardar y seguir con la siguiente" : "Guardar"}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
 
-            <Text style={styles.label}>Nombre de la torre o block</Text>
-            <TextInput
-              style={styles.input}
-              value={nombreTorre}
-              onChangeText={setNombreTorre}
-              placeholder="ej: Torre A"
-              placeholderTextColor={colors.textMuted}
-            />
+            {/* Sub-pantalla D: resumen final + crear */}
+            {etiquetaTorreBlock && cantidadTorresConfirmada !== null && torreIndiceActual > cantidadTorresConfirmada && (
+              <>
+                <Text style={styles.subtitulo}>Resumen</Text>
+                {torresAgregadas.map((t, i) => (
+                  <View key={i} style={styles.torreResumen}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.torreResumenNombre}>{t.nombre_torre}</Text>
+                      <Text style={styles.torreResumenDetalle}>{t.numeros_unidad.length} unidad(es)</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => handleQuitarTorre(i)}>
+                      <Text style={styles.quitarTexto}>Quitar</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
 
-            <Text style={styles.label}>Generar números automáticamente (opcional)</Text>
-            <View style={styles.filaPatron}>
-              <TextInput
-                style={[styles.input, styles.inputChico]}
-                value={pisosTorre}
-                onChangeText={setPisosTorre}
-                placeholder="Pisos"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="number-pad"
-              />
-              <TextInput
-                style={[styles.input, styles.inputChico]}
-                value={deptosPorPisoTorre}
-                onChangeText={setDeptosPorPisoTorre}
-                placeholder="Deptos/piso"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="number-pad"
-              />
-              <TouchableOpacity
-                style={styles.botonGenerar}
-                onPress={() => handleGenerarPatron(pisosTorre, deptosPorPisoTorre, setNumerosTorreTexto)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.botonGenerarTexto}>Generar</Text>
-              </TouchableOpacity>
-            </View>
+                {error && <Text style={styles.error}>{error}</Text>}
 
-            <Text style={styles.label}>Números de depto de esta torre</Text>
-            <Text style={styles.ayuda}>
-              Separados por coma o uno por línea (puedes pegar una lista, ej. desde Excel) — o usa "Generar" arriba.
-            </Text>
-            <TextInput
-              style={[styles.input, styles.inputMultilinea]}
-              value={numerosTorreTexto}
-              onChangeText={setNumerosTorreTexto}
-              placeholder={"101, 102, 103...\no uno por línea"}
-              placeholderTextColor={colors.textMuted}
-              multiline
-            />
-
-            <TouchableOpacity style={styles.botonSecundario} onPress={handleAgregarTorre} activeOpacity={0.85}>
-              <Text style={styles.botonSecundarioTexto}>+ Agregar esta torre</Text>
-            </TouchableOpacity>
-
-            {error && <Text style={styles.error}>{error}</Text>}
-
-            <TouchableOpacity
-              style={[styles.boton, enviando && styles.botonDeshabilitado]}
-              onPress={handleEnviar}
-              disabled={enviando}
-              activeOpacity={0.85}
-            >
-              {enviando ? (
-                <ActivityIndicator color={colors.navy900} />
-              ) : (
-                <Text style={styles.botonTexto}>Crear condominio</Text>
-              )}
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.boton, enviando && styles.botonDeshabilitado]}
+                  onPress={handleEnviar}
+                  disabled={enviando}
+                  activeOpacity={0.85}
+                >
+                  {enviando ? (
+                    <ActivityIndicator color={colors.navy900} />
+                  ) : (
+                    <Text style={styles.botonTexto}>Crear condominio</Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         )}
 
         {paso === 3 && estructura === "edificio" && (
           <View style={styles.card}>
-            <Text style={styles.label}>Generar números automáticamente (opcional)</Text>
-            <View style={styles.filaPatron}>
-              <TextInput
-                style={[styles.input, styles.inputChico]}
-                value={pisosEdificio}
-                onChangeText={setPisosEdificio}
-                placeholder="Pisos"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="number-pad"
-              />
-              <TextInput
-                style={[styles.input, styles.inputChico]}
-                value={deptosPorPisoEdificio}
-                onChangeText={setDeptosPorPisoEdificio}
-                placeholder="Deptos/piso"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="number-pad"
-              />
-              <TouchableOpacity
-                style={styles.botonGenerar}
-                onPress={() => handleGenerarPatron(pisosEdificio, deptosPorPisoEdificio, setNumerosEdificioTexto)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.botonGenerarTexto}>Generar</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.label}>Números de depto</Text>
-            <Text style={styles.ayuda}>
-              Separados por coma o uno por línea (puedes pegar una lista, ej. desde Excel) — o usa "Generar" arriba.
-            </Text>
+            <Text style={styles.label}>Pisos</Text>
             <TextInput
-              style={[styles.input, styles.inputMultilinea]}
-              value={numerosEdificioTexto}
-              onChangeText={setNumerosEdificioTexto}
-              placeholder={"101, 102, 103...\no uno por línea"}
+              style={styles.input}
+              value={pisosEdificio}
+              onChangeText={setPisosEdificio}
+              placeholder="ej: 8"
               placeholderTextColor={colors.textMuted}
-              multiline
+              keyboardType="number-pad"
             />
+            <Text style={styles.label}>Deptos por piso</Text>
+            <TextInput
+              style={styles.input}
+              value={deptosPorPisoEdificio}
+              onChangeText={setDeptosPorPisoEdificio}
+              placeholder="ej: 4"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+            />
+            <Text style={styles.ayuda}>
+              Los números de depto (101, 102... 201, 202...) se generan solos — si necesitas números distintos
+              (irregulares, saltados, con letra), lo ajustas después desde la administración del condominio.
+            </Text>
 
             {error && <Text style={styles.error}>{error}</Text>}
 
