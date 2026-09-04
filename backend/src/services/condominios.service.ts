@@ -37,6 +37,8 @@ export interface CrearCondominioInput {
   // Ronda 56, a pedido explícito del usuario: comuna del condominio,
   // opcional (se muestra en el selector de condominios del administrador).
   comuna?: string;
+  // Ronda 57, a pedido explícito del usuario: región, junto a la comuna.
+  region?: string;
 }
 
 function limpiarNumeros(lista: string[] | undefined): string[] {
@@ -96,6 +98,9 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
 
     if (input.comuna?.trim()) {
       await tx.prepare(`INSERT INTO condominio_detalle (condominio_id_condominio, comuna) VALUES (?, ?)`).run(condominioId, input.comuna.trim());
+    }
+    if (input.region?.trim()) {
+      await tx.prepare(`INSERT INTO condominio_region (condominio_id_condominio, region) VALUES (?, ?)`).run(condominioId, input.region.trim());
     }
 
     let torresCreadas = 0;
@@ -233,6 +238,7 @@ export async function eliminarCondominioVacio(condominioId: number, solicitanteU
     await tx.prepare(`DELETE FROM unidad WHERE condominio_id_condominio = ?`).run(condominioId);
     await tx.prepare(`DELETE FROM torre_block WHERE condominio_id_condominio = ?`).run(condominioId);
     await tx.prepare(`DELETE FROM condominio_detalle WHERE condominio_id_condominio = ?`).run(condominioId);
+    await tx.prepare(`DELETE FROM condominio_region WHERE condominio_id_condominio = ?`).run(condominioId);
     await tx.prepare(`DELETE FROM condominio WHERE id_condominio = ?`).run(condominioId);
   });
 }

@@ -93,6 +93,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [nombreCondominio, setNombreCondominio] = useState("");
   const [comuna, setComuna] = useState("");
+  const [region, setRegion] = useState("");
   const [estructura, setEstructura] = useState<EstructuraUI | null>(null);
 
   // --- estructura = "torres": una o más torres, se arman de a una ---
@@ -207,6 +208,9 @@ export default function CrearCondominioScreen({ navigation }: any) {
     if (comuna.trim()) {
       payload.comuna = comuna.trim();
     }
+    if (region.trim()) {
+      payload.region = region.trim();
+    }
 
     setEnviando(true);
     try {
@@ -277,6 +281,14 @@ export default function CrearCondominioScreen({ navigation }: any) {
               value={comuna}
               onChangeText={setComuna}
               placeholder="ej: Talca"
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={styles.label}>Región (opcional)</Text>
+            <TextInput
+              style={styles.input}
+              value={region}
+              onChangeText={setRegion}
+              placeholder="ej: Región del Maule"
               placeholderTextColor={colors.textMuted}
             />
             <TouchableOpacity

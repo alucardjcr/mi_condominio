@@ -1565,3 +1565,18 @@ CREATE TABLE IF NOT EXISTS condominio_detalle (
   CONSTRAINT fk_condominiodetalle_condominio FOREIGN KEY (condominio_id_condominio)
     REFERENCES condominio (id_condominio)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ronda 57, a pedido explícito del usuario: región del condominio (junto
+-- a la comuna de la ronda 56). Tabla aparte de condominio_detalle a
+-- propósito — condominio_detalle ya pudo haberse creado en un despliegue
+-- anterior (Railway corre CREATE TABLE IF NOT EXISTS de todo el schema al
+-- iniciar), así que agregar una columna nueva a esa tabla NO se aplicaría
+-- ahí — mismo motivo de siempre por el que este proyecto nunca usa ALTER
+-- TABLE, ni siquiera sobre una tabla creada en la ronda inmediatamente
+-- anterior.
+CREATE TABLE IF NOT EXISTS condominio_region (
+  condominio_id_condominio INT NOT NULL PRIMARY KEY,
+  region                    VARCHAR(100) NULL,
+  CONSTRAINT fk_condominioregion_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

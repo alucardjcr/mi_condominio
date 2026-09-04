@@ -103,7 +103,11 @@ export default function CambiarCondominioScreen({ navigation }: any) {
             >
               <View style={{ flexShrink: 1 }}>
                 <Text style={styles.tarjetaTexto}>{c.nombre}</Text>
-                {c.comuna && <Text style={styles.tarjetaComuna}>📍 {c.comuna}</Text>}
+                {(c.comuna || c.region) && (
+                  <Text style={styles.tarjetaComuna}>
+                    📍 {[c.comuna, c.region].filter(Boolean).join(", ")}
+                  </Text>
+                )}
                 {c.rol && <Text style={styles.tarjetaRol}>{c.rol}</Text>}
               </View>
               {cambiandoId === c.id_condominio ? (

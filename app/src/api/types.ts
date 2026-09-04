@@ -173,6 +173,8 @@ export interface CondominioOpcion {
   rol?: string;
   // Ronda 56, a pedido explícito del usuario.
   comuna?: string | null;
+  // Ronda 57, a pedido explícito del usuario.
+  region?: string | null;
 }
 
 export interface CrearCondominioTorreInput {
@@ -201,6 +203,8 @@ export interface CrearCondominioInput {
   numeros_unidad_casas?: string[]; // solo si estructura = "casas"
   // Ronda 56, a pedido explícito del usuario.
   comuna?: string;
+  // Ronda 57, a pedido explícito del usuario.
+  region?: string;
 }
 
 export interface CrearCondominioResponse {
