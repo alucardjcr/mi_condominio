@@ -34,6 +34,9 @@ export interface CrearCondominioInput {
   torres?: TorreInput[]; // solo si estructura = "torres"
   edificio?: EdificioInput; // solo si estructura = "edificio"
   numeros_unidad_casas?: string[]; // solo si estructura = "casas"
+  // Ronda 56, a pedido explícito del usuario: comuna del condominio,
+  // opcional (se muestra en el selector de condominios del administrador).
+  comuna?: string;
 }
 
 function limpiarNumeros(lista: string[] | undefined): string[] {
@@ -90,6 +93,10 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
   return withTransaction(async (tx) => {
     const insertCondominio = await tx.prepare(`INSERT INTO condominio (gls_condominio) VALUES (?)`).run(nombre);
     const condominioId = Number(insertCondominio.lastInsertRowid);
+
+    if (input.comuna?.trim()) {
+      await tx.prepare(`INSERT INTO condominio_detalle (condominio_id_condominio, comuna) VALUES (?, ?)`).run(condominioId, input.comuna.trim());
+    }
 
     let torresCreadas = 0;
     let unidadesCreadas = 0;
@@ -179,5 +186,53 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
       torres_creadas: torresCreadas,
       unidades_creadas: unidadesCreadas,
     };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Ronda 56, a pedido explícito del usuario: permitir deshacer un
+// condominio creado por error (ej. nombre mal escrito), pero SOLO si
+// todavía no se agregó nada real — ni un residente, guardia, personal,
+// vetado o mascota. La idea es cubrir exactamente el caso de "me
+// equivoqué en el nombre, quiero rehacerlo de cero" sin abrir la puerta a
+// borrar un condominio que ya tiene datos reales de gente (para eso, dar
+// de baja el condominio es otra conversación — no se implementa acá).
+// ---------------------------------------------------------------------------
+export async function eliminarCondominioVacio(condominioId: number, solicitanteUsuarioId: number) {
+  return withTransaction(async (tx) => {
+    // El solicitante tiene que tener realmente una membresía en ese
+    // condominio (evita que alguien intente borrar un condominio ajeno
+    // adivinando el id — mismo criterio IDOR de siempre).
+    const propia = await tx
+      .prepare(`SELECT id_membresia FROM membresia WHERE condominio_id_condominio = ? AND usuario_id_usuario = ?`)
+      .get(condominioId, solicitanteUsuarioId);
+    if (!propia) {
+      throw new Error("No tienes acceso a ese condominio.");
+    }
+
+    const [otrasMembresias, vetados, mascotas] = await Promise.all([
+      tx
+        .prepare(`SELECT COUNT(*) AS n FROM membresia WHERE condominio_id_condominio = ? AND usuario_id_usuario != ?`)
+        .get(condominioId, solicitanteUsuarioId) as Promise<{ n: number }>,
+      tx.prepare(`SELECT COUNT(*) AS n FROM vetado WHERE condominio_id_condominio = ?`).get(condominioId) as Promise<{ n: number }>,
+      tx.prepare(`SELECT COUNT(*) AS n FROM mascota WHERE condominio_id_condominio = ?`).get(condominioId) as Promise<{ n: number }>,
+    ]);
+
+    if (otrasMembresias.n > 0 || vetados.n > 0 || mascotas.n > 0) {
+      throw new Error(
+        "Este condominio ya no se puede eliminar — tiene residentes, guardias, personal, vetados o mascotas cargados. Si te equivocaste en el nombre, puedes cambiarlo desde Ajustes en vez de borrar el condominio."
+      );
+    }
+
+    // Nada más que la estructura inicial y los catálogos por defecto —
+    // seguro de borrar por completo, en el orden correcto por las FK.
+    await tx.prepare(`DELETE FROM membresia WHERE condominio_id_condominio = ?`).run(condominioId);
+    await tx.prepare(`DELETE FROM tipo_multa WHERE condominio_id_condominio = ?`).run(condominioId);
+    await tx.prepare(`DELETE FROM tipo_amonestacion WHERE condominio_id_condominio = ?`).run(condominioId);
+    await tx.prepare(`DELETE FROM tipo_notificacion WHERE condominio_id_condominio = ?`).run(condominioId);
+    await tx.prepare(`DELETE FROM unidad WHERE condominio_id_condominio = ?`).run(condominioId);
+    await tx.prepare(`DELETE FROM torre_block WHERE condominio_id_condominio = ?`).run(condominioId);
+    await tx.prepare(`DELETE FROM condominio_detalle WHERE condominio_id_condominio = ?`).run(condominioId);
+    await tx.prepare(`DELETE FROM condominio WHERE id_condominio = ?`).run(condominioId);
   });
 }

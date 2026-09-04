@@ -424,7 +424,17 @@ export async function listarCondominiosDeUsuario(idUsuario: number) {
   const resultado = [];
   for (const m of membresias) {
     if (await condominioEstaBloqueado(m.condominio_id_condominio)) continue;
-    resultado.push({ id_condominio: m.condominio_id_condominio, nombre: m.gls_condominio, rol: m.gls_tipousuario });
+    // Ronda 56, a pedido explícito del usuario: comuna de cada condominio,
+    // para diferenciarlos de un vistazo en la lista de cambio.
+    const detalle = (await db
+      .prepare(`SELECT comuna FROM condominio_detalle WHERE condominio_id_condominio = ?`)
+      .get(m.condominio_id_condominio)) as { comuna: string | null } | undefined;
+    resultado.push({
+      id_condominio: m.condominio_id_condominio,
+      nombre: m.gls_condominio,
+      rol: m.gls_tipousuario,
+      comuna: detalle?.comuna ?? null,
+    });
   }
   return resultado;
 }

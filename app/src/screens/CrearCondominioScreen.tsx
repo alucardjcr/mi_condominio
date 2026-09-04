@@ -92,6 +92,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
 
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [nombreCondominio, setNombreCondominio] = useState("");
+  const [comuna, setComuna] = useState("");
   const [estructura, setEstructura] = useState<EstructuraUI | null>(null);
 
   // --- estructura = "torres": una o más torres, se arman de a una ---
@@ -203,6 +204,10 @@ export default function CrearCondominioScreen({ navigation }: any) {
       payload = { nombre_condominio: nombreCondominio.trim(), estructura: "casas", numeros_unidad_casas: numeros };
     }
 
+    if (comuna.trim()) {
+      payload.comuna = comuna.trim();
+    }
+
     setEnviando(true);
     try {
       const resultado = await crearCondominio(tokenApi, payload);
@@ -264,6 +269,14 @@ export default function CrearCondominioScreen({ navigation }: any) {
               value={nombreCondominio}
               onChangeText={setNombreCondominio}
               placeholder="ej: Altos de San Miguel"
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={styles.label}>Comuna (opcional)</Text>
+            <TextInput
+              style={styles.input}
+              value={comuna}
+              onChangeText={setComuna}
+              placeholder="ej: Talca"
               placeholderTextColor={colors.textMuted}
             />
             <TouchableOpacity

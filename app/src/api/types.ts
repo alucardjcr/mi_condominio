@@ -171,6 +171,8 @@ export interface CondominioOpcion {
   // la misma persona (ej. Residente en uno, Guardia en otro) — se muestra
   // junto al nombre en el selector para que quede claro con cuál entra.
   rol?: string;
+  // Ronda 56, a pedido explícito del usuario.
+  comuna?: string | null;
 }
 
 export interface CrearCondominioTorreInput {
@@ -197,6 +199,8 @@ export interface CrearCondominioInput {
   torres?: CrearCondominioTorreInput[]; // solo si estructura = "torres"
   edificio?: CrearCondominioEdificioInput; // solo si estructura = "edificio"
   numeros_unidad_casas?: string[]; // solo si estructura = "casas"
+  // Ronda 56, a pedido explícito del usuario.
+  comuna?: string;
 }
 
 export interface CrearCondominioResponse {

@@ -1555,3 +1555,13 @@ CREATE TABLE IF NOT EXISTS guardia_perfil (
   CONSTRAINT fk_guardiaperfil_usuario FOREIGN KEY (usuario_id_usuario)
     REFERENCES usuario (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ronda 56, a pedido explícito del usuario: comuna del condominio (antes
+-- no existía ningún dato de ubicación). Tabla aparte, 1 a 1, opcional
+-- (mismo criterio de siempre en este proyecto).
+CREATE TABLE IF NOT EXISTS condominio_detalle (
+  condominio_id_condominio INT NOT NULL PRIMARY KEY,
+  comuna                    VARCHAR(100) NULL,
+  CONSTRAINT fk_condominiodetalle_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

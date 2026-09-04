@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { crearCondominioConEstructura } from "../services/condominios.service";
+import { crearCondominioConEstructura, eliminarCondominioVacio } from "../services/condominios.service";
 import { listarCondominiosDeUsuario } from "../services/auth.service";
 
 // Ronda 26: montado en index.ts SOLO con requireAuth + requireAdmin (sin
@@ -40,6 +40,18 @@ condominiosRouter.post("/", async (req, res) => {
   try {
     const resultado = await crearCondominioConEstructura(req.guardia!.id_usuario, req.body);
     res.status(201).json(resultado);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 56, a pedido explícito del usuario: deshacer un condominio creado
+// por error (ej. nombre mal escrito), siempre que todavía no se le haya
+// agregado nada real — ver la nota completa en eliminarCondominioVacio().
+condominiosRouter.delete("/:id", async (req, res) => {
+  try {
+    await eliminarCondominioVacio(Number(req.params.id), req.guardia!.id_usuario);
+    res.status(204).send();
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

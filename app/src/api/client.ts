@@ -191,6 +191,11 @@ export const getMisCondominios = (token: string) => get<CondominioOpcion[]>(`/ad
 export const crearCondominio = (token: string, input: CrearCondominioInput) =>
   send<CrearCondominioResponse>(`/admin-condominios`, "POST", token, input as unknown as object);
 
+// Ronda 56, a pedido explícito del usuario: deshacer un condominio creado
+// por error, siempre que todavía no se le haya agregado nada real — el
+// backend valida esto y rechaza con un mensaje claro si no corresponde.
+export const eliminarCondominio = (token: string, id: number) => send<void>(`/admin-condominios/${id}`, "DELETE", token);
+
 export const cambiarPassword = (token: string, passwordActual: string, passwordNueva: string) =>
   send<{ ok: boolean }>(`/auth/cambiar-password`, "POST", token, {
     password_actual: passwordActual,
