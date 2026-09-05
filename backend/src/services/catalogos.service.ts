@@ -61,7 +61,10 @@ export async function listarTiposResidente() {
 
 // Residentes con carnet de discapacidad vigente — para que el guardia
 // pueda buscar/seleccionar quién va a usar el cupo (regla 1 de discapacitados).
-export async function listarResidentesConCarnetDiscapacidad() {
+// Ronda 61, a pedido explícito del usuario: mismo bug exacto — no
+// filtraba por condominio, y encima es información sensible (estado de
+// discapacidad), más grave todavía que las otras 3.
+export async function listarResidentesConCarnetDiscapacidad(condominioId: number) {
   return db
     .prepare(
       `SELECT u.id_usuario, u.nombre_usuario, un.numero_unidad, tb.nombre_torre
@@ -69,8 +72,8 @@ export async function listarResidentesConCarnetDiscapacidad() {
        JOIN usuario u ON u.id_usuario = rd.usuario_id_usuario
        JOIN unidad un ON un.id_unidad = u.unidad_id_unidad
        JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
-       WHERE rd.flg_vigencia = 1 AND u.flg_vigencia = 1
+       WHERE rd.flg_vigencia = 1 AND u.flg_vigencia = 1 AND u.condominio_id_condominio = ?
        ORDER BY u.nombre_usuario`
     )
-    .all();
+    .all(condominioId);
 }

@@ -35,7 +35,7 @@ function rechazarSiNoEsPropietario(req: any, res: any): boolean {
 
 miDeptoRouter.get("/residentes", soloResidente, async (req, res) => {
   if (rechazarSiNoEsPropietario(req, res)) return;
-  res.json(await listarResidentes(req.guardia!.unidad_id_unidad));
+  res.json(await listarResidentes(req.guardia!.condominio_id_condominio!, req.guardia!.unidad_id_unidad));
 });
 
 miDeptoRouter.post("/residentes", soloResidente, async (req, res) => {

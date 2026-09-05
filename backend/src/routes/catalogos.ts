@@ -34,8 +34,8 @@ catalogosRouter.get("/tipos-tenencia-patente", async (_req, res) => {
   res.json(await listarTiposTenenciaPatente());
 });
 
-catalogosRouter.get("/residentes-discapacitados", async (_req, res) => {
-  res.json(await listarResidentesConCarnetDiscapacidad());
+catalogosRouter.get("/residentes-discapacitados", async (req, res) => {
+  res.json(await listarResidentesConCarnetDiscapacidad(req.guardia!.condominio_id_condominio!));
 });
 
 catalogosRouter.get("/tipos-paquete", async (req, res) => {

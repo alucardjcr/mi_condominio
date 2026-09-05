@@ -113,7 +113,15 @@ export async function actualizarGuardia(id: number, input: { nombre_usuario?: st
 // Residentes
 // ---------------------------------------------------------------------------
 
-export async function listarResidentes(unidadId?: number) {
+// Ronda 61, a pedido explícito del usuario (bug real reportado: al crear
+// un condominio nuevo y entrar a Residentes, aparecían residentes de
+// OTRO condominio) — esta función no filtraba por condominio EN
+// ABSOLUTO, devolvía TODOS los residentes de TODO el sistema. Mismo
+// patrón exacto que el bug de listarGuardias() encontrado en la ronda
+// 44 — se revisaron todas las demás funciones "listar*" del backend por
+// si quedaba alguna más con este mismo hueco (ver el commit para el
+// detalle completo de la revisión).
+export async function listarResidentes(condominioId: number, unidadId?: number) {
   const base = `SELECT u.id_usuario, u.nombre_usuario, u.unidad_id_unidad, u.flg_vigencia, u.usuariocol, u.flg_comite, u.flg_propietario,
                        un.numero_unidad, tb.nombre_torre,
                        rd.id_residentediscapacitado, rd.numero_carnet,
@@ -126,11 +134,11 @@ export async function listarResidentes(unidadId?: number) {
                 LEFT JOIN residente_discapacitado rd ON rd.usuario_id_usuario = u.id_usuario AND rd.flg_vigencia = 1
                 LEFT JOIN tipo_residente tr ON tr.id_tiporesidente = u.tipo_residente_id_tiporesidente
                 LEFT JOIN residente_perfil rp ON rp.usuario_id_usuario = u.id_usuario
-                WHERE tu.gls_tipousuario = 'Residente'`;
+                WHERE tu.gls_tipousuario = 'Residente' AND u.condominio_id_condominio = ?`;
   if (unidadId) {
-    return db.prepare(`${base} AND u.unidad_id_unidad = ? ORDER BY u.nombre_usuario`).all(unidadId);
+    return db.prepare(`${base} AND u.unidad_id_unidad = ? ORDER BY u.nombre_usuario`).all(condominioId, unidadId);
   }
-  return db.prepare(`${base} ORDER BY tb.nombre_torre, un.numero_unidad, u.nombre_usuario`).all();
+  return db.prepare(`${base} ORDER BY tb.nombre_torre, un.numero_unidad, u.nombre_usuario`).all(condominioId);
 }
 
 // Ronda 36, a pedido explícito del usuario: datos adicionales opcionales
@@ -437,17 +445,20 @@ export async function quitarCarnetDiscapacidad(usuarioId: number) {
 // Patentes de residentes
 // ---------------------------------------------------------------------------
 
-export async function listarPatentes(unidadId?: number) {
+// Ronda 61, a pedido explícito del usuario: mismo bug exacto que
+// listarResidentes — no filtraba por condominio en absoluto.
+export async function listarPatentes(condominioId: number, unidadId?: number) {
   const base = `SELECT p.id_patente, p.patente, p.flg_vigencia,
                        tt.gls_tipotenencia, p.unidad_id_unidad, un.numero_unidad, tb.nombre_torre
                 FROM patente_condominio p
                 JOIN tipo_tenencia_patente tt ON tt.id_tipotenencia = p.tipo_tenencia_id_tipotenencia
                 JOIN unidad un ON un.id_unidad = p.unidad_id_unidad
-                JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock`;
+                JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
+                WHERE p.condominio_id_condominio = ?`;
   if (unidadId) {
-    return db.prepare(`${base} WHERE p.unidad_id_unidad = ? ORDER BY p.patente`).all(unidadId);
+    return db.prepare(`${base} AND p.unidad_id_unidad = ? ORDER BY p.patente`).all(condominioId, unidadId);
   }
-  return db.prepare(`${base} ORDER BY tb.nombre_torre, un.numero_unidad, p.patente`).all();
+  return db.prepare(`${base} ORDER BY tb.nombre_torre, un.numero_unidad, p.patente`).all(condominioId);
 }
 
 export async function crearPatente(input: {

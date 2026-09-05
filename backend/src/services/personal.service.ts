@@ -55,7 +55,9 @@ export async function listarTiposPersonal(condominioId: number) {
 // Ficha de personal externo (Administrador/Comité)
 // ---------------------------------------------------------------------------
 
-export async function listarPersonal() {
+// Ronda 61, a pedido explícito del usuario: mismo bug exacto — no
+// filtraba por condominio en absoluto.
+export async function listarPersonal(condominioId: number) {
   return db
     .prepare(
       `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia,
@@ -64,10 +66,10 @@ export async function listarPersonal() {
        FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
        LEFT JOIN tipo_personal tp ON tp.id_tipopersonal = u.tipo_personal_id_tipopersonal
-       WHERE tu.gls_tipousuario = 'Personal'
+       WHERE tu.gls_tipousuario = 'Personal' AND u.condominio_id_condominio = ?
        ORDER BY u.nombre_usuario`
     )
-    .all();
+    .all(condominioId);
 }
 
 export async function crearPersonal(input: {

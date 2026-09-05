@@ -91,8 +91,13 @@ function esDuplicado(err: any): boolean {
 // --- Guardias -----------------------------------------------------------
 
 adminRouter.get("/guardias", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
-  res.json(await listarGuardias(condominioId));
+  // Ronda 61: mismo bug que residentes/patentes/personal — el frontend
+  // (adminGetGuardias) nunca manda condominio_id en la URL, así que el
+  // fallback fijo (CONDOMINIO_ID_DEFAULT) mostraba siempre el condominio
+  // 1 sin importar la sesión real. La función listarGuardias() ya
+  // filtraba bien desde la ronda 44 — el problema era que esta ruta
+  // nunca le pasaba el valor correcto.
+  res.json(await listarGuardias(req.guardia!.condominio_id_condominio!));
 });
 
 adminRouter.post("/guardias", async (req, res) => {
@@ -128,8 +133,13 @@ adminRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_u
 // --- Residentes -----------------------------------------------------------
 
 adminRouter.get("/residentes", async (req, res) => {
+  // Ronda 61: usa el condominio de la SESIÓN (verificado en el token), no
+  // un query param con fallback hardcodeado — el frontend real nunca
+  // manda condominio_id acá, así que un fallback fijo (CONDOMINIO_ID_DEFAULT)
+  // habría mostrado siempre el condominio 1 sin importar en cuál
+  // condominio esté trabajando el admin en este momento.
   const unidadId = req.query.unidad_id ? Number(req.query.unidad_id) : undefined;
-  res.json(await listarResidentes(unidadId));
+  res.json(await listarResidentes(req.guardia!.condominio_id_condominio!, unidadId));
 });
 
 adminRouter.post("/residentes", async (req, res) => {
@@ -246,7 +256,7 @@ adminRouter.delete("/residentes/:id/discapacidad", requirePerteneceAlCondominio(
 
 adminRouter.get("/patentes", async (req, res) => {
   const unidadId = req.query.unidad_id ? Number(req.query.unidad_id) : undefined;
-  res.json(await listarPatentes(unidadId));
+  res.json(await listarPatentes(req.guardia!.condominio_id_condominio!, unidadId));
 });
 
 adminRouter.post("/patentes", async (req, res) => {
@@ -586,8 +596,8 @@ adminRouter.get("/personal/tipos", async (req, res) => {
   res.json(await listarTiposPersonal(condominioId));
 });
 
-adminRouter.get("/personal", async (_req, res) => {
-  res.json(await listarPersonal());
+adminRouter.get("/personal", async (req, res) => {
+  res.json(await listarPersonal(req.guardia!.condominio_id_condominio!));
 });
 
 adminRouter.post("/personal", async (req, res) => {
