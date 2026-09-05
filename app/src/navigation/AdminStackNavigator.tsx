@@ -20,6 +20,7 @@ import AdminReservasScreen from "../screens/admin/AdminReservasScreen";
 import AdminComunicadosScreen from "../screens/admin/AdminComunicadosScreen";
 import AdminGastoComunScreen from "../screens/admin/AdminGastoComunScreen";
 import AdminPersonalScreen from "../screens/admin/AdminPersonalScreen";
+import AdminJefesAreaScreen from "../screens/admin/AdminJefesAreaScreen";
 import AdminAsignarTareaScreen from "../screens/admin/AdminAsignarTareaScreen";
 import AdminPersonalDetalleScreen from "../screens/admin/AdminPersonalDetalleScreen";
 import AdminMantencionesScreen from "../screens/admin/AdminMantencionesScreen";
@@ -152,6 +153,7 @@ export default function AdminStackNavigator() {
       <Stack.Screen name="AdminComunicados" component={AdminComunicadosScreen} options={{ title: "Enviar comunicado" }} />
       <Stack.Screen name="AdminGastoComun" component={AdminGastoComunScreen} options={{ title: "Gasto común" }} />
       <Stack.Screen name="AdminPersonal" component={AdminPersonalScreen} options={{ title: "Personal externo" }} />
+      <Stack.Screen name="AdminJefesArea" component={AdminJefesAreaScreen} options={{ title: "Jefes de área" }} />
       <Stack.Screen name="AdminAsignarTarea" component={AdminAsignarTareaScreen} options={{ title: "Asignar tarea" }} />
       <Stack.Screen name="AdminPersonalDetalle" component={AdminPersonalDetalleScreen} options={{ title: "Historial" }} />
       <Stack.Screen name="AdminMantenciones" component={AdminMantencionesScreen} options={{ title: "Mantenciones" }} />

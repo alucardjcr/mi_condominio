@@ -62,10 +62,12 @@ export async function listarPersonal(condominioId: number) {
     .prepare(
       `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia,
               u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal,
+              u.jefe_id_usuario, jefe.nombre_usuario AS jefe_nombre,
               EXISTS(SELECT 1 FROM turno_personal t WHERE t.usuario_id_usuario = u.id_usuario AND t.fecha_termino IS NULL) as turno_abierto
        FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
        LEFT JOIN tipo_personal tp ON tp.id_tipopersonal = u.tipo_personal_id_tipopersonal
+       LEFT JOIN usuario jefe ON jefe.id_usuario = u.jefe_id_usuario
        WHERE tu.gls_tipousuario = 'Personal' AND u.condominio_id_condominio = ?
        ORDER BY u.nombre_usuario`
     )
@@ -78,13 +80,20 @@ export async function crearPersonal(input: {
   password: string;
   condominio_id_condominio: number;
   tipo_personal_id_tipopersonal?: number;
+  // Ronda 68, a pedido explícito del usuario: el administrador decide
+  // manualmente a qué Jefe de área reporta este trabajador (o a ninguno,
+  // si el administrador lo supervisa directo).
+  jefe_id_usuario?: number | null;
 }) {
   const tipoPersonalUsuarioId = await getIdByGls("tipo_usuario", "id_tipousuario", "gls_tipousuario", "Personal");
+  if (input.jefe_id_usuario) {
+    await validarJefeDelMismoCondominio(input.jefe_id_usuario, input.condominio_id_condominio);
+  }
   const passwordHash = bcrypt.hashSync(input.password, 10);
   const insert = await db
     .prepare(
-      `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio, tipo_personal_id_tipopersonal)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio, tipo_personal_id_tipopersonal, jefe_id_usuario)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       input.nombre_usuario,
@@ -92,22 +101,52 @@ export async function crearPersonal(input: {
       passwordHash,
       tipoPersonalUsuarioId,
       input.condominio_id_condominio,
-      input.tipo_personal_id_tipopersonal ?? null
+      input.tipo_personal_id_tipopersonal ?? null,
+      input.jefe_id_usuario ?? null
     );
   const id = Number(insert.lastInsertRowid);
   await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal, 0 as turno_abierto
-       FROM usuario u LEFT JOIN tipo_personal tp ON tp.id_tipopersonal = u.tipo_personal_id_tipopersonal
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal,
+              u.jefe_id_usuario, jefe.nombre_usuario AS jefe_nombre, 0 as turno_abierto
+       FROM usuario u
+       LEFT JOIN tipo_personal tp ON tp.id_tipopersonal = u.tipo_personal_id_tipopersonal
+       LEFT JOIN usuario jefe ON jefe.id_usuario = u.jefe_id_usuario
        WHERE u.id_usuario = ?`
     )
     .get(id);
 }
 
+// Ronda 68: confirma que `jefeId` sea de verdad un Jefe de área
+// (JefeGuardias/JefeAseo/JefeJardineria) del MISMO condominio — evita que
+// alguien asigne un trabajador a un "jefe" que en realidad es de otro
+// condominio, o que ni siquiera es un jefe (mismo criterio IDOR de
+// siempre en este proyecto).
+async function validarJefeDelMismoCondominio(jefeId: number, condominioId: number) {
+  const jefe = await db
+    .prepare(
+      `SELECT u.id_usuario FROM usuario u
+       JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
+       WHERE u.id_usuario = ? AND u.condominio_id_condominio = ?
+         AND tu.gls_tipousuario IN ('JefeGuardias','JefeAseo','JefeJardineria')`
+    )
+    .get(jefeId, condominioId);
+  if (!jefe) {
+    throw new Error("Ese jefe no existe o no pertenece a este condominio.");
+  }
+}
+
 export async function actualizarPersonal(
   id: number,
-  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; tipo_personal_id_tipopersonal?: number | null }
+  input: {
+    nombre_usuario?: string;
+    password?: string;
+    flg_vigencia?: number;
+    tipo_personal_id_tipopersonal?: number | null;
+    jefe_id_usuario?: number | null;
+    condominio_id_condominio?: number; // para validar el jefe, si se manda
+  }
 ) {
   if (input.nombre_usuario !== undefined) {
     await db.prepare(`UPDATE usuario SET nombre_usuario = ? WHERE id_usuario = ?`).run(input.nombre_usuario, id);
@@ -124,12 +163,21 @@ export async function actualizarPersonal(
       .prepare(`UPDATE usuario SET tipo_personal_id_tipopersonal = ? WHERE id_usuario = ?`)
       .run(input.tipo_personal_id_tipopersonal, id);
   }
+  if (input.jefe_id_usuario !== undefined) {
+    if (input.jefe_id_usuario !== null && input.condominio_id_condominio) {
+      await validarJefeDelMismoCondominio(input.jefe_id_usuario, input.condominio_id_condominio);
+    }
+    await db.prepare(`UPDATE usuario SET jefe_id_usuario = ? WHERE id_usuario = ?`).run(input.jefe_id_usuario, id);
+  }
   await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
       `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal,
+              u.jefe_id_usuario, jefe.nombre_usuario AS jefe_nombre,
               EXISTS(SELECT 1 FROM turno_personal t WHERE t.usuario_id_usuario = u.id_usuario AND t.fecha_termino IS NULL) as turno_abierto
-       FROM usuario u LEFT JOIN tipo_personal tp ON tp.id_tipopersonal = u.tipo_personal_id_tipopersonal
+       FROM usuario u
+       LEFT JOIN tipo_personal tp ON tp.id_tipopersonal = u.tipo_personal_id_tipopersonal
+       LEFT JOIN usuario jefe ON jefe.id_usuario = u.jefe_id_usuario
        WHERE u.id_usuario = ?`
     )
     .get(id);

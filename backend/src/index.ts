@@ -22,6 +22,7 @@ import { mantencionesRouter } from "./routes/mantenciones";
 import { vetadosRouter } from "./routes/vetados";
 import { bitacoraRouter } from "./routes/bitacora";
 import { jefeGuardiasRouter } from "./routes/jefe-guardias";
+import { jefeEquipoRouter } from "./routes/jefe-equipo";
 import { mascotasRouter } from "./routes/mascotas";
 import { hoyRouter } from "./routes/hoy";
 import { condominiosRouter } from "./routes/condominios";
@@ -138,6 +139,7 @@ app.use("/mantenciones", requireAuth, requireCondominioAccess, requireSuscripcio
 app.use("/vetados", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, vetadosRouter); // ronda 20: listado VETADOS — CRUD solo Administrador/Comité, búsqueda por RUT también Guardia (ver requireRol dentro del router)
 app.use("/bitacora", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, bitacoraRouter); // ronda 20: bitácora de novedades del turno — escribe Guardia, lee Guardia y Administrador/Comité (ver requireRol dentro del router)
 app.use("/jefe-guardias", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, jefeGuardiasRouter); // ronda 20: rol JEFE_GUARDIAS — calendario de turnos + CRUD de guardias, y SOLO eso (ver requireRol dentro del router)
+app.use("/mi-equipo", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, jefeEquipoRouter); // ronda 68: JefeAseo/JefeJardineria — su equipo de personal + horarios semanales, y SOLO eso (ver requireRol dentro del router)
 app.use("/mascotas", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, mascotasRouter); // ronda 20: mascotas por depto — autoservicio del residente de esa unidad, o Administrador/Comité (ver requireAuth dentro del router)
 app.use("/hoy", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, hoyRouter); // ronda 40: "quién viene hoy" — personal externo + mantenciones del día, cualquier rol logeado del condominio
 app.use("/privacidad", requireAuth, privacidadRouter); // ronda 32, Ley 21.719: derechos ARCO — autoservicio de cualquier rol sobre sí mismo, ver routes/privacidad.ts. A propósito SIN requireSuscripcionAlDia: es un derecho de la PERSONA, no puede quedar condicionado a si el condominio pagó su mensualidad o no.

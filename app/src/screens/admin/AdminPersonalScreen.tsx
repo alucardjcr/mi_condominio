@@ -15,8 +15,9 @@ import {
   adminCrearPersonal,
   adminGetPersonal,
   adminGetTiposPersonal,
+  adminGetJefesDeArea,
 } from "../../api/client";
-import { PersonalAdmin, TipoPersonal } from "../../api/types";
+import { PersonalAdmin, TipoPersonal, JefeDeArea } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { CONDOMINIO_ID } from "../../config/api";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
@@ -30,20 +31,33 @@ export default function AdminPersonalScreen({ navigation }: any) {
   const { token } = useAuth();
   const [personal, setPersonal] = useState<PersonalAdmin[]>([]);
   const [tipos, setTipos] = useState<TipoPersonal[]>([]);
+  const [jefes, setJefes] = useState<JefeDeArea[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [nombre, setNombre] = useState("");
   const [usuariocol, setUsuariocol] = useState("");
   const [password, setPassword] = useState("");
   const [tipoSel, setTipoSel] = useState<OpcionSelect | null>(null);
+  const [jefeSel, setJefeSel] = useState<OpcionSelect | null>(null);
   const [creando, setCreando] = useState(false);
+
+  // Ronda 68, a pedido explícito del usuario: reasignar el jefe de un
+  // trabajador ya existente, directo desde su tarjeta.
+  const [editandoJefeDeId, setEditandoJefeDeId] = useState<number | null>(null);
+  const [jefeEditarSel, setJefeEditarSel] = useState<OpcionSelect | null>(null);
+  const [guardandoJefe, setGuardandoJefe] = useState(false);
 
   const cargar = useCallback(async () => {
     if (!token) return;
     try {
-      const [listaPersonal, listaTipos] = await Promise.all([adminGetPersonal(token), adminGetTiposPersonal(token, CONDOMINIO_ID)]);
+      const [listaPersonal, listaTipos, listaJefes] = await Promise.all([
+        adminGetPersonal(token),
+        adminGetTiposPersonal(token, CONDOMINIO_ID),
+        adminGetJefesDeArea(token),
+      ]);
       setPersonal(listaPersonal);
       setTipos(listaTipos);
+      setJefes(listaJefes);
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
@@ -71,11 +85,13 @@ export default function AdminPersonalScreen({ navigation }: any) {
         password,
         tipo_personal_id_tipopersonal: tipoSel ? Number(tipoSel.id) : undefined,
         condominio_id_condominio: CONDOMINIO_ID,
+        jefe_id_usuario: jefeSel ? Number(jefeSel.id) : undefined,
       });
       setNombre("");
       setUsuariocol("");
       setPassword("");
       setTipoSel(null);
+      setJefeSel(null);
       cargar();
     } catch (e: any) {
       Alert.alert("Error", e.message);
@@ -91,6 +107,25 @@ export default function AdminPersonalScreen({ navigation }: any) {
       cargar();
     } catch (e: any) {
       Alert.alert("Error", e.message);
+    }
+  };
+
+  const handleAbrirEdicionJefe = (p: PersonalAdmin) => {
+    setEditandoJefeDeId(p.id_usuario);
+    setJefeEditarSel(p.jefe_id_usuario && p.jefe_nombre ? { id: p.jefe_id_usuario, label: p.jefe_nombre } : null);
+  };
+
+  const handleGuardarJefe = async (id: number) => {
+    if (!token) return;
+    setGuardandoJefe(true);
+    try {
+      await adminActualizarPersonal(token, id, { jefe_id_usuario: jefeEditarSel ? Number(jefeEditarSel.id) : null });
+      setEditandoJefeDeId(null);
+      cargar();
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    } finally {
+      setGuardandoJefe(false);
     }
   };
 
@@ -133,6 +168,14 @@ export default function AdminPersonalScreen({ navigation }: any) {
             valorSeleccionado={tipoSel}
             onSeleccionar={setTipoSel}
           />
+          <SelectModal
+            label="Reporta a (opcional)"
+            placeholder={jefes.length ? "Selecciona un jefe, o deja vacío" : "No hay jefes de área creados todavía"}
+            opciones={jefes.map((j) => ({ id: j.id_usuario, label: `${j.nombre_usuario} (${j.rol})` }))}
+            valorSeleccionado={jefeSel}
+            onSeleccionar={setJefeSel}
+            disabled={jefes.length === 0}
+          />
           <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
             <Text style={styles.botonCrearTexto}>{creando ? "Creando..." : "Crear"}</Text>
           </TouchableOpacity>
@@ -171,6 +214,39 @@ export default function AdminPersonalScreen({ navigation }: any) {
               <Text style={[styles.botonAccionTexto, styles.botonAccionSecundarioTexto]}>Ver historial</Text>
             </TouchableOpacity>
           </View>
+
+          {editandoJefeDeId === item.id_usuario ? (
+            <View style={styles.subForm}>
+              <SelectModal
+                label="Reporta a"
+                placeholder="Selecciona un jefe, o deja vacío para quitar"
+                opciones={jefes.map((j) => ({ id: j.id_usuario, label: `${j.nombre_usuario} (${j.rol})` }))}
+                valorSeleccionado={jefeEditarSel}
+                onSeleccionar={setJefeEditarSel}
+              />
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                <TouchableOpacity
+                  style={[styles.botonAccion, { flex: 1 }]}
+                  onPress={() => handleGuardarJefe(item.id_usuario)}
+                  disabled={guardandoJefe}
+                >
+                  <Text style={styles.botonAccionTexto}>{guardandoJefe ? "Guardando..." : "Guardar"}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.botonAccion, styles.botonAccionSecundario, { flex: 1 }]}
+                  onPress={() => setEditandoJefeDeId(null)}
+                >
+                  <Text style={[styles.botonAccionTexto, styles.botonAccionSecundarioTexto]}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={() => handleAbrirEdicionJefe(item)}>
+              <Text style={styles.enlaceJefe}>
+                {item.jefe_nombre ? `👤 Reporta a: ${item.jefe_nombre}` : "👤 Sin jefe asignado — toca para asignar"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     />
@@ -210,4 +286,6 @@ const styles = StyleSheet.create({
   botonAccionSecundario: { backgroundColor: "#eef1f5" },
   botonAccionTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },
   botonAccionSecundarioTexto: { color: "#333" },
+  subForm: { marginTop: 12, borderTopWidth: 1, borderTopColor: "#f0f0f0", paddingTop: 12 },
+  enlaceJefe: { color: "#014BD2", fontWeight: "700", fontSize: 12, marginTop: 12 },
 });

@@ -50,6 +50,7 @@ import MascotaDetalleScreen from "./src/screens/MascotaDetalleScreen";
 import JefeGuardiasTurnosScreen from "./src/screens/jefeguardias/JefeGuardiasTurnosScreen";
 import JefeGuardiasGuardiasScreen from "./src/screens/jefeguardias/JefeGuardiasGuardiasScreen";
 import JefeGuardiasHomeScreen from "./src/screens/jefeguardias/JefeGuardiasHomeScreen";
+import MiEquipoScreen from "./src/screens/jefeequipo/MiEquipoScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -68,6 +69,11 @@ function AppNavigator() {
   // turnos y al CRUD de guardias (ver JefeGuardiasTurnosScreen /
   // JefeGuardiasGuardiasScreen), nada más de lo que ve Guardia/Administrador.
   const esJefeGuardias = rol === "JefeGuardias";
+  // Ronda 68, a pedido explícito del usuario: JefeAseo y JefeJardineria
+  // comparten exactamente la misma navegación (una sola pantalla,
+  // MiEquipoScreen) — no hace falta distinguirlos más allá de esto.
+  const esJefeAseo = rol === "JefeAseo";
+  const esJefeJardineria = rol === "JefeJardineria";
 
   // Ronda 17: mientras se intenta restaurar una sesión guardada, se muestra
   // un loading en vez del login — si no, alguien con sesión ya guardada
@@ -107,7 +113,9 @@ function AppNavigator() {
       // su dashboard (ronda 53) en vez del Home genérico de botones. Usa
       // la misma `key` de arriba, que ya fuerza el remount correcto del
       // navigator al cambiar de rol.
-      initialRouteName={esResidente ? "MiHogar" : esJefeGuardias ? "JefeGuardiasHome" : undefined}
+      initialRouteName={
+        esResidente ? "MiHogar" : esJefeGuardias ? "JefeGuardiasHome" : esJefeAseo || esJefeJardineria ? "MiEquipo" : undefined
+      }
     >
       {!token && requiereOnboarding ? (
         // Ronda 37, a pedido explícito del usuario: el administrador le
@@ -283,6 +291,12 @@ function AppNavigator() {
                 options={{ title: "Guardias" }}
               />
             </>
+          ) : esJefeAseo || esJefeJardineria ? (
+            // Ronda 68, a pedido explícito del usuario: JefeAseo y
+            // JefeJardineria comparten la MISMA pantalla (MiEquipoScreen)
+            // — son estructuralmente idénticos, la diferencia de a quién
+            // ve cada uno ya la resuelve el backend.
+            <Stack.Screen name="MiEquipo" component={MiEquipoScreen} options={{ title: "Mi equipo" }} />
           ) : (
             <>
               <Stack.Screen

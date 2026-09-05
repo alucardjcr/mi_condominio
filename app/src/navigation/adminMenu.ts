@@ -42,6 +42,7 @@ export const SECCIONES_MENU_ADMIN: SeccionMenu[] = [
     items: [
       { label: "Guardias", route: "AdminGuardias", icon: "🛡️" },
       { label: "Personal externo", route: "AdminPersonal", icon: "🧰" },
+      { label: "Jefes de área", route: "AdminJefesArea", icon: "👥" },
     ],
   },
   {

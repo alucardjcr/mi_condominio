@@ -600,7 +600,53 @@ export interface PersonalAdmin {
   // todavía no marcó salida) — para que el administrador vea de un vistazo
   // quién está en el condominio en este momento.
   turno_abierto: number | boolean;
+  // Ronda 68, a pedido explícito del usuario: a qué Jefe de área reporta
+  // este trabajador (JefeGuardias/JefeAseo/JefeJardineria) — el
+  // administrador lo asigna manualmente, según cómo organice su
+  // condominio.
+  jefe_id_usuario: number | null;
+  jefe_nombre: string | null;
 }
+
+// --- Ronda 68: Jefes de área (JefeGuardias / JefeAseo / JefeJardineria) ----
+
+export type RolJefeDeArea = "JefeGuardias" | "JefeAseo" | "JefeJardineria";
+
+export interface JefeDeArea {
+  id_usuario: number;
+  nombre_usuario: string;
+  usuariocol: string;
+  flg_vigencia: number;
+  rol: RolJefeDeArea;
+}
+
+export interface CrearJefeDeAreaInput {
+  rol: RolJefeDeArea;
+  nombre_usuario: string;
+  usuariocol: string;
+  password: string;
+}
+
+// --- Ronda 68: equipo y horario semanal de JefeAseo/JefeJardineria --------
+
+export interface MiembroEquipo {
+  id_usuario: number;
+  nombre_usuario: string;
+  usuariocol: string;
+  flg_vigencia: number;
+  tipo_personal_id_tipopersonal: number | null;
+  gls_tipopersonal: string | null;
+  turno_abierto: number | boolean;
+  dias_con_horario: number;
+}
+
+export interface DiaHorarioPersonal {
+  id_horariopersonal?: number;
+  dia_semana: number; // 1=Lunes ... 7=Domingo
+  hora_inicio: string; // "HH:MM" o "HH:MM:SS"
+  hora_termino: string;
+}
+
 
 export interface TareaPersonal {
   id_tareapersonal: number;

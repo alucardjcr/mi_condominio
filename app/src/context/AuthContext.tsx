@@ -33,7 +33,7 @@ interface Guardia {
   esPropietario?: boolean;
 }
 
-type Rol = "Guardia" | "Administrador" | "Residente" | "Personal" | "JefeGuardias" | "SuperAdmin";
+type Rol = "Guardia" | "Administrador" | "Residente" | "Personal" | "JefeGuardias" | "SuperAdmin" | "JefeAseo" | "JefeJardineria";
 
 interface AuthContextValue {
   token: string | null;

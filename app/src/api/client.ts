@@ -25,6 +25,11 @@ import {
   PaquetePendiente,
   PatenteAdmin,
   PersonalAdmin,
+  RolJefeDeArea,
+  JefeDeArea,
+  CrearJefeDeAreaInput,
+  MiembroEquipo,
+  DiaHorarioPersonal,
   RegistrarEntradaPayload,
   RegistrarEntradaResponse,
   RegistrarEntregaPaquetePayload,
@@ -561,14 +566,53 @@ export const adminGetPersonal = (token: string) => get<PersonalAdmin[]>(`/admin/
 
 export const adminCrearPersonal = (
   token: string,
-  input: { nombre_usuario: string; usuariocol: string; password: string; tipo_personal_id_tipopersonal?: number; condominio_id_condominio: number }
+  input: {
+    nombre_usuario: string;
+    usuariocol: string;
+    password: string;
+    tipo_personal_id_tipopersonal?: number;
+    condominio_id_condominio: number;
+    // Ronda 68, a pedido explícito del usuario: a qué Jefe reporta.
+    jefe_id_usuario?: number;
+  }
 ) => send<PersonalAdmin>(`/admin/personal`, "POST", token, input);
 
 export const adminActualizarPersonal = (
   token: string,
   id: number,
-  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; tipo_personal_id_tipopersonal?: number | null }
+  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; tipo_personal_id_tipopersonal?: number | null; jefe_id_usuario?: number | null }
 ) => send<PersonalAdmin>(`/admin/personal/${id}`, "PATCH", token, input);
+
+// --- Ronda 68: Jefes de área (JefeGuardias / JefeAseo / JefeJardineria) ----
+// El Administrador arma su condominio según cómo se organice: puede crear
+// un Jefe para supervisar guardias, aseo o jardinería externos, o dejar
+// esos trabajadores sin jefe (los supervisa él mismo directo).
+
+export const adminGetJefesDeArea = (token: string, rol?: RolJefeDeArea) =>
+  get<JefeDeArea[]>(`/admin/jefes-de-area${rol ? `?rol=${rol}` : ""}`, token);
+
+export const adminCrearJefeDeArea = (token: string, input: CrearJefeDeAreaInput) =>
+  send<JefeDeArea>(`/admin/jefes-de-area`, "POST", token, input);
+
+export const adminActualizarJefeDeArea = (
+  token: string,
+  id: number,
+  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number }
+) => send<JefeDeArea>(`/admin/jefes-de-area/${id}`, "PATCH", token, input);
+
+// --- Ronda 68: equipo y horario semanal (autoservicio de JefeAseo/JefeJardineria) ---
+// Horario SEMANAL RECURRENTE simple (no un patrón rotativo con fechas
+// como los guardias) — cada Jefe de área lo define según la necesidad
+// real de cada trabajador (ej. aseo: lunes a sábado 4 horas; jardinero:
+// 2 veces por semana, 5 horas cada vez).
+
+export const jefeEquipoGetMiEquipo = (token: string) => get<MiembroEquipo[]>(`/mi-equipo`, token);
+
+export const jefeEquipoGetHorario = (token: string, usuarioId: number) =>
+  get<DiaHorarioPersonal[]>(`/mi-equipo/${usuarioId}/horario`, token);
+
+export const jefeEquipoDefinirHorario = (token: string, usuarioId: number, dias: DiaHorarioPersonal[]) =>
+  send<DiaHorarioPersonal[]>(`/mi-equipo/${usuarioId}/horario`, "PUT", token, { dias });
 
 // Tarea puntual (texto libre, no una plantilla) que le llega al trabajador
 // como notificación — bandeja + push best-effort, igual que un comunicado.

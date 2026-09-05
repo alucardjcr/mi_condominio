@@ -708,3 +708,67 @@ export async function actualizarEstacionamientoAdmin(
 
   return obtenerEstacionamientoAdmin(id);
 }
+
+// ---------------------------------------------------------------------------
+// Ronda 68, a pedido explícito del usuario: hoy no existía ninguna forma
+// de crear una cuenta JefeGuardias desde la app (solo se podía sembrar
+// por script) — se agrega acá, junto con los 2 roles nuevos (JefeAseo,
+// JefeJardineria), como una sola función genérica de "crear jefe de
+// área", ya que las 3 son estructuralmente idénticas (solo cambia el rol).
+// ---------------------------------------------------------------------------
+const ROLES_JEFE_DE_AREA = ["JefeGuardias", "JefeAseo", "JefeJardineria"] as const;
+export type RolJefeDeArea = (typeof ROLES_JEFE_DE_AREA)[number];
+
+export async function listarJefesDeArea(condominioId: number, rol?: RolJefeDeArea) {
+  const filtroRol = rol ? "AND tu.gls_tipousuario = ?" : `AND tu.gls_tipousuario IN ('JefeGuardias','JefeAseo','JefeJardineria')`;
+  const params = rol ? [condominioId, rol] : [condominioId];
+  return db
+    .prepare(
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, tu.gls_tipousuario AS rol
+       FROM usuario u
+       JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
+       WHERE u.condominio_id_condominio = ? ${filtroRol}
+       ORDER BY tu.gls_tipousuario, u.nombre_usuario`
+    )
+    .all(...params);
+}
+
+export async function crearJefeDeArea(input: {
+  rol: RolJefeDeArea;
+  nombre_usuario: string;
+  usuariocol: string;
+  password: string;
+  condominio_id_condominio: number;
+}) {
+  if (!ROLES_JEFE_DE_AREA.includes(input.rol)) {
+    throw new Error(`Rol de jefe inválido: ${input.rol}`);
+  }
+  const tipoUsuarioId = await getIdByGls("tipo_usuario", "id_tipousuario", "gls_tipousuario", input.rol);
+  const passwordHash = bcrypt.hashSync(input.password, 10);
+  const insert = await db
+    .prepare(
+      `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(input.nombre_usuario, input.usuariocol, passwordHash, tipoUsuarioId, input.condominio_id_condominio);
+  const id = Number(insert.lastInsertRowid);
+  // Sin esto, la cuenta recién creada no tendría ninguna membresía y no
+  // podría loguearse (ver auth.service.ts -> login).
+  await sincronizarMembresiaPrincipal(id);
+  return db.prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia FROM usuario WHERE id_usuario = ?`).get(id);
+}
+
+export async function actualizarJefeDeArea(id: number, input: { nombre_usuario?: string; password?: string; flg_vigencia?: number }) {
+  if (input.nombre_usuario !== undefined) {
+    await db.prepare(`UPDATE usuario SET nombre_usuario = ? WHERE id_usuario = ?`).run(input.nombre_usuario, id);
+  }
+  if (input.password) {
+    const hash = bcrypt.hashSync(input.password, 10);
+    await db.prepare(`UPDATE usuario SET password_usuario = ? WHERE id_usuario = ?`).run(hash, id);
+  }
+  if (input.flg_vigencia !== undefined) {
+    await db.prepare(`UPDATE usuario SET flg_vigencia = ? WHERE id_usuario = ?`).run(input.flg_vigencia, id);
+  }
+  await sincronizarMembresiaPrincipal(id);
+  return db.prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia FROM usuario WHERE id_usuario = ?`).get(id);
+}
