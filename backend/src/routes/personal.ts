@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { iniciarTurno, finalizarTurno, getTurnoActual, listarMisTareas, completarTarea } from "../services/personal.service";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 import { requireRol } from "../middleware/auth";
 
 // Ronda 18: autoservicio del propio trabajador de personal externo (aseo,
@@ -18,7 +17,7 @@ personalRouter.post("/turno/iniciar", async (req, res) => {
     // si algún día hay más de uno; por ahora este MVP es de un solo
     // condominio, así que se usa el default (mismo criterio que el resto de
     // las rutas de este proyecto).
-    const condominioId = Number(req.body?.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(await iniciarTurno(req.guardia!.id_usuario, condominioId));
   } catch (err: any) {
     res.status(400).json({ error: err.message });

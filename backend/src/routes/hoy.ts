@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { listarPersonalEnTurnoHoy } from "../services/personal.service";
 import { listarMantenciones } from "../services/mantencion.service";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 
 // Ronda 40, a pedido explícito del usuario: "quién viene hoy" — pantalla
 // para que CUALQUIER residente (no solo Administrador/Comité, a diferencia
@@ -18,7 +17,7 @@ function hoyISO(): string {
 
 hoyRouter.get("/", async (req, res) => {
   try {
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const hoy = hoyISO();
     const [personalExterno, mantenciones] = await Promise.all([
       listarPersonalEnTurnoHoy(condominioId),

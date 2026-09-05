@@ -14,7 +14,6 @@ import {
 } from "../services/mascotas.service";
 import { requireAuth } from "../middleware/auth";
 import { guardarImagenBase64 } from "../utils/imagenes";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 
 // Ronda 20: mascotas por depto. Autoservicio de cualquier residente activo
 // de la unidad (no exclusivo del propietario); Administrador/Comité tiene
@@ -30,7 +29,7 @@ function esAdminOComite(req: any): boolean {
 // condominio (Administrador/Comité, vía ?condominio_id=).
 mascotasRouter.get("/", async (req, res) => {
   if (esAdminOComite(req)) {
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     return res.json(await listarMascotasDelCondominio(condominioId));
   }
   if (req.guardia?.rol !== "Residente" || !req.guardia.unidad_id_unidad) {
@@ -51,7 +50,7 @@ mascotasRouter.post("/", async (req, res) => {
     } else {
       return res.status(403).json({ error: "Solo un residente o Administrador/Comité pueden registrar mascotas." });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const fotoUrl = foto ? await guardarImagenBase64(foto, "mascota", "mascotas") : undefined;
     const mascota = await crearMascota(
       { nombre, especie, raza, numeroChip: numero_chip, fotoUrl, unidadId: unidadId!, condominioId },

@@ -9,12 +9,11 @@ import {
   listarTiposPaquete,
   listarTiposResidente,
 } from "../services/catalogos.service";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 
 export const catalogosRouter = Router();
 
 catalogosRouter.get("/torres", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarTorres(condominioId));
 });
 
@@ -39,7 +38,7 @@ catalogosRouter.get("/residentes-discapacitados", async (req, res) => {
 });
 
 catalogosRouter.get("/tipos-paquete", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarTiposPaquete(condominioId));
 });
 

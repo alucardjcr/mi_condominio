@@ -2,7 +2,6 @@ import { Router } from "express";
 import { listarDisponibilidad } from "../services/estacionamientoVisita.service";
 import { listarPizarronArriendo, actualizarEstadoArriendo } from "../services/estacionamientosArriendo.service";
 import { requireAuth, requireCondominioAccess, requireSuscripcionAlDia } from "../middleware/auth";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 
 export const estacionamientosRouter = Router();
 
@@ -33,7 +32,7 @@ estacionamientosRouter.get("/disponibilidad", async (req, res) => {
 
 estacionamientosRouter.get("/arriendo", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, async (req, res) => {
   try {
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.json(await listarPizarronArriendo(condominioId));
   } catch (err: any) {
     res.status(500).json({ error: err.message });

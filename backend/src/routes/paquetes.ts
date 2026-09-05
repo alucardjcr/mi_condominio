@@ -7,7 +7,6 @@ import {
   buscarPaquetes,
   getPaquete,
 } from "../services/paquetes.service";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 import { requireRol } from "../middleware/auth";
 
 export const paquetesRouter = Router();
@@ -36,7 +35,7 @@ paquetesRouter.post("/", soloConserjeria, async (req, res) => {
       });
     }
 
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const resultado = await registrarLlegada(
       {
         unidad_id_unidad: Number(unidad_id_unidad),
@@ -59,7 +58,7 @@ paquetesRouter.post("/", soloConserjeria, async (req, res) => {
 // GET /paquetes/pendientes?condominio_id=1 -> lo que hay guardado en portería
 paquetesRouter.get("/pendientes", soloConserjeria, async (req, res) => {
   try {
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.json(await listarPendientes(condominioId));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -79,7 +78,7 @@ paquetesRouter.get("/", async (req, res) => {
     if (esResidente && !req.guardia!.unidad_id_unidad) {
       return res.status(403).json({ error: "Tu usuario no tiene un depto asociado." });
     }
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const resultado = await buscarPaquetes({
       condominioId,
       fechaInicio: req.query.fecha_inicio ? String(req.query.fecha_inicio) : undefined,
@@ -118,7 +117,7 @@ paquetesRouter.patch("/:id/estado", soloConserjeria, async (req, res) => {
   try {
     const { nuevo_estado, observacion } = req.body;
     if (!nuevo_estado) return res.status(400).json({ error: "Falta nuevo_estado." });
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.json(await cambiarEstado(Number(req.params.id), nuevo_estado, observacion, condominioId));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -133,7 +132,7 @@ paquetesRouter.patch("/:id/entrega", soloConserjeria, async (req, res) => {
     if (!entregado_a || !firma_retiro) {
       return res.status(400).json({ error: "Faltan campos: entregado_a y firma_retiro son obligatorios." });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const resultado = await registrarEntrega(
       Number(req.params.id),
       { entregado_a, firma_retiro, foto_retiro },

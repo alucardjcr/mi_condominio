@@ -3,7 +3,6 @@ import { listarVetados, crearVetado, actualizarVetado, buscarVetadoPorRut } from
 import { requireRol, requirePerteneceAlCondominio } from "../middleware/auth";
 import { guardarImagenBase64 } from "../utils/imagenes";
 import { registrarAuditoria } from "../services/auditoria.service";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 
 // Ronda 20: listado VETADOS. Información sensible (puede involucrar
 // órdenes de alejamiento) — solo Administrador/Comité administra la lista
@@ -18,7 +17,7 @@ vetadosRouter.get("/buscar", requireRol("Guardia", "Administrador"), async (req,
     if (!rut) {
       return res.status(400).json({ error: "Falta el parámetro rut." });
     }
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const resultado = await buscarVetadoPorRut(condominioId, rut);
     // Ronda 33, Ley 21.719: consultar la lista VETADOS por RUT es una
     // lectura sensible (puede involucrar una orden de alejamiento) —
@@ -40,7 +39,7 @@ vetadosRouter.get("/buscar", requireRol("Guardia", "Administrador"), async (req,
 });
 
 vetadosRouter.get("/", requireRol("Administrador"), async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarVetados(condominioId));
 });
 
@@ -50,7 +49,7 @@ vetadosRouter.post("/", requireRol("Administrador"), async (req, res) => {
     if (!nombre_completo || !rut || !fecha_ingreso) {
       return res.status(400).json({ error: "Faltan campos: nombre_completo, rut, fecha_ingreso." });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const fotoPersonaUrl = foto_persona ? await guardarImagenBase64(foto_persona, "persona", "vetados") : undefined;
     const fotoVehiculoUrl = foto_vehiculo ? await guardarImagenBase64(foto_vehiculo, "vehiculo", "vetados") : undefined;
     const vetado = await crearVetado(

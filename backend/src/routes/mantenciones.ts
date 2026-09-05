@@ -7,7 +7,6 @@ import {
   registrarIngresoEmpresa,
   registrarSalidaEmpresa,
 } from "../services/mantencion.service";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 import { requireRol, requirePerteneceAlCondominio } from "../middleware/auth";
 
 // Ronda 19: mantenciones (limpieza de techo, piscina, ascensores, etc.) —
@@ -24,17 +23,17 @@ const soloConserjeria = requireRol("Guardia", "Administrador");
 mantencionesRouter.use(soloConserjeria);
 
 mantencionesRouter.get("/elementos", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarTiposElementoMantencion(condominioId));
 });
 
 mantencionesRouter.get("/programadas", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarMantencionesProgramadas(condominioId));
 });
 
 mantencionesRouter.get("/en-curso", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarMantencionesEnCurso(condominioId));
 });
 

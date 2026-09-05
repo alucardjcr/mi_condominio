@@ -77,7 +77,6 @@ import {
   actualizarDatosFinalesMantencion,
 } from "../services/mantencion.service";
 import { guardarImagenBase64 } from "../utils/imagenes";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 
 export const adminRouter = Router();
 
@@ -106,7 +105,7 @@ adminRouter.post("/guardias", async (req, res) => {
     if (!nombre_usuario || !usuariocol || !password) {
       return res.status(400).json({ error: "Faltan campos: nombre_usuario, usuariocol, password." });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(await crearGuardia({ nombre_usuario, usuariocol, password, condominio_id_condominio: condominioId, rut, telefono }));
   } catch (err: any) {
     res.status(400).json({ error: esDuplicado(err) ? "Ese nombre de usuario ya existe." : err.message });
@@ -148,7 +147,7 @@ adminRouter.post("/residentes", async (req, res) => {
     if (!nombre_usuario || !unidad_id_unidad) {
       return res.status(400).json({ error: "Faltan campos: nombre_usuario, unidad_id_unidad." });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(
       await crearResidente({
         nombre_usuario,
@@ -265,7 +264,7 @@ adminRouter.post("/patentes", async (req, res) => {
     if (!patente || !tipo_tenencia_id_tipotenencia || !unidad_id_unidad) {
       return res.status(400).json({ error: "Faltan campos: patente, tipo_tenencia_id_tipotenencia, unidad_id_unidad." });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(
       await crearPatente({
         patente,
@@ -309,7 +308,7 @@ adminRouter.get("/reportes/gasto-comun", async (req, res) => {
     if (!fecha_inicio || !fecha_termino) {
       return res.status(400).json({ error: "Faltan fecha_inicio y fecha_termino (formato YYYY-MM-DD)." });
     }
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.json(
       await reporteGastoComun({
         condominioId,
@@ -331,7 +330,7 @@ adminRouter.get("/reportes/gasto-comun/excel", async (req, res) => {
     if (!fecha_inicio || !fecha_termino) {
       return res.status(400).json({ error: "Faltan fecha_inicio y fecha_termino (formato YYYY-MM-DD)." });
     }
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const buffer = await generarExcelGastoComun({
       condominioId,
       fechaInicio: String(fecha_inicio),
@@ -355,7 +354,7 @@ adminRouter.get("/reportes/gasto-comun/excel", async (req, res) => {
 // router — ver index.ts).
 
 adminRouter.get("/espacios", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarEspacios(condominioId, true));
 });
 
@@ -365,7 +364,7 @@ adminRouter.post("/espacios", async (req, res) => {
     if (!nombre || !tipo_espaciocomun_id_tipoespaciocomun) {
       return res.status(400).json({ error: "Faltan campos: nombre, tipo_espaciocomun_id_tipoespaciocomun." });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const espacio = await crearEspacio({
       nombre,
       tipo_espaciocomun_id_tipoespaciocomun: Number(tipo_espaciocomun_id_tipoespaciocomun),
@@ -436,7 +435,7 @@ adminRouter.get("/espacios/:id", async (req, res) => {
 // --- Reservas de Espacios Comunes: aprobación, pago y garantía -------------
 
 adminRouter.get("/reservas", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(
     await listarReservas(condominioId, {
       estado: req.query.estado ? String(req.query.estado) : undefined,
@@ -481,7 +480,7 @@ adminRouter.patch("/reservas/:id/validar-pago", requirePerteneceAlCondominio("re
 adminRouter.post("/comunicados", async (req, res) => {
   try {
     const { titulo, cuerpo } = req.body;
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const resultado = await crearComunicado({
       titulo,
       cuerpo,
@@ -500,7 +499,7 @@ adminRouter.post("/comunicados", async (req, res) => {
 // flg_propietario en la ronda 15), no una escalada de poder sobre todo el
 // sistema.
 adminRouter.get("/unidades/gasto-comun", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarUnidadesGastoComun(condominioId));
 });
 
@@ -521,7 +520,7 @@ adminRouter.patch("/unidades/:id/gasto-comun", requirePerteneceAlCondominio("uni
 // quedó mal hecho y nadie lo puede usar). Ver la nota completa en
 // admin.service.ts -> listarEstacionamientosAdmin.
 adminRouter.get("/estacionamientos", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarEstacionamientosAdmin(condominioId));
 });
 
@@ -535,7 +534,7 @@ adminRouter.get("/estacionamientos/tipos", async (_req, res) => {
 
 adminRouter.post("/estacionamientos", async (req, res) => {
   try {
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const { numero_estacionamiento, ubicacion, tipo_estacionamiento_id_tipoestacionamiento, unidad_id_unidad } = req.body;
     if (!numero_estacionamiento || !tipo_estacionamiento_id_tipoestacionamiento) {
       return res.status(400).json({ error: "Faltan campos: numero_estacionamiento, tipo_estacionamiento_id_tipoestacionamiento." });
@@ -592,7 +591,7 @@ adminRouter.patch("/estacionamientos/:id", requirePerteneceAlCondominio("estacio
 // desde el día uno, igual que un Guardia (no "activar acceso" aparte).
 
 adminRouter.get("/personal/tipos", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarTiposPersonal(condominioId));
 });
 
@@ -606,7 +605,7 @@ adminRouter.post("/personal", async (req, res) => {
     if (!nombre_usuario || !usuariocol || !password) {
       return res.status(400).json({ error: "Faltan campos: nombre_usuario, usuariocol, password." });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(
       await crearPersonal({
         nombre_usuario,
@@ -648,7 +647,7 @@ adminRouter.patch("/personal/:id", requirePerteneceAlCondominio("usuario", "id_u
 adminRouter.post("/personal/:id/tarea", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
     const { descripcion } = req.body;
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(
       await asignarTarea({
         usuarioId: Number(req.params.id),
@@ -665,7 +664,7 @@ adminRouter.post("/personal/:id/tarea", requirePerteneceAlCondominio("usuario", 
 // Historial de cumplimiento — solo Administrador/Comité (decisión explícita
 // del usuario), de un trabajador puntual o de todos.
 adminRouter.get("/personal/tareas", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   const usuarioId = req.query.usuario_id ? Number(req.query.usuario_id) : undefined;
   res.json(await listarTareasAsignadas({ condominioId, usuarioId }));
 });
@@ -684,14 +683,14 @@ adminRouter.get("/personal/:id/turnos", async (req, res) => {
 // empresa) desde /mantenciones — ver routes/mantenciones.ts.
 
 adminRouter.get("/elementos-mantencion", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   const incluirInactivos = req.query.incluir_inactivos === "1";
   res.json(await listarTiposElementoMantencion(condominioId, incluirInactivos));
 });
 
 adminRouter.post("/elementos-mantencion", async (req, res) => {
   try {
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(await crearTipoElementoMantencion(condominioId, req.body.gls_tipoelementomantencion));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -713,7 +712,7 @@ adminRouter.patch("/elementos-mantencion/:id", requirePerteneceAlCondominio("tip
 });
 
 adminRouter.get("/mantenciones", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(
     await listarMantenciones(condominioId, {
       estado: req.query.estado ? String(req.query.estado) : undefined,
@@ -740,7 +739,7 @@ adminRouter.post("/mantenciones", async (req, res) => {
         error: "Faltan campos: titulo, descripcion, tipo_elemento_mantencion_id_tipoelementomantencion, fecha_programada.",
       });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const mantencion = await crearMantencion(
       {
         titulo,
@@ -821,7 +820,7 @@ adminRouter.patch("/reservas/:id/garantia", requirePerteneceAlCondominio("reserv
 // diseño (Acceso/Portabilidad son autoservicio instantáneo, no pasan por
 // acá — ver routes/privacidad.ts).
 adminRouter.get("/privacidad/solicitudes", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarSolicitudesArcoAdmin(condominioId));
 });
 
@@ -846,7 +845,7 @@ adminRouter.patch("/privacidad/solicitudes/:id", requirePerteneceAlCondominio("s
 // (GET/POST/PATCH/PUT/DELETE), rango de fechas, y texto libre.
 adminRouter.get("/auditoria", async (req, res) => {
   try {
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const { usuario_id, accion, desde, hasta, q } = req.query;
     res.json(
       await listarAuditoria(condominioId, {
@@ -866,13 +865,13 @@ adminRouter.get("/auditoria", async (req, res) => {
 // guarda cada categoría operativa, y disparar la limpieza (ver la nota
 // completa en retencion.service.ts).
 adminRouter.get("/retencion", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarPoliticasRetencion(condominioId));
 });
 
 adminRouter.put("/retencion/:categoria", async (req, res) => {
   try {
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const { cantidad, unidad, dias_retencion } = req.body;
     // Ronda 35: la app ya manda {cantidad, unidad} (días/semanas/años) —
     // se deja también dias_retencion como respaldo por si algún cliente
@@ -894,7 +893,7 @@ adminRouter.put("/retencion/:categoria", async (req, res) => {
 
 adminRouter.post("/retencion/ejecutar", async (req, res) => {
   try {
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.json(await ejecutarLimpiezaRetencion(condominioId));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -905,13 +904,13 @@ adminRouter.post("/retencion/ejecutar", async (req, res) => {
 // horas desde la detección para avisar a la Agencia de Protección de
 // Datos. Ver incidentes.service.ts.
 adminRouter.get("/incidentes", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarIncidentes(condominioId));
 });
 
 adminRouter.post("/incidentes", async (req, res) => {
   try {
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const { fecha_deteccion, descripcion, datos_afectados, personas_afectadas_estimado, acciones_tomadas } = req.body;
     res.status(201).json(
       await crearIncidente(condominioId, req.guardia!.id_usuario, {
@@ -953,13 +952,13 @@ adminRouter.post("/incidentes/:id/cerrar", requirePerteneceAlCondominio("inciden
 // ---------------------------------------------------------------------------
 
 adminRouter.get("/tipos-amonestacion", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarTiposAmonestacion(condominioId, req.query.incluir_inactivos === "true"));
 });
 
 adminRouter.post("/tipos-amonestacion", async (req, res) => {
   try {
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const { gls_tipoamonestacion, flg_es_multa } = req.body;
     res.status(201).json(await crearTipoAmonestacion(condominioId, { gls_tipoamonestacion, flg_es_multa: flg_es_multa ? 1 : 0 }));
   } catch (err: any) {
@@ -983,13 +982,13 @@ adminRouter.patch("/tipos-amonestacion/:id", requirePerteneceAlCondominio("tipo_
 });
 
 adminRouter.get("/tipos-multa", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarTiposMulta(condominioId, req.query.incluir_inactivos === "true"));
 });
 
 adminRouter.post("/tipos-multa", async (req, res) => {
   try {
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const { gls_tipomulta, monto_sugerido, unidad_monto } = req.body;
     res.status(201).json(
       await crearTipoMulta(condominioId, {
@@ -1020,7 +1019,7 @@ adminRouter.patch("/tipos-multa/:id", requirePerteneceAlCondominio("tipo_multa",
 });
 
 adminRouter.get("/amonestaciones", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(
     await listarAmonestaciones(condominioId, {
       estado: req.query.estado ? String(req.query.estado) : undefined,
@@ -1042,7 +1041,7 @@ adminRouter.get("/amonestaciones/:id", async (req, res) => {
 // sola en el acto (ver amonestaciones.service.ts -> crearAmonestacion).
 adminRouter.post("/amonestaciones", async (req, res) => {
   try {
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const { unidad_id_unidad, tipo_amonestacion_id_tipoamonestacion, descripcion, fecha_hecho, tipo_multa_id_tipomulta, monto, unidad_monto } =
       req.body;
     if (!unidad_id_unidad || !tipo_amonestacion_id_tipoamonestacion) {
@@ -1125,7 +1124,7 @@ adminRouter.post("/usuarios/:id/cerrar-sesion", requirePerteneceAlCondominio("us
 // visual que no tienen un campo 1 a 1 en el modelo actual.
 adminRouter.get("/dashboard", async (req, res) => {
   try {
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.json(await obtenerDashboardAdmin(condominioId));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -1134,7 +1133,7 @@ adminRouter.get("/dashboard", async (req, res) => {
 
 adminRouter.get("/dashboard/actividad-reciente", async (req, res) => {
   try {
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.json(await obtenerActividadReciente(condominioId));
   } catch (err: any) {
     res.status(400).json({ error: err.message });

@@ -14,7 +14,6 @@ import {
   marcarSalida,
 } from "../services/reservas.service";
 import { guardarImagenBase64 } from "../utils/imagenes";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 import { requireRol, requirePerteneceAlCondominio } from "../middleware/auth";
 
 export const reservasRouter = Router();
@@ -25,12 +24,12 @@ export const reservasRouter = Router();
 // en portería; el residente, para elegir dónde y cuándo reservar.
 
 reservasRouter.get("/espacios/tipos", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarTiposEspacioComun(condominioId));
 });
 
 reservasRouter.get("/espacios", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarEspacios(condominioId));
 });
 
@@ -117,7 +116,7 @@ reservasRouter.get("/mias", requireRol("Residente"), async (req, res) => {
     if (!req.guardia!.unidad_id_unidad) {
       return res.status(403).json({ error: "Tu usuario no tiene un depto asociado." });
     }
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.json(await listarReservasDeUnidad(req.guardia!.unidad_id_unidad, condominioId));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -168,7 +167,7 @@ const soloConserjeria = requireRol("Guardia", "Administrador");
 
 reservasRouter.get("/dia", soloConserjeria, async (req, res) => {
   try {
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const fecha = String(req.query.fecha || "");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
       return res.status(400).json({ error: "Falta el parámetro fecha (formato YYYY-MM-DD)." });

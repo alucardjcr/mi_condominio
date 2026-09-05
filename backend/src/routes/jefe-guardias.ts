@@ -13,7 +13,6 @@ import {
 } from "../services/turnos.service";
 import { listarGuardias, crearGuardia, actualizarGuardia } from "../services/admin.service";
 import { requireRol, requirePerteneceAlCondominio } from "../middleware/auth";
-import { CONDOMINIO_ID_DEFAULT } from "../config";
 
 // Ronda 20: rol JEFE_GUARDIAS. A pedido explícito del usuario, este perfil
 // SOLO tiene acceso a dos cosas: el calendario semanal de turnos y un CRUD
@@ -32,7 +31,7 @@ function esDuplicado(err: any): boolean {
 // --- Calendario de turnos ---------------------------------------------
 
 jefeGuardiasRouter.get("/bloques", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarBloques(condominioId));
 });
 
@@ -41,7 +40,7 @@ jefeGuardiasRouter.get("/bloques", async (req, res) => {
 jefeGuardiasRouter.post("/bloques", async (req, res) => {
   try {
     const { gls_turnobloque, hora_inicio, hora_termino } = req.body;
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(await crearBloque(condominioId, { gls_turnobloque, hora_inicio, hora_termino }));
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -70,7 +69,7 @@ jefeGuardiasRouter.delete("/bloques/:id", requirePerteneceAlCondominio("turno_bl
 // solo se podía elegir un Guardia; el jefe de guardias no aparecía acá
 // aunque en la práctica también hace turno).
 jefeGuardiasRouter.get("/personal", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(await listarPersonalParaTurno(condominioId));
 });
 
@@ -79,7 +78,7 @@ jefeGuardiasRouter.get("/personal", async (req, res) => {
 // (ronda 39: el front ahora pide un mes completo para la vista de
 // calendario mensual).
 jefeGuardiasRouter.get("/turnos", async (req, res) => {
-  const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+  const condominioId = req.guardia!.condominio_id_condominio!;
   res.json(
     await listarTurnos(
       condominioId,
@@ -95,7 +94,7 @@ jefeGuardiasRouter.post("/turnos", async (req, res) => {
     if (!guardia_usuario_id || !turno_bloque_id_turnobloque || !fecha) {
       return res.status(400).json({ error: "Faltan campos: guardia_usuario_id, turno_bloque_id_turnobloque, fecha." });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const turno = await asignarTurno(
       {
         guardiaUsuarioId: Number(guardia_usuario_id),
@@ -130,7 +129,7 @@ jefeGuardiasRouter.post("/turnos/generar-patron", async (req, res) => {
         error: "Faltan campos: fecha_inicio, fecha_termino, bloque_dia_id, bloque_noche_id, duplas.",
       });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const resultado = await generarPatronTurnos(
       {
         condominioId,
@@ -161,7 +160,7 @@ jefeGuardiasRouter.post("/guardias", async (req, res) => {
     if (!nombre_usuario || !usuariocol || !password) {
       return res.status(400).json({ error: "Faltan campos: nombre_usuario, usuariocol, password." });
     }
-    const condominioId = Number(req.body.condominio_id_condominio) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(await crearGuardia({ nombre_usuario, usuariocol, password, condominio_id_condominio: condominioId, rut, telefono }));
   } catch (err: any) {
     res.status(400).json({ error: esDuplicado(err) ? "Ese nombre de usuario ya existe." : err.message });
@@ -189,7 +188,7 @@ jefeGuardiasRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario"
 // de turnos por guardia y bloque en un rango (para el dashboard).
 jefeGuardiasRouter.get("/turnos/resumen-mes", async (req, res) => {
   try {
-    const condominioId = Number(req.query.condominio_id) || CONDOMINIO_ID_DEFAULT;
+    const condominioId = req.guardia!.condominio_id_condominio!;
     const fechaInicio = String(req.query.fecha_inicio);
     const fechaTermino = String(req.query.fecha_termino);
     if (!fechaInicio || !fechaTermino) {
