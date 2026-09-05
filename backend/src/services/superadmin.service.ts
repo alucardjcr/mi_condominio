@@ -22,13 +22,33 @@ export async function listarCondominiosParaSuperAdmin() {
  * manda a un flujo especial de creación inicial, en vez del error de
  * "no tienes ningún condominio asignado" que se tira para cualquier otro
  * rol en esa misma situación).
+ *
+ * Ronda 67, a pedido explícito del usuario: además de nombre/usuario/
+ * contraseña, ahora pide el perfil completo del Administrador — foto,
+ * RUT, nombre completo, fecha de nacimiento, N° de registro RNAC
+ * (Registro Nacional de Administradores de Condominios, opcional),
+ * correo electrónico y teléfono. Todos obligatorios salvo el número de
+ * registro. El correo va al `usuario.correo_usuario` que ya existía
+ * desde el principio del proyecto (no se duplicó); el resto va a la
+ * tabla nueva `administrador_perfil`.
  */
 export async function crearAdministrador(input: {
   nombre_usuario: string;
   usuariocol: string;
   password: string;
   condominio_id_condominio?: number;
+  foto_url?: string;
+  rut: string;
+  fecha_nacimiento: string;
+  numero_registro_rnac?: string;
+  correo: string;
+  telefono: string;
 }) {
+  if (!input.rut?.trim()) throw new Error("Falta el RUT del administrador.");
+  if (!input.fecha_nacimiento?.trim()) throw new Error("Falta la fecha de nacimiento del administrador.");
+  if (!input.correo?.trim()) throw new Error("Falta el correo electrónico del administrador.");
+  if (!input.telefono?.trim()) throw new Error("Falta el teléfono del administrador.");
+
   const tipoAdminId = (await db
     .prepare(`SELECT id_tipousuario FROM tipo_usuario WHERE gls_tipousuario = 'Administrador'`)
     .get()) as { id_tipousuario: number } | undefined;
@@ -46,11 +66,19 @@ export async function crearAdministrador(input: {
   const passwordHash = bcrypt.hashSync(input.password, 10);
   const insert = await db
     .prepare(
-      `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio)
-       VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO usuario (nombre_usuario, correo_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio)
+       VALUES (?, ?, ?, ?, ?, ?)`
     )
-    .run(input.nombre_usuario, input.usuariocol, passwordHash, tipoAdminId.id_tipousuario, condominioId);
+    .run(input.nombre_usuario, input.correo.trim(), input.usuariocol, passwordHash, tipoAdminId.id_tipousuario, condominioId);
   const id = Number(insert.lastInsertRowid);
+
+  await db
+    .prepare(
+      `INSERT INTO administrador_perfil (usuario_id_usuario, foto_url, rut, fecha_nacimiento, numero_registro_rnac, telefono)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(id, input.foto_url || null, input.rut.trim(), input.fecha_nacimiento.trim(), input.numero_registro_rnac?.trim() || null, input.telefono.trim());
+
   // Si tiene condominio asignado, esto le arma la membresía correspondiente
   // (sin esto no podría loguearse). Si NO tiene condominio, no hace nada
   // — entrará por el flujo de "crear mi primer condominio" en su lugar.
@@ -58,17 +86,30 @@ export async function crearAdministrador(input: {
     await sincronizarMembresiaPrincipal(id);
   }
   return db
-    .prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia FROM usuario WHERE id_usuario = ?`)
+    .prepare(
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.correo_usuario, u.flg_vigencia,
+              ap.foto_url, ap.rut, ap.fecha_nacimiento, ap.numero_registro_rnac, ap.telefono
+       FROM usuario u
+       LEFT JOIN administrador_perfil ap ON ap.usuario_id_usuario = u.id_usuario
+       WHERE u.id_usuario = ?`
+    )
     .get(id);
 }
 
 export async function listarAdministradores() {
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, c.gls_condominio AS condominio_home
+      // Ronda 67: LEFT JOIN a condominio (antes era JOIN normal, y por
+      // error hacía desaparecer de la lista a cualquier Administrador
+      // que todavía no tuviera ningún condominio asignado — un caso que
+      // ahora es válido desde la ronda 66). Se agregan los campos de
+      // administrador_perfil.
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.correo_usuario, u.flg_vigencia, c.gls_condominio AS condominio_home,
+              ap.foto_url, ap.rut, ap.fecha_nacimiento, ap.numero_registro_rnac, ap.telefono
        FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
-       JOIN condominio c ON c.id_condominio = u.condominio_id_condominio
+       LEFT JOIN condominio c ON c.id_condominio = u.condominio_id_condominio
+       LEFT JOIN administrador_perfil ap ON ap.usuario_id_usuario = u.id_usuario
        WHERE tu.gls_tipousuario = 'Administrador'
        ORDER BY u.nombre_usuario`
     )

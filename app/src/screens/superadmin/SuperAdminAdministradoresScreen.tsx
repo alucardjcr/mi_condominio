@@ -1,10 +1,16 @@
 import React, { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { superAdminActualizarAdministrador, superAdminGetAdministradores } from "../../api/client";
 import { AdministradorCuenta } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
+import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
 import { colors, radius, spacing, typography } from "../../theme/theme";
+
+function iniciales(nombre: string) {
+  const partes = nombre.trim().split(/\s+/);
+  return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
+}
 
 export default function SuperAdminAdministradoresScreen() {
   const { token } = useAuth();
@@ -58,27 +64,42 @@ export default function SuperAdminAdministradoresScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {error && <Text style={styles.error}>{error}</Text>}
-      {administradores.map((a) => (
-        <View key={a.id_usuario} style={styles.tarjeta}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.nombre}>{a.nombre_usuario}</Text>
-            <Text style={styles.detalle}>
-              {a.usuariocol} · {a.condominio_home}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.badge, a.flg_vigencia ? styles.badgeActivo : styles.badgeInactivo]}
-            onPress={() => handleToggleVigencia(a)}
-            disabled={actualizandoId === a.id_usuario}
-          >
-            {actualizandoId === a.id_usuario ? (
-              <ActivityIndicator size="small" color={colors.textDark} />
+      {administradores.map((a) => {
+        const fuenteFoto = fuenteImagenPrivada(a.foto_url, token);
+        return (
+          <View key={a.id_usuario} style={styles.tarjeta}>
+            {fuenteFoto ? (
+              <Image source={fuenteFoto} style={styles.avatar} />
             ) : (
-              <Text style={styles.badgeTexto}>{a.flg_vigencia ? "Activo" : "Inactivo"}</Text>
+              <View style={[styles.avatar, styles.avatarIniciales]}>
+                <Text style={styles.avatarInicialesTexto}>{iniciales(a.nombre_usuario)}</Text>
+              </View>
             )}
-          </TouchableOpacity>
-        </View>
-      ))}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.nombre}>{a.nombre_usuario}</Text>
+              <Text style={styles.detalle}>
+                {a.usuariocol} · {a.condominio_home ?? "Sin condominio todavía"}
+              </Text>
+              {(a.rut || a.telefono) && (
+                <Text style={styles.detalleChico}>
+                  {[a.rut, a.telefono].filter(Boolean).join(" · ")}
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity
+              style={[styles.badge, a.flg_vigencia ? styles.badgeActivo : styles.badgeInactivo]}
+              onPress={() => handleToggleVigencia(a)}
+              disabled={actualizandoId === a.id_usuario}
+            >
+              {actualizandoId === a.id_usuario ? (
+                <ActivityIndicator size="small" color={colors.textDark} />
+              ) : (
+                <Text style={styles.badgeTexto}>{a.flg_vigencia ? "Activo" : "Inactivo"}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -99,6 +120,10 @@ const styles = StyleSheet.create({
   },
   nombre: { ...typography.heading, color: colors.textDark },
   detalle: { ...typography.small, color: colors.textMuted, marginTop: 2 },
+  detalleChico: { color: colors.textMuted, marginTop: 2, fontSize: 11 },
+  avatar: { width: 44, height: 44, borderRadius: 22, marginRight: spacing.sm, backgroundColor: colors.offWhite },
+  avatarIniciales: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border },
+  avatarInicialesTexto: { fontWeight: "800", color: colors.navy900 },
   badge: { borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6, marginLeft: spacing.sm, minWidth: 70, alignItems: "center" },
   badgeActivo: { backgroundColor: "#DCFCE7" },
   badgeInactivo: { backgroundColor: "#FEE2E2" },

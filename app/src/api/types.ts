@@ -882,15 +882,34 @@ export interface AdministradorCuenta {
   id_usuario: number;
   nombre_usuario: string;
   usuariocol: string;
+  correo_usuario: string | null;
   flg_vigencia: number;
-  condominio_home: string;
+  // Ronda 67: puede ser null — un Administrador recién creado sin
+  // condominio todavía (ver ronda 66) no tiene ninguno hasta que crea el
+  // suyo propio.
+  condominio_home: string | null;
+  foto_url: string | null;
+  rut: string | null;
+  fecha_nacimiento: string | null;
+  numero_registro_rnac: string | null;
+  telefono: string | null;
 }
 
 export interface CrearAdministradorInput {
   nombre_usuario: string;
   usuariocol: string;
   password: string;
-  condominio_id_condominio: number;
+  // Ronda 66, a pedido explícito del usuario: opcional — si no se manda,
+  // el Administrador entra por el flujo de "crear mi primer condominio".
+  condominio_id_condominio?: number;
+  // Ronda 67, a pedido explícito del usuario: perfil completo del
+  // administrador — todos obligatorios salvo el número de registro RNAC.
+  foto?: string; // data URL base64
+  rut: string;
+  fecha_nacimiento: string; // "YYYY-MM-DD"
+  numero_registro_rnac?: string;
+  correo: string;
+  telefono: string;
 }
 
 export interface CondominioConFacturacion {

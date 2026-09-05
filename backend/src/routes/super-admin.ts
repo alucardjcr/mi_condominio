@@ -9,6 +9,7 @@ import {
   marcarPagado,
 } from "../services/superadmin.service";
 import { listarEventosSeguridad, resumenEventosSeguridad } from "../services/eventosSeguridad.service";
+import { guardarImagenBase64 } from "../utils/imagenes";
 
 // Ronda 27: montado en index.ts con requireAuth + requireSuperAdmin — el
 // dueño del sistema, no un Administrador de condominio. Ver
@@ -34,17 +35,35 @@ superAdminRouter.get("/administradores", async (_req, res) => {
 
 superAdminRouter.post("/administradores", async (req, res) => {
   try {
-    const { nombre_usuario, usuariocol, password, condominio_id_condominio } = req.body;
+    const {
+      nombre_usuario,
+      usuariocol,
+      password,
+      condominio_id_condominio,
+      foto,
+      rut,
+      fecha_nacimiento,
+      numero_registro_rnac,
+      correo,
+      telefono,
+    } = req.body;
     if (!nombre_usuario || !usuariocol || !password) {
       return res.status(400).json({
         error: "Faltan campos: nombre_usuario, usuariocol, password.",
       });
     }
+    const fotoUrl = foto ? await guardarImagenBase64(foto, "administrador", "administradores") : undefined;
     const resultado = await crearAdministrador({
       nombre_usuario,
       usuariocol,
       password,
       condominio_id_condominio: condominio_id_condominio ? Number(condominio_id_condominio) : undefined,
+      foto_url: fotoUrl,
+      rut,
+      fecha_nacimiento,
+      numero_registro_rnac,
+      correo,
+      telefono,
     });
     res.status(201).json(resultado);
   } catch (err: any) {

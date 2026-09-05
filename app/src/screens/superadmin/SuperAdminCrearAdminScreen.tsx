@@ -3,11 +3,19 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOp
 import { superAdminCrearAdministrador, superAdminGetCondominios } from "../../api/client";
 import { CondominioSimple } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
+import FotoCapture from "../../components/FotoCapture";
 import { colors, radius, spacing, typography } from "../../theme/theme";
 
 // Ronda 27, a pedido explícito del usuario: "solo yo podré crear el rol de
 // administrador" — esta pantalla es exclusiva del SuperAdmin (backend la
 // rechaza con 403 para cualquier otro rol, ver requireSuperAdmin).
+//
+// Ronda 67, a pedido explícito del usuario: perfil completo del
+// administrador (foto, RUT, fecha de nacimiento, N° de registro RNAC
+// opcional, correo, teléfono) — antes solo pedía nombre/usuario/clave.
+// El condominio también pasó a ser opcional (ronda 66): si no se elige
+// ninguno, el Administrador entra por el flujo de "crear mi primer
+// condominio" la primera vez que se loguea.
 export default function SuperAdminCrearAdminScreen({ navigation }: any) {
   const { token } = useAuth();
   const [condominios, setCondominios] = useState<CondominioSimple[]>([]);
@@ -15,6 +23,14 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
   const [nombreUsuario, setNombreUsuario] = useState("");
   const [usuariocol, setUsuariocol] = useState("");
   const [password, setPassword] = useState("");
+
+  const [foto, setFoto] = useState<string | null>(null);
+  const [rut, setRut] = useState("");
+  const [fechaNacimiento, setFechaNacimiento] = useState("");
+  const [numeroRegistroRnac, setNumeroRegistroRnac] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [telefono, setTelefono] = useState("");
+
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
@@ -33,8 +49,20 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
       setError("Completa nombre, usuario y contraseña.");
       return;
     }
-    if (!condominioId) {
-      setError("Elige a qué condominio queda vinculado este Administrador.");
+    if (!rut.trim()) {
+      setError("Falta el RUT del administrador.");
+      return;
+    }
+    if (!fechaNacimiento.trim()) {
+      setError("Falta la fecha de nacimiento (formato AAAA-MM-DD).");
+      return;
+    }
+    if (!correo.trim()) {
+      setError("Falta el correo electrónico.");
+      return;
+    }
+    if (!telefono.trim()) {
+      setError("Falta el teléfono.");
       return;
     }
     if (!token) return;
@@ -45,13 +73,29 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
         nombre_usuario: nombreUsuario.trim(),
         usuariocol: usuariocol.trim(),
         password,
-        condominio_id_condominio: condominioId,
+        condominio_id_condominio: condominioId ?? undefined,
+        foto: foto || undefined,
+        rut: rut.trim(),
+        fecha_nacimiento: fechaNacimiento.trim(),
+        numero_registro_rnac: numeroRegistroRnac.trim() || undefined,
+        correo: correo.trim(),
+        telefono: telefono.trim(),
       });
-      setExito(`Cuenta "${usuariocol.trim()}" creada correctamente.`);
+      setExito(
+        condominioId
+          ? `Cuenta "${usuariocol.trim()}" creada correctamente.`
+          : `Cuenta "${usuariocol.trim()}" creada correctamente — sin condominio todavía. Al loguearse por primera vez, va a poder crear el suyo propio.`
+      );
       setNombreUsuario("");
       setUsuariocol("");
       setPassword("");
       setCondominioId(null);
+      setFoto(null);
+      setRut("");
+      setFechaNacimiento("");
+      setNumeroRegistroRnac("");
+      setCorreo("");
+      setTelefono("");
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -62,6 +106,8 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
+        <FotoCapture label="Foto del administrador" value={foto} onChange={setFoto} />
+
         <Text style={styles.label}>Nombre completo</Text>
         <TextInput
           style={styles.input}
@@ -69,6 +115,56 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
           onChangeText={setNombreUsuario}
           placeholder="ej: María Pérez"
           placeholderTextColor={colors.textMuted}
+        />
+
+        <Text style={styles.label}>RUT</Text>
+        <TextInput
+          style={styles.input}
+          value={rut}
+          onChangeText={setRut}
+          placeholder="ej: 12.345.678-9"
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="characters"
+        />
+
+        <Text style={styles.label}>Fecha de nacimiento</Text>
+        <TextInput
+          style={styles.input}
+          value={fechaNacimiento}
+          onChangeText={setFechaNacimiento}
+          placeholder="AAAA-MM-DD"
+          placeholderTextColor={colors.textMuted}
+        />
+
+        <Text style={styles.label}>N° de registro RNAC (opcional)</Text>
+        <Text style={styles.ayudaChica}>Registro Nacional de Administradores de Condominios.</Text>
+        <TextInput
+          style={styles.input}
+          value={numeroRegistroRnac}
+          onChangeText={setNumeroRegistroRnac}
+          placeholder="ej: RNAC-4521"
+          placeholderTextColor={colors.textMuted}
+        />
+
+        <Text style={styles.label}>Correo electrónico</Text>
+        <TextInput
+          style={styles.input}
+          value={correo}
+          onChangeText={setCorreo}
+          placeholder="ej: maria@ejemplo.cl"
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+
+        <Text style={styles.label}>Teléfono</Text>
+        <TextInput
+          style={styles.input}
+          value={telefono}
+          onChangeText={setTelefono}
+          placeholder="ej: +56912345678"
+          placeholderTextColor={colors.textMuted}
+          keyboardType="phone-pad"
         />
 
         <Text style={styles.label}>Usuario (para loguearse)</Text>
@@ -91,13 +187,13 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
           secureTextEntry
         />
 
-        <Text style={styles.label}>Condominio al que queda vinculado</Text>
+        <Text style={styles.label}>Condominio al que queda vinculado (opcional)</Text>
         <View style={styles.listaCondominios}>
           {condominios.map((c) => (
             <TouchableOpacity
               key={c.id_condominio}
               style={[styles.opcionCondominio, condominioId === c.id_condominio && styles.opcionCondominioActiva]}
-              onPress={() => setCondominioId(c.id_condominio)}
+              onPress={() => setCondominioId(condominioId === c.id_condominio ? null : c.id_condominio)}
               activeOpacity={0.8}
             >
               <Text
@@ -112,8 +208,9 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
           ))}
         </View>
         <Text style={styles.ayuda}>
-          Si quieres crear el Administrador de un condominio que todavía no existe, primero pídele que él mismo lo
-          cree desde su propia cuenta (opción "Crear nuevo condominio"), o crea el condominio a mano y vuelve acá.
+          Si no eliges ningún condominio, esta cuenta va a poder crear el suyo propio la primera vez que se
+          loguee — es el caso normal para un Administrador nuevo. Elegí uno solo si ya existe el condominio y
+          querés vincularlo directo.
         </Text>
 
         {error && <Text style={styles.error}>{error}</Text>}
@@ -137,6 +234,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
   label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
   ayuda: { ...typography.small, color: colors.textMuted, marginTop: spacing.sm },
+  ayudaChica: { ...typography.small, color: colors.textMuted, marginTop: 2, fontSize: 11 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
