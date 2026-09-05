@@ -230,6 +230,9 @@ export interface Guardia {
   // Ronda 53, a pedido explícito del usuario, con referencia visual.
   rut?: string | null;
   telefono?: string | null;
+  // Ronda 69, a pedido explícito del usuario.
+  flg_interno?: boolean | number | null;
+  empresa_externa?: string | null;
 }
 
 export interface ResidenteAdmin {
@@ -606,6 +609,11 @@ export interface PersonalAdmin {
   // condominio.
   jefe_id_usuario: number | null;
   jefe_nombre: string | null;
+  // Ronda 69, a pedido explícito del usuario: "¿tenemos si... son
+  // internos?" — null = no definido; true = personal propio del
+  // condominio; false = contratado a través de una empresa externa.
+  flg_interno: boolean | number | null;
+  empresa_externa: string | null;
 }
 
 // --- Ronda 68: Jefes de área (JefeGuardias / JefeAseo / JefeJardineria) ----
@@ -618,6 +626,9 @@ export interface JefeDeArea {
   usuariocol: string;
   flg_vigencia: number;
   rol: RolJefeDeArea;
+  // Ronda 69, a pedido explícito del usuario.
+  flg_interno?: boolean | number | null;
+  empresa_externa?: string | null;
 }
 
 export interface CrearJefeDeAreaInput {
@@ -625,6 +636,8 @@ export interface CrearJefeDeAreaInput {
   nombre_usuario: string;
   usuariocol: string;
   password: string;
+  flg_interno?: boolean | null;
+  empresa_externa?: string;
 }
 
 // --- Ronda 68: equipo y horario semanal de JefeAseo/JefeJardineria --------

@@ -27,7 +27,15 @@ export default function AdminJefesAreaScreen() {
   const [nombre, setNombre] = useState("");
   const [usuariocol, setUsuariocol] = useState("");
   const [password, setPassword] = useState("");
+  const [esInterno, setEsInterno] = useState<boolean | null>(null);
+  const [empresaExterna, setEmpresaExterna] = useState("");
   const [creando, setCreando] = useState(false);
+
+  // Edición de interno/externo de un jefe ya existente, inline.
+  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [editInterno, setEditInterno] = useState<boolean | null>(null);
+  const [editEmpresa, setEditEmpresa] = useState("");
+  const [guardandoInterno, setGuardandoInterno] = useState(false);
 
   const cargar = useCallback(async () => {
     if (!token) return;
@@ -54,11 +62,20 @@ export default function AdminJefesAreaScreen() {
     }
     setCreando(true);
     try {
-      await adminCrearJefeDeArea(token, { rol: rolSel, nombre_usuario: nombre.trim(), usuariocol: usuariocol.trim(), password });
+      await adminCrearJefeDeArea(token, {
+        rol: rolSel,
+        nombre_usuario: nombre.trim(),
+        usuariocol: usuariocol.trim(),
+        password,
+        flg_interno: esInterno ?? undefined,
+        empresa_externa: esInterno === false ? empresaExterna.trim() || undefined : undefined,
+      });
       setRolSel(null);
       setNombre("");
       setUsuariocol("");
       setPassword("");
+      setEsInterno(null);
+      setEmpresaExterna("");
       cargar();
     } catch (e: any) {
       Alert.alert("Error", e.message);
@@ -74,6 +91,29 @@ export default function AdminJefesAreaScreen() {
       cargar();
     } catch (e: any) {
       Alert.alert("Error", e.message);
+    }
+  };
+
+  const handleAbrirEdicionInterno = (j: JefeDeArea) => {
+    setEditandoId(j.id_usuario);
+    setEditInterno(j.flg_interno === null || j.flg_interno === undefined ? null : Boolean(j.flg_interno));
+    setEditEmpresa(j.empresa_externa ?? "");
+  };
+
+  const handleGuardarInterno = async (id: number) => {
+    if (!token) return;
+    setGuardandoInterno(true);
+    try {
+      await adminActualizarJefeDeArea(token, id, {
+        flg_interno: editInterno,
+        empresa_externa: editInterno === false ? editEmpresa.trim() || null : null,
+      });
+      setEditandoId(null);
+      cargar();
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    } finally {
+      setGuardandoInterno(false);
     }
   };
 
@@ -123,6 +163,24 @@ export default function AdminJefesAreaScreen() {
           />
           <TextInput style={styles.input} placeholder="Contraseña" value={password} onChangeText={setPassword} secureTextEntry />
 
+          <Text style={styles.label}>¿Es personal interno del condominio o viene de una empresa externa?</Text>
+          <View style={styles.filaChips}>
+            <TouchableOpacity style={[styles.chip, esInterno === true && styles.chipActivo]} onPress={() => setEsInterno(true)}>
+              <Text style={[styles.chipTexto, esInterno === true && styles.chipTextoActivo]}>Interno</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.chip, esInterno === false && styles.chipActivo]} onPress={() => setEsInterno(false)}>
+              <Text style={[styles.chipTexto, esInterno === false && styles.chipTextoActivo]}>Externo</Text>
+            </TouchableOpacity>
+          </View>
+          {esInterno === false && (
+            <TextInput
+              style={styles.input}
+              placeholder="Nombre de la empresa (ej: Vigilancia Segura SPA)"
+              value={empresaExterna}
+              onChangeText={setEmpresaExterna}
+            />
+          )}
+
           <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
             <Text style={styles.botonCrearTexto}>{creando ? "Creando..." : "Crear jefe"}</Text>
           </TouchableOpacity>
@@ -133,20 +191,61 @@ export default function AdminJefesAreaScreen() {
         const opcion = OPCIONES_ROL.find((o) => o.valor === item.rol);
         return (
           <View style={styles.card}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.nombreItem}>
-                {opcion?.icono} {item.nombre_usuario}
-              </Text>
-              <Text style={styles.detalle}>
-                usuario: {item.usuariocol} · {opcion?.label ?? item.rol} · {item.flg_vigencia ? "Activo" : "Inactivo"}
-              </Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.nombreItem}>
+                  {opcion?.icono} {item.nombre_usuario}
+                </Text>
+                <Text style={styles.detalle}>
+                  usuario: {item.usuariocol} · {opcion?.label ?? item.rol} · {item.flg_vigencia ? "Activo" : "Inactivo"}
+                </Text>
+                <Text style={styles.detalle}>
+                  {item.flg_interno === null || item.flg_interno === undefined
+                    ? "Interno/externo: sin definir"
+                    : item.flg_interno
+                    ? "Interno"
+                    : `Externo${item.empresa_externa ? ` — ${item.empresa_externa}` : ""}`}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.botonToggle, item.flg_vigencia ? styles.botonDesactivar : styles.botonActivar]}
+                onPress={() => handleToggle(item)}
+              >
+                <Text style={styles.botonToggleTexto}>{item.flg_vigencia ? "Desactivar" : "Activar"}</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={[styles.botonToggle, item.flg_vigencia ? styles.botonDesactivar : styles.botonActivar]}
-              onPress={() => handleToggle(item)}
-            >
-              <Text style={styles.botonToggleTexto}>{item.flg_vigencia ? "Desactivar" : "Activar"}</Text>
-            </TouchableOpacity>
+
+            {editandoId === item.id_usuario ? (
+              <View style={styles.subForm}>
+                <View style={styles.filaChips}>
+                  <TouchableOpacity style={[styles.chip, editInterno === true && styles.chipActivo]} onPress={() => setEditInterno(true)}>
+                    <Text style={[styles.chipTexto, editInterno === true && styles.chipTextoActivo]}>Interno</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.chip, editInterno === false && styles.chipActivo]} onPress={() => setEditInterno(false)}>
+                    <Text style={[styles.chipTexto, editInterno === false && styles.chipTextoActivo]}>Externo</Text>
+                  </TouchableOpacity>
+                </View>
+                {editInterno === false && (
+                  <TextInput style={styles.input} placeholder="Nombre de la empresa" value={editEmpresa} onChangeText={setEditEmpresa} />
+                )}
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <TouchableOpacity
+                    style={[styles.botonToggle, styles.botonActivar, { flex: 1 }]}
+                    onPress={() => handleGuardarInterno(item.id_usuario)}
+                    disabled={guardandoInterno}
+                  >
+                    <Text style={styles.botonToggleTexto}>{guardandoInterno ? "Guardando..." : "Guardar"}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]} onPress={() => setEditandoId(null)}>
+                    <Text style={styles.botonToggleTexto}>Cancelar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => handleAbrirEdicionInterno(item)}>
+                <Text style={styles.enlaceEditar}>✏️ Editar interno/externo</Text>
+              </TouchableOpacity>
+            )}
           </View>
         );
       }}
@@ -165,6 +264,12 @@ const styles = StyleSheet.create({
   chipRolActivo: { borderColor: "#014BD2", backgroundColor: "#EEF2FF" },
   chipRolTexto: { color: "#666", fontWeight: "600", fontSize: 12 },
   chipRolTextoActivo: { color: "#014BD2" },
+  label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 6 },
+  filaChips: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  chip: { borderWidth: 1.5, borderColor: "#ddd", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  chipActivo: { borderColor: "#014BD2", backgroundColor: "#EEF2FF" },
+  chipTexto: { color: "#666", fontWeight: "600", fontSize: 13 },
+  chipTextoActivo: { color: "#014BD2" },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
@@ -176,11 +281,13 @@ const styles = StyleSheet.create({
   botonCrear: { backgroundColor: "#2e7d32", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
   botonCrearTexto: { color: "#fff", fontWeight: "700" },
   vacio: { textAlign: "center", color: "#888", marginTop: 20 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" },
+  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14 },
   nombreItem: { fontSize: 16, fontWeight: "700" },
   detalle: { color: "#666", marginTop: 2, fontSize: 13 },
   botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   botonActivar: { backgroundColor: "#1a9d5c" },
   botonDesactivar: { backgroundColor: "#c0392b" },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12 },
+  subForm: { marginTop: 10, borderTopWidth: 1, borderTopColor: "#f0f0f0", paddingTop: 10, gap: 8 },
+  enlaceEditar: { color: "#014BD2", fontWeight: "700", fontSize: 12, marginTop: 10 },
 });

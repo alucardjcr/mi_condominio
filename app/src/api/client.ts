@@ -296,13 +296,13 @@ export const adminGetGuardias = (token: string) => get<Guardia[]>(`/admin/guardi
 
 export const adminCrearGuardia = (
   token: string,
-  input: { nombre_usuario: string; usuariocol: string; password: string }
+  input: { nombre_usuario: string; usuariocol: string; password: string; flg_interno?: boolean; empresa_externa?: string }
 ) => send<Guardia>(`/admin/guardias`, "POST", token, input);
 
 export const adminActualizarGuardia = (
   token: string,
   id: number,
-  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number }
+  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; flg_interno?: boolean | null; empresa_externa?: string | null }
 ) => send<Guardia>(`/admin/guardias/${id}`, "PATCH", token, input);
 
 export const adminGetResidentes = (token: string) => get<ResidenteAdmin[]>(`/admin/residentes`, token);
@@ -574,13 +574,24 @@ export const adminCrearPersonal = (
     condominio_id_condominio: number;
     // Ronda 68, a pedido explícito del usuario: a qué Jefe reporta.
     jefe_id_usuario?: number;
+    // Ronda 69, a pedido explícito del usuario.
+    flg_interno?: boolean;
+    empresa_externa?: string;
   }
 ) => send<PersonalAdmin>(`/admin/personal`, "POST", token, input);
 
 export const adminActualizarPersonal = (
   token: string,
   id: number,
-  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; tipo_personal_id_tipopersonal?: number | null; jefe_id_usuario?: number | null }
+  input: {
+    nombre_usuario?: string;
+    password?: string;
+    flg_vigencia?: number;
+    tipo_personal_id_tipopersonal?: number | null;
+    jefe_id_usuario?: number | null;
+    flg_interno?: boolean | null;
+    empresa_externa?: string | null;
+  }
 ) => send<PersonalAdmin>(`/admin/personal/${id}`, "PATCH", token, input);
 
 // --- Ronda 68: Jefes de área (JefeGuardias / JefeAseo / JefeJardineria) ----
@@ -597,7 +608,7 @@ export const adminCrearJefeDeArea = (token: string, input: CrearJefeDeAreaInput)
 export const adminActualizarJefeDeArea = (
   token: string,
   id: number,
-  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number }
+  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; flg_interno?: boolean | null; empresa_externa?: string | null }
 ) => send<JefeDeArea>(`/admin/jefes-de-area/${id}`, "PATCH", token, input);
 
 // --- Ronda 68: equipo y horario semanal (autoservicio de JefeAseo/JefeJardineria) ---

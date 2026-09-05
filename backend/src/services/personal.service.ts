@@ -60,7 +60,7 @@ export async function listarTiposPersonal(condominioId: number) {
 export async function listarPersonal(condominioId: number) {
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia,
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa,
               u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal,
               u.jefe_id_usuario, jefe.nombre_usuario AS jefe_nombre,
               EXISTS(SELECT 1 FROM turno_personal t WHERE t.usuario_id_usuario = u.id_usuario AND t.fecha_termino IS NULL) as turno_abierto
@@ -84,6 +84,11 @@ export async function crearPersonal(input: {
   // manualmente a qué Jefe de área reporta este trabajador (o a ninguno,
   // si el administrador lo supervisa directo).
   jefe_id_usuario?: number | null;
+  // Ronda 69, a pedido explícito del usuario: "¿tenemos si... el personal
+  // de jardinería y aseo son internos?" — antes no había ningún dato de
+  // esto.
+  flg_interno?: boolean | null;
+  empresa_externa?: string | null;
 }) {
   const tipoPersonalUsuarioId = await getIdByGls("tipo_usuario", "id_tipousuario", "gls_tipousuario", "Personal");
   if (input.jefe_id_usuario) {
@@ -92,8 +97,8 @@ export async function crearPersonal(input: {
   const passwordHash = bcrypt.hashSync(input.password, 10);
   const insert = await db
     .prepare(
-      `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio, tipo_personal_id_tipopersonal, jefe_id_usuario)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio, tipo_personal_id_tipopersonal, jefe_id_usuario, flg_interno, empresa_externa)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       input.nombre_usuario,
@@ -102,13 +107,16 @@ export async function crearPersonal(input: {
       tipoPersonalUsuarioId,
       input.condominio_id_condominio,
       input.tipo_personal_id_tipopersonal ?? null,
-      input.jefe_id_usuario ?? null
+      input.jefe_id_usuario ?? null,
+      input.flg_interno === undefined || input.flg_interno === null ? null : input.flg_interno ? 1 : 0,
+      input.flg_interno === false ? input.empresa_externa?.trim() || null : null
     );
   const id = Number(insert.lastInsertRowid);
   await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal,
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa,
+              u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal,
               u.jefe_id_usuario, jefe.nombre_usuario AS jefe_nombre, 0 as turno_abierto
        FROM usuario u
        LEFT JOIN tipo_personal tp ON tp.id_tipopersonal = u.tipo_personal_id_tipopersonal
@@ -146,6 +154,8 @@ export async function actualizarPersonal(
     tipo_personal_id_tipopersonal?: number | null;
     jefe_id_usuario?: number | null;
     condominio_id_condominio?: number; // para validar el jefe, si se manda
+    flg_interno?: boolean | null;
+    empresa_externa?: string | null;
   }
 ) {
   if (input.nombre_usuario !== undefined) {
@@ -169,10 +179,16 @@ export async function actualizarPersonal(
     }
     await db.prepare(`UPDATE usuario SET jefe_id_usuario = ? WHERE id_usuario = ?`).run(input.jefe_id_usuario, id);
   }
+  if (input.flg_interno !== undefined) {
+    const interno = input.flg_interno === null ? null : input.flg_interno ? 1 : 0;
+    const empresa = input.flg_interno === false ? input.empresa_externa?.trim() || null : null;
+    await db.prepare(`UPDATE usuario SET flg_interno = ?, empresa_externa = ? WHERE id_usuario = ?`).run(interno, empresa, id);
+  }
   await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal,
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa,
+              u.tipo_personal_id_tipopersonal, tp.gls_tipopersonal,
               u.jefe_id_usuario, jefe.nombre_usuario AS jefe_nombre,
               EXISTS(SELECT 1 FROM turno_personal t WHERE t.usuario_id_usuario = u.id_usuario AND t.fecha_termino IS NULL) as turno_abierto
        FROM usuario u

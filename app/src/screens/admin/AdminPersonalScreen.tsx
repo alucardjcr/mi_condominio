@@ -39,6 +39,8 @@ export default function AdminPersonalScreen({ navigation }: any) {
   const [password, setPassword] = useState("");
   const [tipoSel, setTipoSel] = useState<OpcionSelect | null>(null);
   const [jefeSel, setJefeSel] = useState<OpcionSelect | null>(null);
+  const [esInterno, setEsInterno] = useState<boolean | null>(null);
+  const [empresaExterna, setEmpresaExterna] = useState("");
   const [creando, setCreando] = useState(false);
 
   // Ronda 68, a pedido explícito del usuario: reasignar el jefe de un
@@ -86,12 +88,16 @@ export default function AdminPersonalScreen({ navigation }: any) {
         tipo_personal_id_tipopersonal: tipoSel ? Number(tipoSel.id) : undefined,
         condominio_id_condominio: CONDOMINIO_ID,
         jefe_id_usuario: jefeSel ? Number(jefeSel.id) : undefined,
+        flg_interno: esInterno ?? undefined,
+        empresa_externa: esInterno === false ? empresaExterna.trim() || undefined : undefined,
       });
       setNombre("");
       setUsuariocol("");
       setPassword("");
       setTipoSel(null);
       setJefeSel(null);
+      setEsInterno(null);
+      setEmpresaExterna("");
       cargar();
     } catch (e: any) {
       Alert.alert("Error", e.message);
@@ -176,6 +182,25 @@ export default function AdminPersonalScreen({ navigation }: any) {
             onSeleccionar={setJefeSel}
             disabled={jefes.length === 0}
           />
+
+          <Text style={styles.label}>¿Es personal interno del condominio o externo?</Text>
+          <View style={styles.filaChips}>
+            <TouchableOpacity style={[styles.chip, esInterno === true && styles.chipActivo]} onPress={() => setEsInterno(true)}>
+              <Text style={[styles.chipTexto, esInterno === true && styles.chipTextoActivo]}>Interno</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.chip, esInterno === false && styles.chipActivo]} onPress={() => setEsInterno(false)}>
+              <Text style={[styles.chipTexto, esInterno === false && styles.chipTextoActivo]}>Externo</Text>
+            </TouchableOpacity>
+          </View>
+          {esInterno === false && (
+            <TextInput
+              style={styles.input}
+              placeholder="Nombre de la empresa (ej: Jardines del Sur)"
+              value={empresaExterna}
+              onChangeText={setEmpresaExterna}
+            />
+          )}
+
           <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
             <Text style={styles.botonCrearTexto}>{creando ? "Creando..." : "Crear"}</Text>
           </TouchableOpacity>
@@ -191,6 +216,13 @@ export default function AdminPersonalScreen({ navigation }: any) {
                 usuario: {item.usuariocol} · {item.gls_tipopersonal ?? "Sin especialidad"} ·{" "}
                 {item.flg_vigencia ? "Activo" : "Inactivo"}
                 {item.turno_abierto ? " · En turno ahora" : ""}
+              </Text>
+              <Text style={styles.detalle}>
+                {item.flg_interno === null || item.flg_interno === undefined
+                  ? "Interno/externo: sin definir"
+                  : item.flg_interno
+                  ? "Interno"
+                  : `Externo${item.empresa_externa ? ` — ${item.empresa_externa}` : ""}`}
               </Text>
             </View>
             <TouchableOpacity
@@ -258,6 +290,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 8 },
   formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
+  label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 6 },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
@@ -266,6 +299,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 10,
   },
+  filaChips: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  chip: { borderWidth: 1.5, borderColor: "#ddd", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  chipActivo: { borderColor: "#014BD2", backgroundColor: "#EEF2FF" },
+  chipTexto: { color: "#666", fontWeight: "600", fontSize: 13 },
+  chipTextoActivo: { color: "#014BD2" },
   botonCrear: { backgroundColor: "#2e7d32", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 14 },
   botonCrearTexto: { color: "#fff", fontWeight: "700" },
   vacio: { textAlign: "center", color: "#888", marginTop: 20 },

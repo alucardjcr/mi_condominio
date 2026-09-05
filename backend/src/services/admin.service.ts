@@ -22,7 +22,7 @@ async function getIdByGls(table: string, idColumn: string, glsColumn: string, va
 export async function listarGuardias(condominioId: number) {
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, gp.rut, gp.telefono
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono
        FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
        LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario
@@ -64,15 +64,27 @@ export async function crearGuardia(input: {
   condominio_id_condominio: number;
   rut?: string;
   telefono?: string;
+  // Ronda 69, a pedido explícito del usuario: "¿tenemos si los guardias
+  // o conserjes... son internos?" — antes no había ningún dato de esto.
+  flg_interno?: boolean | null;
+  empresa_externa?: string | null;
 }) {
   const tipoGuardiaId = await getIdByGls("tipo_usuario", "id_tipousuario", "gls_tipousuario", "Guardia");
   const passwordHash = bcrypt.hashSync(input.password, 10);
   const insert = await db
     .prepare(
-      `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio)
-       VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio, flg_interno, empresa_externa)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(input.nombre_usuario, input.usuariocol, passwordHash, tipoGuardiaId, input.condominio_id_condominio);
+    .run(
+      input.nombre_usuario,
+      input.usuariocol,
+      passwordHash,
+      tipoGuardiaId,
+      input.condominio_id_condominio,
+      input.flg_interno === undefined || input.flg_interno === null ? null : input.flg_interno ? 1 : 0,
+      input.flg_interno === false ? input.empresa_externa?.trim() || null : null
+    );
   const id = Number(insert.lastInsertRowid);
   // Ronda 26 (fase 2): sin esto, un Guardia recién creado no tendría
   // ninguna membresía y no podría loguearse (ver auth.service.ts -> login).
@@ -82,13 +94,24 @@ export async function crearGuardia(input: {
   }
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, gp.rut, gp.telefono
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono
        FROM usuario u LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
     )
     .get(id);
 }
 
-export async function actualizarGuardia(id: number, input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; rut?: string | null; telefono?: string | null }) {
+export async function actualizarGuardia(
+  id: number,
+  input: {
+    nombre_usuario?: string;
+    password?: string;
+    flg_vigencia?: number;
+    rut?: string | null;
+    telefono?: string | null;
+    flg_interno?: boolean | null;
+    empresa_externa?: string | null;
+  }
+) {
   if (input.nombre_usuario !== undefined) {
     await db.prepare(`UPDATE usuario SET nombre_usuario = ? WHERE id_usuario = ?`).run(input.nombre_usuario, id);
   }
@@ -99,11 +122,16 @@ export async function actualizarGuardia(id: number, input: { nombre_usuario?: st
   if (input.flg_vigencia !== undefined) {
     await db.prepare(`UPDATE usuario SET flg_vigencia = ? WHERE id_usuario = ?`).run(input.flg_vigencia, id);
   }
+  if (input.flg_interno !== undefined) {
+    const interno = input.flg_interno === null ? null : input.flg_interno ? 1 : 0;
+    const empresa = input.flg_interno === false ? input.empresa_externa?.trim() || null : null;
+    await db.prepare(`UPDATE usuario SET flg_interno = ?, empresa_externa = ? WHERE id_usuario = ?`).run(interno, empresa, id);
+  }
   await upsertGuardiaPerfil(id, input.rut, input.telefono);
   await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, gp.rut, gp.telefono
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono
        FROM usuario u LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
     )
     .get(id);
@@ -724,7 +752,7 @@ export async function listarJefesDeArea(condominioId: number, rol?: RolJefeDeAre
   const params = rol ? [condominioId, rol] : [condominioId];
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, tu.gls_tipousuario AS rol
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, tu.gls_tipousuario AS rol
        FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
        WHERE u.condominio_id_condominio = ? ${filtroRol}
@@ -739,6 +767,11 @@ export async function crearJefeDeArea(input: {
   usuariocol: string;
   password: string;
   condominio_id_condominio: number;
+  // Ronda 69, a pedido explícito del usuario: un Jefe también puede venir
+  // de una empresa externa (ej. el supervisor que manda la empresa de
+  // seguridad contratada), no solo el personal a su cargo.
+  flg_interno?: boolean | null;
+  empresa_externa?: string | null;
 }) {
   if (!ROLES_JEFE_DE_AREA.includes(input.rol)) {
     throw new Error(`Rol de jefe inválido: ${input.rol}`);
@@ -747,18 +780,31 @@ export async function crearJefeDeArea(input: {
   const passwordHash = bcrypt.hashSync(input.password, 10);
   const insert = await db
     .prepare(
-      `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio)
-       VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio, flg_interno, empresa_externa)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(input.nombre_usuario, input.usuariocol, passwordHash, tipoUsuarioId, input.condominio_id_condominio);
+    .run(
+      input.nombre_usuario,
+      input.usuariocol,
+      passwordHash,
+      tipoUsuarioId,
+      input.condominio_id_condominio,
+      input.flg_interno === undefined || input.flg_interno === null ? null : input.flg_interno ? 1 : 0,
+      input.flg_interno === false ? input.empresa_externa?.trim() || null : null
+    );
   const id = Number(insert.lastInsertRowid);
   // Sin esto, la cuenta recién creada no tendría ninguna membresía y no
   // podría loguearse (ver auth.service.ts -> login).
   await sincronizarMembresiaPrincipal(id);
-  return db.prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia FROM usuario WHERE id_usuario = ?`).get(id);
+  return db
+    .prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia, flg_interno, empresa_externa FROM usuario WHERE id_usuario = ?`)
+    .get(id);
 }
 
-export async function actualizarJefeDeArea(id: number, input: { nombre_usuario?: string; password?: string; flg_vigencia?: number }) {
+export async function actualizarJefeDeArea(
+  id: number,
+  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; flg_interno?: boolean | null; empresa_externa?: string | null }
+) {
   if (input.nombre_usuario !== undefined) {
     await db.prepare(`UPDATE usuario SET nombre_usuario = ? WHERE id_usuario = ?`).run(input.nombre_usuario, id);
   }
@@ -769,6 +815,13 @@ export async function actualizarJefeDeArea(id: number, input: { nombre_usuario?:
   if (input.flg_vigencia !== undefined) {
     await db.prepare(`UPDATE usuario SET flg_vigencia = ? WHERE id_usuario = ?`).run(input.flg_vigencia, id);
   }
+  if (input.flg_interno !== undefined) {
+    const interno = input.flg_interno === null ? null : input.flg_interno ? 1 : 0;
+    const empresa = input.flg_interno === false ? input.empresa_externa?.trim() || null : null;
+    await db.prepare(`UPDATE usuario SET flg_interno = ?, empresa_externa = ? WHERE id_usuario = ?`).run(interno, empresa, id);
+  }
   await sincronizarMembresiaPrincipal(id);
-  return db.prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia FROM usuario WHERE id_usuario = ?`).get(id);
+  return db
+    .prepare(`SELECT id_usuario, nombre_usuario, usuariocol, flg_vigencia, flg_interno, empresa_externa FROM usuario WHERE id_usuario = ?`)
+    .get(id);
 }

@@ -104,7 +104,7 @@ adminRouter.get("/jefes-de-area", async (req, res) => {
 
 adminRouter.post("/jefes-de-area", async (req, res) => {
   try {
-    const { rol, nombre_usuario, usuariocol, password } = req.body;
+    const { rol, nombre_usuario, usuariocol, password, flg_interno, empresa_externa } = req.body;
     if (!rol || !nombre_usuario || !usuariocol || !password) {
       return res.status(400).json({ error: "Faltan campos: rol, nombre_usuario, usuariocol, password." });
     }
@@ -115,6 +115,8 @@ adminRouter.post("/jefes-de-area", async (req, res) => {
         usuariocol,
         password,
         condominio_id_condominio: req.guardia!.condominio_id_condominio!,
+        flg_interno: flg_interno === undefined ? undefined : flg_interno === null ? null : Boolean(flg_interno),
+        empresa_externa,
       })
     );
   } catch (err: any) {
@@ -124,12 +126,14 @@ adminRouter.post("/jefes-de-area", async (req, res) => {
 
 adminRouter.patch("/jefes-de-area/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
-    const { nombre_usuario, password, flg_vigencia } = req.body;
+    const { nombre_usuario, password, flg_vigencia, flg_interno, empresa_externa } = req.body;
     res.json(
       await actualizarJefeDeArea(Number(req.params.id), {
         nombre_usuario,
         password,
         flg_vigencia: flg_vigencia !== undefined ? Number(flg_vigencia) : undefined,
+        flg_interno: flg_interno === undefined ? undefined : flg_interno === null ? null : Boolean(flg_interno),
+        empresa_externa,
       })
     );
   } catch (err: any) {
@@ -151,12 +155,23 @@ adminRouter.get("/guardias", async (req, res) => {
 
 adminRouter.post("/guardias", async (req, res) => {
   try {
-    const { nombre_usuario, usuariocol, password, rut, telefono } = req.body;
+    const { nombre_usuario, usuariocol, password, rut, telefono, flg_interno, empresa_externa } = req.body;
     if (!nombre_usuario || !usuariocol || !password) {
       return res.status(400).json({ error: "Faltan campos: nombre_usuario, usuariocol, password." });
     }
     const condominioId = req.guardia!.condominio_id_condominio!;
-    res.status(201).json(await crearGuardia({ nombre_usuario, usuariocol, password, condominio_id_condominio: condominioId, rut, telefono }));
+    res.status(201).json(
+      await crearGuardia({
+        nombre_usuario,
+        usuariocol,
+        password,
+        condominio_id_condominio: condominioId,
+        rut,
+        telefono,
+        flg_interno: flg_interno === undefined ? undefined : flg_interno === null ? null : Boolean(flg_interno),
+        empresa_externa,
+      })
+    );
   } catch (err: any) {
     res.status(400).json({ error: esDuplicado(err) ? "Ese nombre de usuario ya existe." : err.message });
   }
@@ -164,7 +179,7 @@ adminRouter.post("/guardias", async (req, res) => {
 
 adminRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
-    const { nombre_usuario, password, flg_vigencia, rut, telefono } = req.body;
+    const { nombre_usuario, password, flg_vigencia, rut, telefono, flg_interno, empresa_externa } = req.body;
     res.json(
       await actualizarGuardia(Number(req.params.id), {
         nombre_usuario,
@@ -172,6 +187,8 @@ adminRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_u
         flg_vigencia: flg_vigencia !== undefined ? Number(flg_vigencia) : undefined,
         rut,
         telefono,
+        flg_interno: flg_interno === undefined ? undefined : flg_interno === null ? null : Boolean(flg_interno),
+        empresa_externa,
       })
     );
   } catch (err: any) {
@@ -651,7 +668,7 @@ adminRouter.get("/personal", async (req, res) => {
 
 adminRouter.post("/personal", async (req, res) => {
   try {
-    const { nombre_usuario, usuariocol, password, tipo_personal_id_tipopersonal, jefe_id_usuario } = req.body;
+    const { nombre_usuario, usuariocol, password, tipo_personal_id_tipopersonal, jefe_id_usuario, flg_interno, empresa_externa } = req.body;
     if (!nombre_usuario || !usuariocol || !password) {
       return res.status(400).json({ error: "Faltan campos: nombre_usuario, usuariocol, password." });
     }
@@ -664,6 +681,8 @@ adminRouter.post("/personal", async (req, res) => {
         condominio_id_condominio: condominioId,
         tipo_personal_id_tipopersonal: tipo_personal_id_tipopersonal !== undefined ? Number(tipo_personal_id_tipopersonal) : undefined,
         jefe_id_usuario: jefe_id_usuario !== undefined ? (jefe_id_usuario === null ? null : Number(jefe_id_usuario)) : undefined,
+        flg_interno: flg_interno === undefined ? undefined : flg_interno === null ? null : Boolean(flg_interno),
+        empresa_externa,
       })
     );
   } catch (err: any) {
@@ -673,7 +692,7 @@ adminRouter.post("/personal", async (req, res) => {
 
 adminRouter.patch("/personal/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
-    const { nombre_usuario, password, flg_vigencia, tipo_personal_id_tipopersonal, jefe_id_usuario } = req.body;
+    const { nombre_usuario, password, flg_vigencia, tipo_personal_id_tipopersonal, jefe_id_usuario, flg_interno, empresa_externa } = req.body;
     res.json(
       await actualizarPersonal(Number(req.params.id), {
         nombre_usuario,
@@ -687,6 +706,8 @@ adminRouter.patch("/personal/:id", requirePerteneceAlCondominio("usuario", "id_u
             : undefined,
         jefe_id_usuario: jefe_id_usuario !== undefined ? (jefe_id_usuario === null ? null : Number(jefe_id_usuario)) : undefined,
         condominio_id_condominio: req.guardia?.condominio_id_condominio,
+        flg_interno: flg_interno === undefined ? undefined : flg_interno === null ? null : Boolean(flg_interno),
+        empresa_externa,
       })
     );
   } catch (err: any) {
