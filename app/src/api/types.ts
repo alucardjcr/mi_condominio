@@ -175,6 +175,9 @@ export interface CondominioOpcion {
   comuna?: string | null;
   // Ronda 57, a pedido explícito del usuario.
   region?: string | null;
+  // Ronda 63, a pedido explícito del usuario.
+  direccion?: string | null;
+  codigo_postal?: string | null;
 }
 
 export interface CrearCondominioTorreInput {
@@ -205,6 +208,9 @@ export interface CrearCondominioInput {
   comuna?: string;
   // Ronda 57, a pedido explícito del usuario.
   region?: string;
+  // Ronda 63, a pedido explícito del usuario.
+  direccion?: string;
+  codigo_postal?: string;
 }
 
 export interface CrearCondominioResponse {

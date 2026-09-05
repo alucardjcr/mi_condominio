@@ -96,6 +96,8 @@ export default function CrearCondominioScreen({ navigation }: any) {
   const [nombreCondominio, setNombreCondominio] = useState("");
   const [regionSel, setRegionSel] = useState<OpcionSelect | null>(null);
   const [comunaSel, setComunaSel] = useState<OpcionSelect | null>(null);
+  const [direccion, setDireccion] = useState("");
+  const [codigoPostal, setCodigoPostal] = useState("");
   const comunasDisponibles = regionSel ? REGIONES_CHILE.find((r) => r.nombre === regionSel.label)?.comunas ?? [] : [];
 
   const handleSeleccionarRegion = (opcion: OpcionSelect) => {
@@ -209,6 +211,11 @@ export default function CrearCondominioScreen({ navigation }: any) {
       setPaso(1);
       return;
     }
+    if (!direccion.trim()) {
+      setError("Falta la dirección del condominio.");
+      setPaso(1);
+      return;
+    }
     if (!estructura) {
       setError("Indica cómo está estructurado el condominio.");
       return;
@@ -260,6 +267,10 @@ export default function CrearCondominioScreen({ navigation }: any) {
     }
     if (regionSel) {
       payload.region = regionSel.label;
+    }
+    payload.direccion = direccion.trim();
+    if (codigoPostal.trim()) {
+      payload.codigo_postal = codigoPostal.trim();
     }
 
     enviandoRef.current = true;
@@ -342,6 +353,23 @@ export default function CrearCondominioScreen({ navigation }: any) {
               onSeleccionar={setComunaSel}
               disabled={!regionSel}
             />
+            <Text style={styles.label}>Dirección</Text>
+            <TextInput
+              style={styles.input}
+              value={direccion}
+              onChangeText={setDireccion}
+              placeholder="ej: 6 Sur 2750"
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={styles.label}>Código postal (opcional)</Text>
+            <TextInput
+              style={styles.input}
+              value={codigoPostal}
+              onChangeText={setCodigoPostal}
+              placeholder="ej: 3460000"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+            />
             <TouchableOpacity
               style={styles.boton}
               onPress={() => {
@@ -355,6 +383,10 @@ export default function CrearCondominioScreen({ navigation }: any) {
                 }
                 if (!comunaSel) {
                   setError("Falta la comuna del condominio.");
+                  return;
+                }
+                if (!direccion.trim()) {
+                  setError("Falta la dirección del condominio.");
                   return;
                 }
                 setError(null);

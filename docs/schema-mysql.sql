@@ -1580,3 +1580,16 @@ CREATE TABLE IF NOT EXISTS condominio_region (
   CONSTRAINT fk_condominioregion_condominio FOREIGN KEY (condominio_id_condominio)
     REFERENCES condominio (id_condominio)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ronda 63, a pedido explícito del usuario: dirección completa del
+-- condominio (obligatoria, ej. "6 Sur 2750") + código postal (opcional).
+-- Tabla aparte de condominio_detalle/condominio_region (mismo motivo de
+-- siempre: esas tablas ya pudieron haberse desplegado sin esta columna,
+-- y CREATE TABLE IF NOT EXISTS no las modificaría).
+CREATE TABLE IF NOT EXISTS condominio_direccion (
+  condominio_id_condominio INT NOT NULL PRIMARY KEY,
+  direccion                 VARCHAR(255) NOT NULL,
+  codigo_postal              VARCHAR(20) NULL,
+  CONSTRAINT fk_condominiodireccion_condominio FOREIGN KEY (condominio_id_condominio)
+    REFERENCES condominio (id_condominio)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -424,15 +424,18 @@ export async function listarCondominiosDeUsuario(idUsuario: number) {
   const resultado = [];
   for (const m of membresias) {
     if (await condominioEstaBloqueado(m.condominio_id_condominio)) continue;
-    // Ronda 56/57, a pedido explícito del usuario: comuna y región de
-    // cada condominio, para diferenciarlos de un vistazo en la lista de
-    // cambio.
-    const [detalle, detalleRegion] = await Promise.all([
+    // Ronda 56/57/63, a pedido explícito del usuario: comuna, región y
+    // dirección de cada condominio, para diferenciarlos de un vistazo en
+    // la lista de cambio.
+    const [detalle, detalleRegion, detalleDireccion] = await Promise.all([
       db.prepare(`SELECT comuna FROM condominio_detalle WHERE condominio_id_condominio = ?`).get(m.condominio_id_condominio) as Promise<
         { comuna: string | null } | undefined
       >,
       db.prepare(`SELECT region FROM condominio_region WHERE condominio_id_condominio = ?`).get(m.condominio_id_condominio) as Promise<
         { region: string | null } | undefined
+      >,
+      db.prepare(`SELECT direccion, codigo_postal FROM condominio_direccion WHERE condominio_id_condominio = ?`).get(m.condominio_id_condominio) as Promise<
+        { direccion: string | null; codigo_postal: string | null } | undefined
       >,
     ]);
     resultado.push({
@@ -441,6 +444,8 @@ export async function listarCondominiosDeUsuario(idUsuario: number) {
       rol: m.gls_tipousuario,
       comuna: detalle?.comuna ?? null,
       region: detalleRegion?.region ?? null,
+      direccion: detalleDireccion?.direccion ?? null,
+      codigo_postal: detalleDireccion?.codigo_postal ?? null,
     });
   }
   return resultado;

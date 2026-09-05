@@ -39,6 +39,10 @@ export interface CrearCondominioInput {
   comuna?: string;
   // Ronda 57, a pedido explícito del usuario: región, junto a la comuna.
   region?: string;
+  // Ronda 63, a pedido explícito del usuario: dirección completa
+  // (obligatoria) y código postal (opcional).
+  direccion?: string;
+  codigo_postal?: string;
 }
 
 function limpiarNumeros(lista: string[] | undefined): string[] {
@@ -75,6 +79,9 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
   if (!input.comuna?.trim()) {
     throw new Error("Falta la comuna del condominio.");
   }
+  if (!input.direccion?.trim()) {
+    throw new Error("Falta la dirección del condominio.");
+  }
 
   if (input.estructura === "torres") {
     if (!input.torres || input.torres.length === 0) {
@@ -110,6 +117,10 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
     if (input.region?.trim()) {
       await tx.prepare(`INSERT INTO condominio_region (condominio_id_condominio, region) VALUES (?, ?)`).run(condominioId, input.region.trim());
     }
+    // Dirección es obligatoria (ya validada arriba), siempre se inserta.
+    await tx
+      .prepare(`INSERT INTO condominio_direccion (condominio_id_condominio, direccion, codigo_postal) VALUES (?, ?, ?)`)
+      .run(condominioId, input.direccion!.trim(), input.codigo_postal?.trim() || null);
 
     let torresCreadas = 0;
     let unidadesCreadas = 0;
@@ -281,6 +292,7 @@ export async function eliminarCondominioVacio(condominioId: number, solicitanteU
       "torre_block",
       "condominio_detalle",
       "condominio_region",
+      "condominio_direccion",
     ];
     for (const tabla of tablasParaLimpiar) {
       await tx.prepare(`DELETE FROM ${tabla} WHERE condominio_id_condominio = ?`).run(condominioId);
