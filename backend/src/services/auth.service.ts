@@ -4,6 +4,7 @@ import { db } from "../db/client";
 import { verificarTurnoParaLogin } from "./turnos.service";
 import { condominioEstaBloqueado } from "./facturacion.service";
 import { registrarEventoSeguridad } from "./eventosSeguridad.service";
+import { crearCondominioConEstructura, CrearCondominioInput } from "./condominios.service";
 
 // Ronda 36, a pedido explícito del usuario (revisión de encriptación): antes
 // había un valor por defecto ("dev-secret-cambiar-en-produccion") si no se
@@ -229,9 +230,29 @@ async function resolverSesionParaUsuario(idUsuario: number, nombreUsuario: strin
   const membresiasCrudas = await obtenerMembresiasDeUsuario(idUsuario);
 
   if (membresiasCrudas.length === 0) {
-    // No debería pasar (el backfill del schema le da una membresía a todo
-    // usuario que ya existía) — solo podría darse en un usuario creado a
-    // mano sin pasar por los flujos normales de creación.
+    // Ronda 66, a pedido explícito del usuario: un Administrador creado
+    // sin ningún condominio todavía (ver superadmin.service.ts ->
+    // crearAdministrador, condominio_id_condominio ahora opcional) tiene
+    // que poder entrar igual, para crear el suyo propio la primera vez.
+    // Cualquier OTRO rol sin membresías sigue siendo un error real — no
+    // hay ningún flujo válido en el que un Guardia/Residente/Personal
+    // exista sin condominio asignado.
+    const propioTipo = (await db
+      .prepare(
+        `SELECT tu.gls_tipousuario FROM usuario u
+         JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
+         WHERE u.id_usuario = ?`
+      )
+      .get(idUsuario)) as { gls_tipousuario: string } | undefined;
+
+    if (propioTipo?.gls_tipousuario === "Administrador") {
+      const tokenIntermedio = jwt.sign({ id_usuario: idUsuario, nombre_usuario: nombreUsuario }, JWT_SECRET, { expiresIn: "15m" });
+      return { requiereCrearCondominioInicial: true as const, token: tokenIntermedio };
+    }
+
+    // No debería pasar para ningún otro rol (el backfill del schema le da
+    // una membresía a todo usuario que ya existía) — solo podría darse en
+    // un usuario creado a mano sin pasar por los flujos normales.
     throw new Error("Tu cuenta no tiene ningún condominio asignado. Contacta al administrador.");
   }
 
@@ -690,4 +711,43 @@ export async function resetearPassword(identificador: string, codigo: string, pa
   // porque sospechaba que se la habían visto, cualquier sesión vieja
   // (la de quien la tenía antes) deja de servir de inmediato.
   await revocarSesionesDeUsuario(usuario.id_usuario);
+}
+
+// ---------------------------------------------------------------------------
+// Ronda 66, a pedido explícito del usuario: un Administrador creado SIN
+// condominio todavía (ver superadmin.service.ts -> crearAdministrador)
+// entra por acá la primera vez, en vez del selector normal — crea su
+// primer condominio y queda logueado directo en él, sin pasos extra.
+// ---------------------------------------------------------------------------
+export async function crearCondominioInicial(tokenIntermedio: string, input: CrearCondominioInput) {
+  let payload: { id_usuario: number; nombre_usuario: string };
+  try {
+    payload = jwt.verify(tokenIntermedio, JWT_SECRET) as { id_usuario: number; nombre_usuario: string };
+  } catch {
+    throw new Error("Sesión inválida o expirada. Vuelve a iniciar sesión.");
+  }
+
+  // Defensa en profundidad: confirma que este usuario TODAVÍA no tenga
+  // ningún condominio — evita que alguien reutilice un token viejo (antes
+  // de expirar) para crearse condominios extra saltándose el flujo normal
+  // (que sí exige una sesión completa) una vez que ya tiene el primero.
+  const yaTieneMembresia = (await obtenerMembresiasDeUsuario(payload.id_usuario)).length > 0;
+  if (yaTieneMembresia) {
+    throw new Error("Tu cuenta ya tiene al menos un condominio — usa la opción de crear condominio desde la app normal.");
+  }
+
+  const resultado = await crearCondominioConEstructura(payload.id_usuario, input);
+
+  // crearCondominioConEstructura ya le creó la membresía como Administrador
+  // de este condominio nuevo — arma la sesión completa a partir de ella,
+  // igual que hace seleccionarCondominio().
+  const membresias = await obtenerMembresiasDeUsuario(payload.id_usuario);
+  const membresiaNueva = membresias.find((m) => m.condominio_id_condominio === resultado.id_condominio);
+  if (!membresiaNueva) {
+    // No debería pasar nunca — crearCondominioConEstructura siempre crea
+    // la membresía del creador como parte de la misma transacción.
+    throw new Error("El condominio se creó, pero no se pudo armar la sesión. Vuelve a iniciar sesión.");
+  }
+
+  return construirSesionDesdeMembresia(payload.id_usuario, payload.nombre_usuario, membresiaNueva);
 }

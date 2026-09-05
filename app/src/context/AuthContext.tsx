@@ -6,10 +6,11 @@ import {
   eliminarPushToken,
   seleccionarCondominio as apiSeleccionarCondominio,
   completarOnboarding as apiCompletarOnboarding,
+  crearCondominioInicial as apiCrearCondominioInicial,
   setUnauthorizedHandler,
   setPagoPendienteHandler,
 } from "../api/client";
-import { CondominioOpcion } from "../api/types";
+import { CondominioOpcion, CrearCondominioInput } from "../api/types";
 import { setCondominioIdActual } from "../config/api";
 import { obtenerPushTokenExpo } from "../utils/notificaciones";
 
@@ -62,6 +63,14 @@ interface AuthContextValue {
   // de Login/Home mientras esto es true. Reutiliza tokenIntermedio (mismo
   // token, misma forma) para no duplicar ese estado.
   requiereOnboarding: boolean;
+  // Ronda 66, a pedido explícito del usuario: true cuando un Administrador
+  // se logea y todavía no tiene NINGÚN condominio (cuenta recién creada
+  // por el SuperAdmin, sin condominio_id_condominio asignado) — App.tsx
+  // muestra CrearCondominioScreen directo, sin pasar por
+  // SeleccionarCondominioScreen (no tendría nada para elegir todavía) ni
+  // por Login otra vez. Distinto de requiereSeleccionCondominio (esa es
+  // para elegir ENTRE varios condominios ya existentes).
+  requiereCrearCondominioInicial: boolean;
   // Ronda 27, a pedido del usuario: true cuando TODOS los condominios de
   // esta cuenta tienen la mensualidad pendiente — App.tsx muestra
   // PagoPendienteScreen en vez de Login/Home mientras esto es true. La
@@ -88,6 +97,13 @@ interface AuthContextValue {
   // mismo tokenIntermedio que ya tiene el contexto.
   completarOnboarding: (usuariocolNuevo: string, passwordNuevo: string) => Promise<void>;
   seleccionarCondominio: (condominioId: number) => Promise<void>;
+  // Ronda 66: crea el primer condominio de un Administrador sin ninguno
+  // todavía (ver requiereCrearCondominioInicial) — a diferencia de crear
+  // un condominio ADICIONAL desde el menú (eso sigue siendo
+  // CrearCondominioScreen llamando a la API directo con el token de
+  // sesión), este método deja a la persona con una sesión completa lista
+  // para usar, en un solo paso.
+  crearCondominioInicial: (input: CrearCondominioInput) => Promise<void>;
   // Ronda 26: para un Administrador YA logeado (sesión completa) que
   // quiere pasarse a otro de sus condominios desde el menú, sin
   // desloguearse — reutiliza el mismo endpoint que el selector post-login,
@@ -126,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // persiste ni se usa para llamar a ninguna otra ruta.
   const [tokenIntermedio, setTokenIntermedio] = useState<string | null>(null);
   const [requiereOnboarding, setRequiereOnboarding] = useState(false);
+  const [requiereCrearCondominioInicial, setRequiereCrearCondominioInicial] = useState(false);
   const [condominiosDisponibles, setCondominiosDisponibles] = useState<CondominioOpcion[]>([]);
   const [nombreCondominioActual, setNombreCondominioActual] = useState<string | null>(null);
   const [pagoPendiente, setPagoPendiente] = useState(false);
@@ -251,9 +268,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if ("requiereSeleccionCondominio" in resultado) {
       setTokenIntermedio(resultado.token);
       setRequiereOnboarding(false);
+      setRequiereCrearCondominioInicial(false);
       setCondominiosDisponibles(resultado.condominios);
       return;
     }
+    if ("requiereCrearCondominioInicial" in resultado) {
+      setTokenIntermedio(resultado.token);
+      setRequiereOnboarding(false);
+      setRequiereCrearCondominioInicial(true);
+      return;
+    }
+    setRequiereCrearCondominioInicial(false);
     aplicarSesion(resultado);
   };
 
@@ -265,8 +290,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       esAdmin: rol === "Administrador" || guardia?.esComite === true,
       esPropietario: rol === "Residente" && guardia?.esPropietario === true,
       restaurandoSesion,
-      requiereSeleccionCondominio: tokenIntermedio !== null && !requiereOnboarding,
+      requiereSeleccionCondominio: tokenIntermedio !== null && !requiereOnboarding && !requiereCrearCondominioInicial,
       requiereOnboarding,
+      requiereCrearCondominioInicial,
       condominiosDisponibles,
       pagoPendiente,
       rolPagoPendiente,
@@ -291,6 +317,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const resultado = await apiSeleccionarCondominio(tokenIntermedio, condominioId);
         aplicarSesion(resultado);
       },
+      crearCondominioInicial: async (input: CrearCondominioInput) => {
+        if (!tokenIntermedio) return;
+        const resultado = await apiCrearCondominioInicial(tokenIntermedio, input);
+        setRequiereCrearCondominioInicial(false);
+        aplicarSesion(resultado);
+      },
       cambiarCondominio: async (condominioId: number) => {
         if (!token) return;
         const resultado = await apiSeleccionarCondominio(token, condominioId);
@@ -305,6 +337,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       restaurandoSesion,
       tokenIntermedio,
       requiereOnboarding,
+      requiereCrearCondominioInicial,
       condominiosDisponibles,
       nombreCondominioActual,
       pagoPendiente,

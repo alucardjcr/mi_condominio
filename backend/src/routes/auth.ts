@@ -1,6 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { login, cambiarPassword, solicitarRecuperacion, resetearPassword, seleccionarCondominio, completarOnboardingResidente } from "../services/auth.service";
+import { login, cambiarPassword, solicitarRecuperacion, resetearPassword, seleccionarCondominio, completarOnboardingResidente, crearCondominioInicial } from "../services/auth.service";
 import { registrarPushToken, eliminarPushToken } from "../services/notificaciones.service";
 import { requireAuth } from "../middleware/auth";
 import { registrarEventoSeguridad } from "../services/eventosSeguridad.service";
@@ -88,6 +88,25 @@ authRouter.post("/seleccionar-condominio", limitadorLogin, async (req, res) => {
     res.json(resultado);
   } catch (err: any) {
     res.status(401).json({ error: err.message });
+  }
+});
+
+// Ronda 66, a pedido explícito del usuario: un Administrador sin ningún
+// condominio todavía crea el primero por acá (ver
+// auth.service.ts -> resolverSesionParaUsuario, caso
+// requiereCrearCondominioInicial). Mismo limitador que login/selección,
+// por las dudas — es una acción de una sola vez, no debería necesitar
+// muchos intentos seguidos.
+authRouter.post("/crear-condominio-inicial", limitadorLogin, async (req, res) => {
+  try {
+    const { token, ...datosCondominio } = req.body;
+    if (!token) {
+      return res.status(400).json({ error: "Falta el campo: token." });
+    }
+    const resultado = await crearCondominioInicial(token, datosCondominio);
+    res.status(201).json(resultado);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
 });
 

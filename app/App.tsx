@@ -54,7 +54,8 @@ import JefeGuardiasHomeScreen from "./src/screens/jefeguardias/JefeGuardiasHomeS
 const Stack = createNativeStackNavigator();
 
 function AppNavigator() {
-  const { token, rol, esAdmin, restaurandoSesion, requiereSeleccionCondominio, pagoPendiente, requiereOnboarding } = useAuth();
+  const { token, rol, esAdmin, restaurandoSesion, requiereSeleccionCondominio, pagoPendiente, requiereOnboarding, requiereCrearCondominioInicial } =
+    useAuth();
   const esSuperAdmin = rol === "SuperAdmin";
   // Un residente del comité (esAdmin=true aunque rol="Residente") navega
   // igual que Administrador, no por la rama de Residente.
@@ -129,6 +130,17 @@ function AppNavigator() {
         // login() no entrega sesión mientras no haya ningún condominio
         // disponible).
         <Stack.Screen name="PagoPendiente" component={PagoPendienteScreen} options={{ headerShown: false }} />
+      ) : !token && requiereCrearCondominioInicial ? (
+        // Ronda 66, a pedido explícito del usuario: Administrador recién
+        // creado por el SuperAdmin, todavía sin ningún condominio — entra
+        // directo a crear el suyo, sin pasar por el selector (no tendría
+        // nada para elegir) ni por el Login otra vez. Ver
+        // AuthContext.requiereCrearCondominioInicial.
+        <Stack.Screen
+          name="CrearCondominioInicial"
+          component={CrearCondominioScreen}
+          options={{ headerShown: false }}
+        />
       ) : !token && requiereSeleccionCondominio ? (
         // Ronda 26: Administrador logeado pero con más de un condominio —
         // ver AuthContext.requiereSeleccionCondominio. Se corta acá ANTES

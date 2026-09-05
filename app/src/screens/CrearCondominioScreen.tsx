@@ -89,7 +89,8 @@ const OPCIONES_ESTRUCTURA: { valor: EstructuraUI; titulo: string; ayuda: string 
 // disponible (ver useAuth().token / tokenIntermedio) porque el backend
 // acepta cualquiera de los dos para estas rutas (ver routes/condominios.ts).
 export default function CrearCondominioScreen({ navigation }: any) {
-  const { token, tokenIntermedio, seleccionarCondominio, cambiarCondominio } = useAuth();
+  const { token, tokenIntermedio, requiereCrearCondominioInicial, seleccionarCondominio, cambiarCondominio, crearCondominioInicial } =
+    useAuth();
   const tokenApi = token ?? tokenIntermedio;
 
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
@@ -276,6 +277,20 @@ export default function CrearCondominioScreen({ navigation }: any) {
     enviandoRef.current = true;
     setEnviando(true);
     try {
+      // Ronda 66, a pedido explícito del usuario: un Administrador creado
+      // SIN ningún condominio todavía (por el SuperAdmin) usa un flujo
+      // propio, distinto del de "agregar un condominio más" — un solo
+      // paso, sin diálogo de "Entrar ahora" (no tiene a dónde volver:
+      // esta pantalla ES el punto de entrada).
+      if (requiereCrearCondominioInicial) {
+        await crearCondominioInicial(payload);
+        // Sin navegación manual: al igual que seleccionarCondominio() en
+        // SeleccionarCondominioScreen, el cambio de `token` en el contexto
+        // ya hace que App.tsx re-renderice a la navegación de Administrador
+        // logeado (la `key` del Stack.Navigator fuerza el remount).
+        return;
+      }
+
       const resultado = await crearCondominio(tokenApi, payload);
 
       if (!token) {

@@ -186,6 +186,20 @@ export async function seleccionarCondominio(tokenIntermedio: string, condominioI
   return handleResponse(res);
 }
 
+// Ronda 66, a pedido explícito del usuario: un Administrador creado SIN
+// ningún condominio todavía (ver el flujo desde SuperAdmin) usa esto para
+// crear el primero — el token es el intermedio que vino en la respuesta
+// de login() con requiereCrearCondominioInicial=true, y el resultado ya
+// es una sesión completa (no hace falta un segundo paso de "seleccionar").
+export async function crearCondominioInicial(tokenIntermedio: string, input: CrearCondominioInput): Promise<LoginResponse> {
+  const res = await fetch(`${API_BASE_URL}/auth/crear-condominio-inicial`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: tokenIntermedio, ...input }),
+  });
+  return handleResponse(res);
+}
+
 export const getMisCondominios = (token: string) => get<CondominioOpcion[]>(`/admin-condominios/mios`, token);
 
 export const crearCondominio = (token: string, input: CrearCondominioInput) =>

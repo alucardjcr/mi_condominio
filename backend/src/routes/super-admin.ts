@@ -35,16 +35,16 @@ superAdminRouter.get("/administradores", async (_req, res) => {
 superAdminRouter.post("/administradores", async (req, res) => {
   try {
     const { nombre_usuario, usuariocol, password, condominio_id_condominio } = req.body;
-    if (!nombre_usuario || !usuariocol || !password || !condominio_id_condominio) {
+    if (!nombre_usuario || !usuariocol || !password) {
       return res.status(400).json({
-        error: "Faltan campos: nombre_usuario, usuariocol, password, condominio_id_condominio.",
+        error: "Faltan campos: nombre_usuario, usuariocol, password.",
       });
     }
     const resultado = await crearAdministrador({
       nombre_usuario,
       usuariocol,
       password,
-      condominio_id_condominio: Number(condominio_id_condominio),
+      condominio_id_condominio: condominio_id_condominio ? Number(condominio_id_condominio) : undefined,
     });
     res.status(201).json(resultado);
   } catch (err: any) {
