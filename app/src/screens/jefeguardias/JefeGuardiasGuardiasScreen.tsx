@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { jefeActualizarGuardia, jefeCrearGuardia, jefeGetGuardias } from "../../api/client";
 import { Guardia } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
+import { esRutValido, formatearRut } from "../../utils/validarRut";
 
 // Ronda 20: CRUD de guardias para el rol JEFE_GUARDIAS — misma lógica que
 // AdminGuardiasScreen (reutiliza tal cual los datos de listarGuardias/
@@ -19,6 +20,7 @@ export default function JefeGuardiasGuardiasScreen() {
   const [usuariocol, setUsuariocol] = useState("");
   const [password, setPassword] = useState("");
   const [rutNuevo, setRutNuevo] = useState("");
+  const [rutNuevoError, setRutNuevoError] = useState(false);
   const [telefonoNuevo, setTelefonoNuevo] = useState("");
   const [creando, setCreando] = useState(false);
 
@@ -26,6 +28,7 @@ export default function JefeGuardiasGuardiasScreen() {
   // teléfono, editables por guardia ya existente.
   const [perfilEnEdicion, setPerfilEnEdicion] = useState<number | null>(null);
   const [rutEditar, setRutEditar] = useState("");
+  const [rutEditarError, setRutEditarError] = useState(false);
   const [telefonoEditar, setTelefonoEditar] = useState("");
   const [guardandoPerfil, setGuardandoPerfil] = useState(false);
 
@@ -52,13 +55,17 @@ export default function JefeGuardiasGuardiasScreen() {
       Alert.alert("Faltan datos", "Nombre, usuario y contraseña son obligatorios.");
       return;
     }
+    if (rutNuevo.trim() && !esRutValido(rutNuevo)) {
+      Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo antes de continuar.");
+      return;
+    }
     setCreando(true);
     try {
       await jefeCrearGuardia(token, {
         nombre_usuario: nombre,
         usuariocol,
         password,
-        rut: rutNuevo.trim() || undefined,
+        rut: rutNuevo.trim() ? formatearRut(rutNuevo) : undefined,
         telefono: telefonoNuevo.trim() || undefined,
       });
       setNombre("");
@@ -92,9 +99,13 @@ export default function JefeGuardiasGuardiasScreen() {
 
   const handleGuardarPerfil = async (id: number) => {
     if (!token) return;
+    if (rutEditar.trim() && !esRutValido(rutEditar)) {
+      Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo antes de guardar.");
+      return;
+    }
     setGuardandoPerfil(true);
     try {
-      await jefeActualizarGuardia(token, id, { rut: rutEditar.trim() || undefined, telefono: telefonoEditar.trim() || undefined });
+      await jefeActualizarGuardia(token, id, { rut: rutEditar.trim() ? formatearRut(rutEditar) : undefined, telefono: telefonoEditar.trim() || undefined });
       setPerfilEnEdicion(null);
       cargar();
     } catch (e: any) {
@@ -130,7 +141,25 @@ export default function JefeGuardiasGuardiasScreen() {
             autoCapitalize="none"
           />
           <TextInput style={styles.input} placeholder="Contraseña" value={password} onChangeText={setPassword} secureTextEntry />
-          <TextInput style={styles.input} placeholder="RUT (opcional)" value={rutNuevo} onChangeText={setRutNuevo} autoCapitalize="characters" />
+          <TextInput
+            style={[styles.input, rutNuevoError && styles.inputConError]}
+            placeholder="RUT (opcional) — ej: 12345678-9"
+            value={rutNuevo}
+            onChangeText={(t) => {
+              setRutNuevo(t);
+              setRutNuevoError(false);
+            }}
+            onBlur={() => {
+              if (!rutNuevo.trim()) return;
+              if (!esRutValido(rutNuevo)) {
+                setRutNuevoError(true);
+                Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo (formato: 12345678-9).");
+                return;
+              }
+              setRutNuevo(formatearRut(rutNuevo));
+            }}
+            autoCapitalize="characters"
+          />
           <TextInput style={styles.input} placeholder="Teléfono (opcional)" value={telefonoNuevo} onChangeText={setTelefonoNuevo} keyboardType="phone-pad" />
           <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
             <Text style={styles.botonCrearTexto}>{creando ? "Creando..." : "Crear guardia"}</Text>
@@ -158,7 +187,25 @@ export default function JefeGuardiasGuardiasScreen() {
 
           {perfilEnEdicion === item.id_usuario ? (
             <View style={styles.subForm}>
-              <TextInput style={styles.input} placeholder="RUT" value={rutEditar} onChangeText={setRutEditar} autoCapitalize="characters" />
+              <TextInput
+                style={[styles.input, rutEditarError && styles.inputConError]}
+                placeholder="RUT"
+                value={rutEditar}
+                onChangeText={(t) => {
+                  setRutEditar(t);
+                  setRutEditarError(false);
+                }}
+                onBlur={() => {
+                  if (!rutEditar.trim()) return;
+                  if (!esRutValido(rutEditar)) {
+                    setRutEditarError(true);
+                    Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo (formato: 12345678-9).");
+                    return;
+                  }
+                  setRutEditar(formatearRut(rutEditar));
+                }}
+                autoCapitalize="characters"
+              />
               <TextInput style={styles.input} placeholder="Teléfono" value={telefonoEditar} onChangeText={setTelefonoEditar} keyboardType="phone-pad" />
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
@@ -190,6 +237,7 @@ const styles = StyleSheet.create({
   form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 8 },
   formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 10 },
+  inputConError: { borderColor: "#c0392b", borderWidth: 1.5 },
   botonCrear: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center" },
   botonCrearTexto: { color: "#fff", fontWeight: "700" },
   card: { backgroundColor: "#fff", borderRadius: 12, padding: 14 },

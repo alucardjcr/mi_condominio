@@ -514,6 +514,8 @@ export const crearResidenteDelHogar = (
     rut?: string;
     fecha_nacimiento?: string;
     profesion?: string;
+    // Ronda 70, a pedido explícito del usuario.
+    foto?: string;
   }
 ) => send<ResidenteAdmin>(`/mi-depto/residentes`, "POST", token, input);
 
@@ -527,6 +529,7 @@ export const actualizarResidenteDelHogar = (
     rut?: string | null;
     fecha_nacimiento?: string | null;
     profesion?: string | null;
+    foto?: string;
   }
 ) => send<ResidenteAdmin>(`/mi-depto/residentes/${id}`, "PATCH", token, input);
 

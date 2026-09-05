@@ -18,6 +18,7 @@ import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import FotoCapture from "../../components/FotoCapture";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
+import { esRutValido, formatearRut } from "../../utils/validarRut";
 import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
 
 function hoyISO() {
@@ -39,6 +40,7 @@ export default function AdminVetadosScreen() {
 
   const [nombreCompleto, setNombreCompleto] = useState("");
   const [rut, setRut] = useState("");
+  const [rutError, setRutError] = useState(false);
   const [patente, setPatente] = useState("");
   const [parentesco, setParentesco] = useState("");
   const [fechaIngreso, setFechaIngreso] = useState(hoyISO());
@@ -114,11 +116,15 @@ export default function AdminVetadosScreen() {
       Alert.alert("Faltan datos", "Nombre completo y RUT son obligatorios.");
       return;
     }
+    if (!esRutValido(rut)) {
+      Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo antes de continuar.");
+      return;
+    }
     setGuardando(true);
     try {
       await adminCrearVetado(token, {
         nombre_completo: nombreCompleto,
-        rut,
+        rut: formatearRut(rut),
         patente: patente || undefined,
         parentesco: parentesco || undefined,
         fecha_ingreso: fechaIngreso,
@@ -216,7 +222,25 @@ export default function AdminVetadosScreen() {
           <TextInput style={styles.input} value={nombreCompleto} onChangeText={setNombreCompleto} placeholder="Nombre y apellidos" />
 
           <Text style={styles.label}>RUT *</Text>
-          <TextInput style={styles.input} value={rut} onChangeText={setRut} placeholder="Ej: 12.345.678-9" autoCapitalize="none" />
+          <TextInput
+            style={[styles.input, rutError && styles.inputConError]}
+            value={rut}
+            onChangeText={(t) => {
+              setRut(t);
+              setRutError(false);
+            }}
+            onBlur={() => {
+              if (!rut.trim()) return;
+              if (!esRutValido(rut)) {
+                setRutError(true);
+                Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo (formato: 12345678-9).");
+                return;
+              }
+              setRut(formatearRut(rut));
+            }}
+            placeholder="Ej: 12345678-9"
+            autoCapitalize="none"
+          />
 
           <Text style={styles.label}>Patente del vehículo (si tiene)</Text>
           <TextInput style={styles.input} value={patente} onChangeText={setPatente} placeholder="Ej: AB-CD-12" autoCapitalize="characters" />
@@ -339,6 +363,7 @@ const styles = StyleSheet.create({
   foto: { width: 80, height: 80, borderRadius: 8, backgroundColor: "#eee" },
   label: { fontSize: 13, fontWeight: "600", color: "#333", marginTop: 10 },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: "#fff", marginTop: 4 },
+  inputConError: { borderColor: "#c0392b", borderWidth: 1.5 },
   botonGuardar: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 16 },
   botonTexto: { color: "#fff", fontWeight: "700", fontSize: 15 },
   botonBaja: { marginTop: 10, alignItems: "center", borderTopWidth: 1, borderTopColor: "#f0f0f0", paddingTop: 10 },

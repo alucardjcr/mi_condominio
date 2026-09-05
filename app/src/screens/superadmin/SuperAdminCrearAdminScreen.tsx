@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { superAdminCrearAdministrador, superAdminGetCondominios } from "../../api/client";
 import { CondominioSimple } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import FotoCapture from "../../components/FotoCapture";
+import { esRutValido, formatearRut } from "../../utils/validarRut";
 import { colors, radius, spacing, typography } from "../../theme/theme";
 
 // Ronda 27, a pedido explícito del usuario: "solo yo podré crear el rol de
@@ -26,6 +27,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
 
   const [foto, setFoto] = useState<string | null>(null);
   const [rut, setRut] = useState("");
+  const [rutError, setRutError] = useState(false);
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [numeroRegistroRnac, setNumeroRegistroRnac] = useState("");
   const [correo, setCorreo] = useState("");
@@ -53,6 +55,10 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
       setError("Falta el RUT del administrador.");
       return;
     }
+    if (!esRutValido(rut)) {
+      setError("El RUT ingresado no es correcto. Revísalo antes de continuar.");
+      return;
+    }
     if (!fechaNacimiento.trim()) {
       setError("Falta la fecha de nacimiento (formato AAAA-MM-DD).");
       return;
@@ -75,7 +81,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
         password,
         condominio_id_condominio: condominioId ?? undefined,
         foto: foto || undefined,
-        rut: rut.trim(),
+        rut: formatearRut(rut),
         fecha_nacimiento: fechaNacimiento.trim(),
         numero_registro_rnac: numeroRegistroRnac.trim() || undefined,
         correo: correo.trim(),
@@ -119,10 +125,22 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
 
         <Text style={styles.label}>RUT</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, rutError && styles.inputConError]}
           value={rut}
-          onChangeText={setRut}
-          placeholder="ej: 12.345.678-9"
+          onChangeText={(t) => {
+            setRut(t);
+            setRutError(false);
+          }}
+          onBlur={() => {
+            if (!rut.trim()) return;
+            if (!esRutValido(rut)) {
+              setRutError(true);
+              Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo (formato: 12345678-9).");
+              return;
+            }
+            setRut(formatearRut(rut));
+          }}
+          placeholder="ej: 12345678-9"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="characters"
         />
@@ -245,6 +263,7 @@ const styles = StyleSheet.create({
     color: colors.textDark,
     backgroundColor: colors.offWhite,
   },
+  inputConError: { borderColor: colors.danger, borderWidth: 1.5 },
   listaCondominios: { gap: spacing.xs, marginTop: 6 },
   opcionCondominio: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, padding: spacing.sm },
   opcionCondominioActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },

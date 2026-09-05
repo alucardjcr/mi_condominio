@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { actualizarResidente, crearResidente, listarResidentes, residentePerteneceAUnidad } from "../services/admin.service";
 import { requireRol } from "../middleware/auth";
+import { guardarImagenBase64 } from "../utils/imagenes";
 
 export const miDeptoRouter = Router();
 
@@ -40,7 +41,7 @@ miDeptoRouter.get("/residentes", soloResidente, async (req, res) => {
 miDeptoRouter.post("/residentes", soloResidente, async (req, res) => {
   try {
     if (rechazarSiNoEsPropietario(req, res)) return;
-    const { nombre_usuario, tipo_residente_id_tiporesidente, rut, fecha_nacimiento, profesion } = req.body;
+    const { nombre_usuario, tipo_residente_id_tiporesidente, rut, fecha_nacimiento, profesion, foto } = req.body;
     if (!nombre_usuario) {
       return res.status(400).json({ error: "Falta el campo nombre_usuario." });
     }
@@ -56,6 +57,7 @@ miDeptoRouter.post("/residentes", soloResidente, async (req, res) => {
     // cualquier unidad_id_unidad que intente mandar el cliente (mismo
     // patrón defensivo que "a quién visita" en estacionamientos/paquetería
     // y que crearReserva en reservas.ts).
+    const fotoUrl = foto ? await guardarImagenBase64(foto, "residente", "residentes") : undefined;
     res.status(201).json(
       await crearResidente({
         nombre_usuario,
@@ -66,6 +68,7 @@ miDeptoRouter.post("/residentes", soloResidente, async (req, res) => {
         rut: rut || undefined,
         fecha_nacimiento: fecha_nacimiento || undefined,
         profesion: profesion || undefined,
+        foto_url: fotoUrl,
       })
     );
   } catch (err: any) {
@@ -85,12 +88,13 @@ miDeptoRouter.patch("/residentes/:id", soloResidente, async (req, res) => {
         .status(400)
         .json({ error: "No puedes desactivarte a ti mismo desde acá. Pide al Administrador que lo haga si corresponde." });
     }
-    const { nombre_usuario, flg_vigencia, tipo_residente_id_tiporesidente, rut, fecha_nacimiento, profesion } = req.body;
+    const { nombre_usuario, flg_vigencia, tipo_residente_id_tiporesidente, rut, fecha_nacimiento, profesion, foto } = req.body;
     // Deliberadamente NO se aceptan acá flg_comite ni flg_propietario: el
     // dueño administra a quién vive en su depto y a qué título, pero no
     // puede otorgarse (ni quitarle a otro) permisos de comité o de
     // propiedad — eso sigue siendo exclusivo del panel de Administrador/
     // Comité (ver admin.ts).
+    const fotoUrl = foto ? await guardarImagenBase64(foto, "residente", "residentes") : undefined;
     res.json(
       await actualizarResidente(idResidente, {
         nombre_usuario,
@@ -104,6 +108,7 @@ miDeptoRouter.patch("/residentes/:id", soloResidente, async (req, res) => {
         rut: "rut" in req.body ? rut : undefined,
         fecha_nacimiento: "fecha_nacimiento" in req.body ? fecha_nacimiento : undefined,
         profesion: "profesion" in req.body ? profesion : undefined,
+        foto_url: fotoUrl,
       })
     );
   } catch (err: any) {

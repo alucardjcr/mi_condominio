@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   actualizarResidenteDelHogar,
@@ -11,6 +11,9 @@ import {
 import { Mascota, ResidenteAdmin, TipoResidente } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
+import FotoCapture from "../components/FotoCapture";
+import { esRutValido, formatearRut, calcularEdad } from "../utils/validarRut";
+import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
 // Ronda 49, a pedido explícito del usuario, con referencia visual: rediseño
@@ -47,13 +50,17 @@ export default function MiHogarScreen({ navigation }: any) {
   const [creando, setCreando] = useState(false);
 
   const [rutNuevo, setRutNuevo] = useState("");
+  const [rutNuevoError, setRutNuevoError] = useState(false);
   const [fechaNacimientoNuevo, setFechaNacimientoNuevo] = useState("");
   const [profesionNuevo, setProfesionNuevo] = useState("");
+  const [fotoNuevo, setFotoNuevo] = useState<string | null>(null);
 
   const [perfilEnEdicion, setPerfilEnEdicion] = useState<number | null>(null);
   const [rutEditar, setRutEditar] = useState("");
+  const [rutEditarError, setRutEditarError] = useState(false);
   const [fechaNacimientoEditar, setFechaNacimientoEditar] = useState("");
   const [profesionEditar, setProfesionEditar] = useState("");
+  const [fotoEditar, setFotoEditar] = useState<string | null>(null);
   const [guardandoPerfil, setGuardandoPerfil] = useState(false);
 
   const [tipoEnEdicion, setTipoEnEdicion] = useState<number | null>(null);
@@ -83,9 +90,27 @@ export default function MiHogarScreen({ navigation }: any) {
     getTiposResidente(token).then(setTiposResidente).catch((e) => Alert.alert("Error", e.message));
   }, [token]);
 
+  const handleBlurRutNuevo = () => {
+    if (!rutNuevo.trim()) {
+      setRutNuevoError(false);
+      return;
+    }
+    if (!esRutValido(rutNuevo)) {
+      setRutNuevoError(true);
+      Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo (formato: 12345678-9).");
+      return;
+    }
+    setRutNuevoError(false);
+    setRutNuevo(formatearRut(rutNuevo));
+  };
+
   const handleCrear = async () => {
     if (!token || !nombre.trim()) {
       Alert.alert("Falta el nombre", "Ingresa el nombre de la persona que vive en tu depto.");
+      return;
+    }
+    if (rutNuevo.trim() && !esRutValido(rutNuevo)) {
+      Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo antes de continuar.");
       return;
     }
     setCreando(true);
@@ -93,15 +118,17 @@ export default function MiHogarScreen({ navigation }: any) {
       await crearResidenteDelHogar(token, {
         nombre_usuario: nombre.trim(),
         tipo_residente_id_tiporesidente: tipoResidenteSel ? Number(tipoResidenteSel.id) : undefined,
-        rut: rutNuevo.trim() || undefined,
+        rut: rutNuevo.trim() ? formatearRut(rutNuevo) : undefined,
         fecha_nacimiento: fechaNacimientoNuevo.trim() || undefined,
         profesion: profesionNuevo.trim() || undefined,
+        foto: fotoNuevo || undefined,
       });
       setNombre("");
       setTipoResidenteSel(null);
       setRutNuevo("");
       setFechaNacimientoNuevo("");
       setProfesionNuevo("");
+      setFotoNuevo(null);
       setMostrarFormAgregar(false);
       cargar();
     } catch (e: any) {
@@ -114,18 +141,39 @@ export default function MiHogarScreen({ navigation }: any) {
   const handleAbrirPerfil = (r: ResidenteAdmin) => {
     setPerfilEnEdicion(r.id_usuario);
     setRutEditar(r.rut ?? "");
+    setRutEditarError(false);
     setFechaNacimientoEditar(r.fecha_nacimiento ?? "");
     setProfesionEditar(r.profesion ?? "");
+    setFotoEditar(null);
+  };
+
+  const handleBlurRutEditar = () => {
+    if (!rutEditar.trim()) {
+      setRutEditarError(false);
+      return;
+    }
+    if (!esRutValido(rutEditar)) {
+      setRutEditarError(true);
+      Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo (formato: 12345678-9).");
+      return;
+    }
+    setRutEditarError(false);
+    setRutEditar(formatearRut(rutEditar));
   };
 
   const handleGuardarPerfil = async (id: number) => {
     if (!token) return;
+    if (rutEditar.trim() && !esRutValido(rutEditar)) {
+      Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo antes de guardar.");
+      return;
+    }
     setGuardandoPerfil(true);
     try {
       await actualizarResidenteDelHogar(token, id, {
-        rut: rutEditar.trim() || null,
+        rut: rutEditar.trim() ? formatearRut(rutEditar) : null,
         fecha_nacimiento: fechaNacimientoEditar.trim() || null,
         profesion: profesionEditar.trim() || null,
+        foto: fotoEditar || undefined,
       });
       setPerfilEnEdicion(null);
       cargar();
@@ -206,6 +254,7 @@ export default function MiHogarScreen({ navigation }: any) {
       {mostrarFormAgregar && (
         <View style={styles.form}>
           <Text style={styles.formTitulo}>Agregar persona</Text>
+          <FotoCapture label="Foto (opcional)" value={fotoNuevo} onChange={setFotoNuevo} />
           <TextInput style={styles.input} placeholder="Nombre" placeholderTextColor={colors.textMuted} value={nombre} onChangeText={setNombre} />
           <SelectModal
             label="Tipo de residente"
@@ -215,11 +264,15 @@ export default function MiHogarScreen({ navigation }: any) {
             onSeleccionar={setTipoResidenteSel}
           />
           <TextInput
-            style={styles.input}
-            placeholder="RUT (opcional)"
+            style={[styles.input, rutNuevoError && styles.inputConError]}
+            placeholder="RUT (opcional) — ej: 12345678-9"
             placeholderTextColor={colors.textMuted}
             value={rutNuevo}
-            onChangeText={setRutNuevo}
+            onChangeText={(t) => {
+              setRutNuevo(t);
+              setRutNuevoError(false);
+            }}
+            onBlur={handleBlurRutNuevo}
             autoCapitalize="characters"
           />
           <TextInput
@@ -248,9 +301,13 @@ export default function MiHogarScreen({ navigation }: any) {
       {residentes.map((item) => (
         <View key={item.id_usuario} style={styles.card}>
           <View style={styles.cardHeader}>
-            <View style={[styles.avatar, { backgroundColor: colorAvatar(item.id_usuario) }]}>
-              <Text style={styles.avatarTexto}>{iniciales(item.nombre_usuario)}</Text>
-            </View>
+            {fuenteImagenPrivada(item.foto_url, token) ? (
+              <Image source={fuenteImagenPrivada(item.foto_url, token)!} style={styles.avatarFoto} />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: colorAvatar(item.id_usuario) }]}>
+                <Text style={styles.avatarTexto}>{iniciales(item.nombre_usuario)}</Text>
+              </View>
+            )}
             <View style={{ flex: 1 }}>
               <Text style={styles.nombreItem} numberOfLines={1}>
                 {item.nombre_usuario}
@@ -273,7 +330,13 @@ export default function MiHogarScreen({ navigation }: any) {
                   </View>
                 )}
               </View>
-              {item.rut && <Text style={styles.detalle}>👤 {item.rut}</Text>}
+              {(item.rut || calcularEdad(item.fecha_nacimiento)) && (
+                <Text style={styles.detalle}>
+                  {[item.rut ? `👤 ${item.rut}` : null, calcularEdad(item.fecha_nacimiento) !== null ? `${calcularEdad(item.fecha_nacimiento)} años` : null]
+                    .filter(Boolean)
+                    .join("  ·  ")}
+                </Text>
+              )}
             </View>
             {item.id_usuario !== guardia?.id_usuario && (
               <TouchableOpacity
@@ -306,12 +369,17 @@ export default function MiHogarScreen({ navigation }: any) {
 
           {perfilEnEdicion === item.id_usuario ? (
             <View style={styles.subForm}>
+              <FotoCapture label="Foto nueva (opcional, reemplaza la actual)" value={fotoEditar} onChange={setFotoEditar} />
               <TextInput
-                style={styles.input}
-                placeholder="RUT (opcional)"
+                style={[styles.input, rutEditarError && styles.inputConError]}
+                placeholder="RUT (opcional) — ej: 12345678-9"
                 placeholderTextColor={colors.textMuted}
                 value={rutEditar}
-                onChangeText={setRutEditar}
+                onChangeText={(t) => {
+                  setRutEditar(t);
+                  setRutEditarError(false);
+                }}
+                onBlur={handleBlurRutEditar}
                 autoCapitalize="characters"
               />
               <TextInput
@@ -443,6 +511,7 @@ const styles = StyleSheet.create({
     color: colors.textDark,
     backgroundColor: colors.offWhite,
   },
+  inputConError: { borderColor: colors.danger, borderWidth: 1.5 },
   botonCrear: { backgroundColor: colors.success, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: 4 },
   botonCrearTexto: { color: "#fff", fontWeight: "700" },
 
@@ -450,6 +519,7 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   avatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   avatarTexto: { fontWeight: "800", fontSize: 16, color: colors.navy900 },
+  avatarFoto: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.offWhite },
   nombreItem: { fontSize: 15, fontWeight: "700", color: colors.textDark },
   filaBadges: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },

@@ -55,7 +55,7 @@ const MAGIC_BYTES: Record<string, (buffer: Buffer) => boolean> = {
 export async function guardarImagenBase64(
   dataUrl: string,
   prefijo: string,
-  carpeta: "paquetes" | "reservas" | "mantenciones" | "vetados" | "mascotas" | "administradores" = "paquetes"
+  carpeta: "paquetes" | "reservas" | "mantenciones" | "vetados" | "mascotas" | "administradores" | "residentes" = "paquetes"
 ): Promise<string> {
   const match = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/.exec(dataUrl.trim());
   if (!match) {

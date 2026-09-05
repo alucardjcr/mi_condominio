@@ -263,6 +263,8 @@ export interface ResidenteAdmin {
   rut: string | null;
   fecha_nacimiento: string | null; // 'YYYY-MM-DD'
   profesion: string | null;
+  // Ronda 70, a pedido explícito del usuario.
+  foto_url: string | null;
   // Ronda 37: SOLO viene presente en la respuesta de
   // adminActivarAccesoResidente — la clave temporal recién generada, para
   // que el administrador se la comunique al residente. No se puede volver

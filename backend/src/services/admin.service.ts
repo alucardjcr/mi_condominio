@@ -154,7 +154,7 @@ export async function listarResidentes(condominioId: number, unidadId?: number) 
                        un.numero_unidad, tb.nombre_torre,
                        rd.id_residentediscapacitado, rd.numero_carnet,
                        u.tipo_residente_id_tiporesidente, tr.gls_tiporesidente,
-                       rp.rut, rp.fecha_nacimiento, rp.profesion
+                       rp.rut, rp.fecha_nacimiento, rp.profesion, rp.foto_url
                 FROM usuario u
                 JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
                 JOIN unidad un ON un.id_unidad = u.unidad_id_unidad
@@ -179,28 +179,36 @@ export interface PerfilResidenteInput {
   rut?: string | null;
   fecha_nacimiento?: string | null; // 'YYYY-MM-DD'
   profesion?: string | null;
+  // Ronda 70, a pedido explícito del usuario: "en la pantalla principal
+  // de residente se vea su foto, su rut, su edad" — antes ningún
+  // residente podía tener foto guardada.
+  foto_url?: string | null;
 }
 
 async function actualizarPerfilResidente(idUsuario: number, input: PerfilResidenteInput) {
-  const tocaAlgo = input.rut !== undefined || input.fecha_nacimiento !== undefined || input.profesion !== undefined;
+  const tocaAlgo =
+    input.rut !== undefined || input.fecha_nacimiento !== undefined || input.profesion !== undefined || input.foto_url !== undefined;
   if (!tocaAlgo) return;
 
   const existente = (await db
-    .prepare(`SELECT id_residenteperfil, rut, fecha_nacimiento, profesion FROM residente_perfil WHERE usuario_id_usuario = ?`)
-    .get(idUsuario)) as { id_residenteperfil: number; rut: string | null; fecha_nacimiento: string | null; profesion: string | null } | undefined;
+    .prepare(`SELECT id_residenteperfil, rut, fecha_nacimiento, profesion, foto_url FROM residente_perfil WHERE usuario_id_usuario = ?`)
+    .get(idUsuario)) as
+    | { id_residenteperfil: number; rut: string | null; fecha_nacimiento: string | null; profesion: string | null; foto_url: string | null }
+    | undefined;
 
   const rut = input.rut !== undefined ? input.rut : existente?.rut ?? null;
   const fechaNacimiento = input.fecha_nacimiento !== undefined ? input.fecha_nacimiento : existente?.fecha_nacimiento ?? null;
   const profesion = input.profesion !== undefined ? input.profesion : existente?.profesion ?? null;
+  const fotoUrl = input.foto_url !== undefined ? input.foto_url : existente?.foto_url ?? null;
 
   if (existente) {
     await db
-      .prepare(`UPDATE residente_perfil SET rut = ?, fecha_nacimiento = ?, profesion = ? WHERE id_residenteperfil = ?`)
-      .run(rut, fechaNacimiento, profesion, existente.id_residenteperfil);
+      .prepare(`UPDATE residente_perfil SET rut = ?, fecha_nacimiento = ?, profesion = ?, foto_url = ? WHERE id_residenteperfil = ?`)
+      .run(rut, fechaNacimiento, profesion, fotoUrl, existente.id_residenteperfil);
   } else {
     await db
-      .prepare(`INSERT INTO residente_perfil (usuario_id_usuario, rut, fecha_nacimiento, profesion) VALUES (?, ?, ?, ?)`)
-      .run(idUsuario, rut, fechaNacimiento, profesion);
+      .prepare(`INSERT INTO residente_perfil (usuario_id_usuario, rut, fecha_nacimiento, profesion, foto_url) VALUES (?, ?, ?, ?, ?)`)
+      .run(idUsuario, rut, fechaNacimiento, profesion, fotoUrl);
   }
 }
 
@@ -213,6 +221,7 @@ export async function crearResidente(input: {
   rut?: string;
   fecha_nacimiento?: string;
   profesion?: string;
+  foto_url?: string;
 }) {
   const tipoResidenteUsuarioId = await getIdByGls("tipo_usuario", "id_tipousuario", "gls_tipousuario", "Residente");
   // A lo más un dueño por unidad (ronda 15): si se crea directamente como
@@ -239,11 +248,12 @@ export async function crearResidente(input: {
   // usuariocol/password, ver activarAccesoResidente) pero ya le dejamos
   // lista su membresía a este condominio para cuando se active.
   await sincronizarMembresiaPrincipal(id);
-  if (input.rut || input.fecha_nacimiento || input.profesion) {
+  if (input.rut || input.fecha_nacimiento || input.profesion || input.foto_url) {
     await actualizarPerfilResidente(id, {
       rut: input.rut ?? null,
       fecha_nacimiento: input.fecha_nacimiento ?? null,
       profesion: input.profesion ?? null,
+      foto_url: input.foto_url ?? null,
     });
   }
   return db
@@ -274,6 +284,7 @@ export async function actualizarResidente(
     rut?: string | null;
     fecha_nacimiento?: string | null;
     profesion?: string | null;
+    foto_url?: string | null;
   }
 ) {
   if (input.nombre_usuario !== undefined) {
@@ -337,10 +348,13 @@ export async function actualizarResidente(
     rut: input.rut,
     fecha_nacimiento: input.fecha_nacimiento,
     profesion: input.profesion,
+    foto_url: input.foto_url,
   });
   return db
     .prepare(
-      `SELECT id_usuario, nombre_usuario, unidad_id_unidad, flg_vigencia, usuariocol, flg_comite, tipo_residente_id_tiporesidente, flg_propietario FROM usuario WHERE id_usuario = ?`
+      `SELECT u.id_usuario, u.nombre_usuario, u.unidad_id_unidad, u.flg_vigencia, u.usuariocol, u.flg_comite, u.tipo_residente_id_tiporesidente, u.flg_propietario,
+              rp.rut, rp.fecha_nacimiento, rp.profesion, rp.foto_url
+       FROM usuario u LEFT JOIN residente_perfil rp ON rp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
     )
     .get(id);
 }
