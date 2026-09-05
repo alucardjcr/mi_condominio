@@ -48,29 +48,21 @@ async function main() {
     process.exit(1);
   }
 
-  // `usuario.condominio_id_condominio` es NOT NULL por diseño (columna
-  // heredada de antes del rol SuperAdmin) pero SuperAdmin no administra
-  // ningún condominio en particular — login() lo detecta por su rol y
-  // nunca lee este campo para él (ver auth.service.ts). Se usa cualquier
-  // condominio existente solo para satisfacer la restricción de la
-  // columna; si no hay ninguno todavía, se avisa en vez de fallar feo.
-  const primerCondominio = (await db.prepare(`SELECT id_condominio FROM condominio LIMIT 1`).get()) as
-    | { id_condominio: number }
-    | undefined;
-  if (!primerCondominio) {
-    console.error(
-      "No hay ningún condominio creado todavía en la base — crea al menos uno primero (ej. corriendo el seed, o desde la app una vez que exista otro Administrador)."
-    );
-    process.exit(1);
-  }
-
+  // `usuario.condominio_id_condominio` era NOT NULL por diseño (columna
+  // heredada de antes del rol SuperAdmin), así que antes había que
+  // "pedirle prestado" cualquier condominio existente solo para poder
+  // insertar la fila — desde la ronda 66 (migración
+  // usuario_condominio_nullable) la columna acepta NULL de verdad, así
+  // que SuperAdmin ya no depende de que exista ningún condominio
+  // previo. login() lo detecta por su rol y nunca lee este campo para él
+  // de todos modos (ver auth.service.ts).
   const hash = bcrypt.hashSync(password, 10);
   await db
     .prepare(
       `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio)
-       VALUES (?, ?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?, NULL)`
     )
-    .run(nombre, usuariocol, hash, tipoSuperAdmin.id_tipousuario, primerCondominio.id_condominio);
+    .run(nombre, usuariocol, hash, tipoSuperAdmin.id_tipousuario);
 
   console.log(`Cuenta SuperAdmin "${usuariocol}" creada correctamente.`);
   process.exit(0);
