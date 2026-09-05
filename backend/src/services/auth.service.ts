@@ -335,13 +335,20 @@ interface MembresiaFila {
   nombre_torre: string | null;
   flg_comite: number;
   flg_propietario: number;
+  // Ronda 65: ahora son columnas reales de `condominio` (antes, 3 tablas
+  // satélite aparte).
+  comuna: string | null;
+  region: string | null;
+  direccion: string | null;
+  codigo_postal: string | null;
 }
 
 async function obtenerMembresiasDeUsuario(idUsuario: number): Promise<MembresiaFila[]> {
   return (await db
     .prepare(
       `SELECT m.id_membresia, m.condominio_id_condominio, c.gls_condominio, tu.gls_tipousuario,
-              m.unidad_id_unidad, un.numero_unidad, tb.nombre_torre, m.flg_comite, m.flg_propietario
+              m.unidad_id_unidad, un.numero_unidad, tb.nombre_torre, m.flg_comite, m.flg_propietario,
+              c.comuna, c.region, c.direccion, c.codigo_postal
        FROM membresia m
        JOIN condominio c ON c.id_condominio = m.condominio_id_condominio
        JOIN tipo_usuario tu ON tu.id_tipousuario = m.tipo_usuario_id_tipousuario
@@ -424,28 +431,18 @@ export async function listarCondominiosDeUsuario(idUsuario: number) {
   const resultado = [];
   for (const m of membresias) {
     if (await condominioEstaBloqueado(m.condominio_id_condominio)) continue;
-    // Ronda 56/57/63, a pedido explícito del usuario: comuna, región y
-    // dirección de cada condominio, para diferenciarlos de un vistazo en
-    // la lista de cambio.
-    const [detalle, detalleRegion, detalleDireccion] = await Promise.all([
-      db.prepare(`SELECT comuna FROM condominio_detalle WHERE condominio_id_condominio = ?`).get(m.condominio_id_condominio) as Promise<
-        { comuna: string | null } | undefined
-      >,
-      db.prepare(`SELECT region FROM condominio_region WHERE condominio_id_condominio = ?`).get(m.condominio_id_condominio) as Promise<
-        { region: string | null } | undefined
-      >,
-      db.prepare(`SELECT direccion, codigo_postal FROM condominio_direccion WHERE condominio_id_condominio = ?`).get(m.condominio_id_condominio) as Promise<
-        { direccion: string | null; codigo_postal: string | null } | undefined
-      >,
-    ]);
+    // Ronda 65: comuna/región/dirección/código postal ya vienen en el
+    // JOIN de obtenerMembresiasDeUsuario (columnas reales de
+    // `condominio` — antes, 3 tablas satélite aparte y 3 consultas
+    // separadas acá mismo).
     resultado.push({
       id_condominio: m.condominio_id_condominio,
       nombre: m.gls_condominio,
       rol: m.gls_tipousuario,
-      comuna: detalle?.comuna ?? null,
-      region: detalleRegion?.region ?? null,
-      direccion: detalleDireccion?.direccion ?? null,
-      codigo_postal: detalleDireccion?.codigo_postal ?? null,
+      comuna: m.comuna,
+      region: m.region,
+      direccion: m.direccion,
+      codigo_postal: m.codigo_postal,
     });
   }
   return resultado;

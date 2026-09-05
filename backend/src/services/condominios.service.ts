@@ -108,19 +108,13 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
   const tipoAdminId = await idTipoUsuarioAdministrador();
 
   return withTransaction(async (tx) => {
-    const insertCondominio = await tx.prepare(`INSERT INTO condominio (gls_condominio) VALUES (?)`).run(nombre);
+    // Ronda 65: comuna/región/dirección/código postal ahora son columnas
+    // reales de `condominio` (antes, 3 tablas satélite aparte — ver la
+    // migración de consolidación) — un solo INSERT en vez de 4.
+    const insertCondominio = await tx
+      .prepare(`INSERT INTO condominio (gls_condominio, comuna, region, direccion, codigo_postal) VALUES (?, ?, ?, ?, ?)`)
+      .run(nombre, input.comuna!.trim(), input.region!.trim(), input.direccion!.trim(), input.codigo_postal?.trim() || null);
     const condominioId = Number(insertCondominio.lastInsertRowid);
-
-    if (input.comuna?.trim()) {
-      await tx.prepare(`INSERT INTO condominio_detalle (condominio_id_condominio, comuna) VALUES (?, ?)`).run(condominioId, input.comuna.trim());
-    }
-    if (input.region?.trim()) {
-      await tx.prepare(`INSERT INTO condominio_region (condominio_id_condominio, region) VALUES (?, ?)`).run(condominioId, input.region.trim());
-    }
-    // Dirección es obligatoria (ya validada arriba), siempre se inserta.
-    await tx
-      .prepare(`INSERT INTO condominio_direccion (condominio_id_condominio, direccion, codigo_postal) VALUES (?, ?, ?)`)
-      .run(condominioId, input.direccion!.trim(), input.codigo_postal?.trim() || null);
 
     let torresCreadas = 0;
     let unidadesCreadas = 0;
@@ -290,9 +284,6 @@ export async function eliminarCondominioVacio(condominioId: number, solicitanteU
       "usuario_condominio", // tabla vieja, previa a `membresia` (ronda 26 fase 2)
       "unidad",
       "torre_block",
-      "condominio_detalle",
-      "condominio_region",
-      "condominio_direccion",
     ];
     for (const tabla of tablasParaLimpiar) {
       await tx.prepare(`DELETE FROM ${tabla} WHERE condominio_id_condominio = ?`).run(condominioId);
