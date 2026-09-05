@@ -1,6 +1,4 @@
 import mysql, { Pool, PoolConnection } from "mysql2/promise";
-import fs from "node:fs";
-import path from "node:path";
 
 // Conexión a MySQL/MariaDB (ronda 13: reemplaza al node:sqlite embebido que
 // se usaba antes solo por la restricción de red de este entorno de
@@ -117,39 +115,20 @@ export async function withTransaction<T>(fn: (tx: DbLike) => Promise<T>): Promis
   }
 }
 
-// Se prueban dos ubicaciones posibles del schema, en orden: (1)
-// backend/docs/schema-mysql.sql — copia local pensada para despliegues
-// donde el build solo incluye la carpeta backend/ (ej. Railway con "Root
-// Directory" = backend, ronda 22), y (2) docs/schema-mysql.sql en la raíz
-// del repo — usada cuando el build incluye el repo completo (ej. correr
-// localmente). Evita que el arranque dependa de cuál de las dos formas de
-// desplegar se esté usando.
-const SCHEMA_CANDIDATES = [
-  path.join(__dirname, "../../docs/schema-mysql.sql"),
-  path.join(__dirname, "../../../docs/schema-mysql.sql"),
-];
-const schemaPath =
-  SCHEMA_CANDIDATES.find((p) => fs.existsSync(p)) ?? SCHEMA_CANDIDATES[0];
-
-// Aplica el schema (CREATE TABLE IF NOT EXISTS...) contra la base indicada
-// en las variables de entorno. Se llama una vez al arrancar el backend (ver
-// index.ts), antes de levantar el servidor HTTP. Usa una conexión aparte
-// con `multipleStatements` habilitado (el pool normal de la app NO lo
-// habilita, a propósito, para no exponer esa superficie en las consultas
-// parametrizadas de todos los días).
+// Ronda 64, a pedido explícito del usuario: initSchema() ahora corre las
+// migraciones de Knex (ver knexfile.js y migrations/) en vez de aplicar
+// schema-mysql.sql crudo directo — la migración baseline hace exactamente
+// eso mismo (correr ese archivo), así que el comportamiento para lo que
+// ya existía no cambia en nada. La diferencia es que de acá en adelante
+// los cambios de schema pueden ser ALTER TABLE reales (migraciones
+// nuevas), no solo tablas satélite — Knex lleva registro de qué
+// migraciones ya se aplicaron (tabla knex_migrations) para no repetirlas.
 export async function initSchema(): Promise<void> {
-  const schemaSql = fs.readFileSync(schemaPath, "utf-8");
-  const connection = await mysql.createConnection({
-    host: DB_HOST,
-    port: DB_PORT,
-    user: DB_USER,
-    password: DB_PASSWORD,
-    database: DB_NAME,
-    multipleStatements: true,
-  });
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const knex = require("knex")(require("../../knexfile.js"));
   try {
-    await connection.query(schemaSql);
+    await knex.migrate.latest();
   } finally {
-    await connection.end();
+    await knex.destroy();
   }
 }

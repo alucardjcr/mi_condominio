@@ -9,6 +9,19 @@
 -- que quedan solo como referencia histórica) — desde la migración a MySQL
 -- (ronda 13) este es el único archivo que hay que mantener al día.
 --
+-- RONDA 64 — CONGELADO: a partir de acá, este archivo ya NO se sigue
+-- editando. El backend adoptó Knex (ver backend/knexfile.js y
+-- backend/migrations/) para poder usar ALTER TABLE de verdad — antes no
+-- había forma segura de aplicar un cambio a una tabla que quizás ya
+-- existía en producción, así que cada columna nueva terminaba siendo una
+-- tabla satélite aparte (condominio_detalle, condominio_region,
+-- condominio_direccion son el ejemplo más reciente). Este archivo entero
+-- quedó "congelado" dentro de la migración baseline
+-- (backend/migrations/20260905000001_baseline_schema.js), que lo corre
+-- tal cual para bases nuevas o ya existentes. Cualquier cambio de schema
+-- de acá en adelante va en una migración nueva (`npm run migrate:make
+-- nombre_del_cambio` dentro de backend/), no en este archivo.
+--
 -- Se usa tal cual para:
 --   - Levantar una base MySQL/MariaDB local de desarrollo (ver
 --     backend/README o el README raíz del proyecto).
