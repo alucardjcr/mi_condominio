@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { db } from "../db/client";
-import { sincronizarMembresiaPrincipal } from "./auth.service";
+import { sincronizarMembresiaPrincipal, validarFortalezaPassword } from "./auth.service";
 
 // Ronda 27, a pedido explícito del usuario: "solo yo podré crear el rol de
 // administrador". Estas funciones solo las expone routes/super-admin.ts,
@@ -31,6 +31,14 @@ export async function listarCondominiosParaSuperAdmin() {
  * registro. El correo va al `usuario.correo_usuario` que ya existía
  * desde el principio del proyecto (no se duplicó); el resto va a la
  * tabla nueva `administrador_perfil`.
+ *
+ * Ronda 72, a pedido explícito del usuario (hallazgo de seguridad: se
+ * pudo crear un Administrador con clave de 4 caracteres): esta función
+ * hasheaba la contraseña directo, sin pasar por `validarFortalezaPassword`
+ * — la misma regla que ya se exige en cualquier otro cambio de clave del
+ * sistema (mínimo 12 caracteres, mayúscula, número y símbolo) nunca se
+ * aplicaba acá. Corregido para que sea imposible crear un Administrador
+ * con una clave débil, sin importar lo que mande la app.
  */
 export async function crearAdministrador(input: {
   nombre_usuario: string;
@@ -48,6 +56,7 @@ export async function crearAdministrador(input: {
   if (!input.fecha_nacimiento?.trim()) throw new Error("Falta la fecha de nacimiento del administrador.");
   if (!input.correo?.trim()) throw new Error("Falta el correo electrónico del administrador.");
   if (!input.telefono?.trim()) throw new Error("Falta el teléfono del administrador.");
+  validarFortalezaPassword(input.password);
 
   const tipoAdminId = (await db
     .prepare(`SELECT id_tipousuario FROM tipo_usuario WHERE gls_tipousuario = 'Administrador'`)
@@ -71,6 +80,16 @@ export async function crearAdministrador(input: {
     )
     .run(input.nombre_usuario, input.correo.trim(), input.usuariocol, passwordHash, tipoAdminId.id_tipousuario, condominioId);
   const id = Number(insert.lastInsertRowid);
+
+  // Ronda 72, a pedido explícito del usuario: aunque la clave que el
+  // SuperAdmin le puso ya pasó la validación de arriba, sigue siendo una
+  // clave elegida por OTRA persona (no por el propio Administrador) — se
+  // marca como pendiente de cambio obligatorio, y login() lo va a mandar a
+  // elegir la suya propia antes de dejarlo entrar a cualquier otra parte
+  // de la app (ver auth.service.ts -> login / completarCambioPasswordInicial).
+  await db
+    .prepare(`INSERT INTO usuario_cambio_password_pendiente (usuario_id_usuario) VALUES (?)`)
+    .run(id);
 
   await db
     .prepare(
@@ -118,6 +137,7 @@ export async function listarAdministradores() {
 
 export async function actualizarAdministrador(id: number, input: { password?: string; flg_vigencia?: number }) {
   if (input.password) {
+    validarFortalezaPassword(input.password);
     const hash = bcrypt.hashSync(input.password, 10);
     await db.prepare(`UPDATE usuario SET password_usuario = ? WHERE id_usuario = ?`).run(hash, id);
   }

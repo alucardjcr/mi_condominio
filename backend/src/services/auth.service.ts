@@ -63,13 +63,14 @@ const JWT_SECRET: string = (() => {
 // menos un símbolo especial (ej. "Matimania1500!"). Se aplica SOLO a las
 // contraseñas que una persona elige para sí misma de forma definitiva:
 // completar el onboarding (ver completarOnboardingResidente), cambiar
-// contraseña (cambiarPassword) y recuperar contraseña (resetearPassword).
-// NO se aplica a la clave temporal de un solo uso que genera el sistema al
-// activar el acceso de un residente (ver admin.service.ts ->
-// generarPasswordTemporal) — esa nunca la elige la persona, y de hecho ya
-// es aleatoria y más difícil de adivinar que cualquier clave que un humano
-// se invente; lo que sí tiene que pasar por acá es la clave DEFINITIVA que
-// el residente pone en su lugar.
+// contraseña (cambiarPassword), recuperar contraseña (resetearPassword) y
+// completar el cambio de clave obligatorio de un Administrador recién
+// creado (ver completarCambioPasswordInicial, ronda 72). NO se aplica a la
+// clave temporal de un solo uso que genera el sistema al activar el acceso
+// de un residente (ver admin.service.ts -> generarPasswordTemporal) — esa
+// nunca la elige la persona, y de hecho ya es aleatoria y más difícil de
+// adivinar que cualquier clave que un humano se invente; lo que sí tiene
+// que pasar por acá es la clave DEFINITIVA que la persona pone en su lugar.
 const REGEX_MAYUSCULA = /[A-Z]/;
 const REGEX_NUMERO = /[0-9]/;
 const REGEX_SIMBOLO = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]/;
@@ -203,6 +204,26 @@ export async function login(usuariocol: string, password: string, ip?: string) {
     return { requiereOnboarding: true as const, token: tokenIntermedio };
   }
 
+  // Ronda 72, a pedido explícito del usuario: si a este usuario le queda
+  // pendiente el cambio de contraseña obligatorio (ver superadmin.service.ts
+  // -> crearAdministrador, que marca esto para TODO Administrador nuevo que
+  // crea el SuperAdmin, sin importar qué tan fuerte era la clave inicial),
+  // se corta acá también, antes de tocar membresía/facturación — mismo
+  // patrón que el onboarding de residente, con su propia tabla marcadora
+  // (usuario_cambio_password_pendiente) y su propio token intermedio, que
+  // solo sirve para POST /auth/completar-cambio-password-inicial.
+  const cambioPasswordPendiente = (await db
+    .prepare(`SELECT 1 FROM usuario_cambio_password_pendiente WHERE usuario_id_usuario = ?`)
+    .get(usuario.id_usuario)) as unknown;
+  if (cambioPasswordPendiente) {
+    const tokenIntermedio = jwt.sign(
+      { id_usuario: usuario.id_usuario, nombre_usuario: usuario.nombre_usuario },
+      JWT_SECRET,
+      { expiresIn: "10m" }
+    );
+    return { requiereCambioPasswordInicial: true as const, token: tokenIntermedio };
+  }
+
   return resolverSesionParaUsuario(usuario.id_usuario, usuario.nombre_usuario);
 }
 
@@ -210,7 +231,7 @@ export async function login(usuariocol: string, password: string, ip?: string) {
 // login() — se extrajo para poder reutilizarlo también desde
 // completarOnboardingResidente() (una vez que el residente elige su
 // usuario/clave definitivos, entra directo, sin tener que loguearse de
-// nuevo desde cero).
+// nuevo desde cero) y desde completarCambioPasswordInicial() (ronda 72).
 async function resolverSesionParaUsuario(idUsuario: number, nombreUsuario: string) {
   // Ronda 27: SuperAdmin (el dueño del sistema, no un Administrador de
   // condominio) no está atado a ningún condominio en particular — se
@@ -341,6 +362,35 @@ export async function completarOnboardingResidente(
   await db.prepare(`DELETE FROM residente_onboarding_pendiente WHERE usuario_id_usuario = ?`).run(payload.id_usuario);
   // El usuario/clave temporales que le dio el administrador ya no deberían
   // servir para nada más — por si acaso alguien más los llegó a ver.
+  await revocarSesionesDeUsuario(payload.id_usuario);
+
+  return resolverSesionParaUsuario(payload.id_usuario, payload.nombre_usuario);
+}
+
+/**
+ * Ronda 72, a pedido explícito del usuario: paso final del cambio de
+ * contraseña obligatorio de un Administrador recién creado por el
+ * SuperAdmin — recibe el token intermedio que devolvió login()
+ * (requiereCambioPasswordInicial) junto con la clave nueva que la persona
+ * eligió, y la deja como definitiva. A diferencia del onboarding de
+ * residente, acá el usuariocol NO cambia (ya lo eligió el SuperAdmin al
+ * crear la cuenta) — solo la contraseña.
+ */
+export async function completarCambioPasswordInicial(tokenIntermedio: string, passwordNueva: string) {
+  let payload: { id_usuario: number; nombre_usuario: string };
+  try {
+    payload = jwt.verify(tokenIntermedio, JWT_SECRET) as { id_usuario: number; nombre_usuario: string };
+  } catch {
+    throw new Error("Sesión inválida o expirada. Vuelve a iniciar sesión.");
+  }
+
+  validarFortalezaPassword(passwordNueva);
+
+  const hash = bcrypt.hashSync(passwordNueva, 10);
+  await db.prepare(`UPDATE usuario SET password_usuario = ? WHERE id_usuario = ?`).run(hash, payload.id_usuario);
+  await db.prepare(`DELETE FROM usuario_cambio_password_pendiente WHERE usuario_id_usuario = ?`).run(payload.id_usuario);
+  // La clave que le puso el SuperAdmin ya no debería servir para nada más
+  // — por si acaso alguien más la llegó a ver.
   await revocarSesionesDeUsuario(payload.id_usuario);
 
   return resolverSesionParaUsuario(payload.id_usuario, payload.nombre_usuario);

@@ -1,6 +1,15 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { login, cambiarPassword, solicitarRecuperacion, resetearPassword, seleccionarCondominio, completarOnboardingResidente, crearCondominioInicial } from "../services/auth.service";
+import {
+  login,
+  cambiarPassword,
+  solicitarRecuperacion,
+  resetearPassword,
+  seleccionarCondominio,
+  completarOnboardingResidente,
+  completarCambioPasswordInicial,
+  crearCondominioInicial,
+} from "../services/auth.service";
 import { registrarPushToken, eliminarPushToken } from "../services/notificaciones.service";
 import { requireAuth } from "../middleware/auth";
 import { registrarEventoSeguridad } from "../services/eventosSeguridad.service";
@@ -122,6 +131,25 @@ authRouter.post("/completar-onboarding", limitadorLogin, async (req, res) => {
       return res.status(400).json({ error: "Faltan campos: token, usuariocol_nuevo, password_nuevo." });
     }
     const resultado = await completarOnboardingResidente(token, usuariocol_nuevo, password_nuevo);
+    res.json(resultado);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Ronda 72, a pedido explícito del usuario: paso 2 del login de un
+// Administrador recién creado por el SuperAdmin (ver login() ->
+// requiereCambioPasswordInicial) — cambia obligatoriamente la clave que le
+// puso el SuperAdmin por una propia antes de entrar a cualquier otra parte
+// de la app. A diferencia de /completar-onboarding, acá el usuariocol NO
+// cambia, solo la contraseña.
+authRouter.post("/completar-cambio-password-inicial", limitadorLogin, async (req, res) => {
+  try {
+    const { token, password_nueva } = req.body;
+    if (!token || !password_nueva) {
+      return res.status(400).json({ error: "Faltan campos: token, password_nueva." });
+    }
+    const resultado = await completarCambioPasswordInicial(token, password_nueva);
     res.json(resultado);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
