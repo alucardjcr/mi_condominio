@@ -150,11 +150,18 @@ export async function actualizarGuardia(
 // si quedaba alguna más con este mismo hueco (ver el commit para el
 // detalle completo de la revisión).
 export async function listarResidentes(condominioId: number, unidadId?: number) {
+  // Ronda 77, a pedido explícito del usuario: se agregan nombres/apellido
+  // paterno/apellido materno por separado (antes solo existía el string
+  // compuesto u.nombre_usuario) y la nacionalidad, para poder filtrar por
+  // apellido directamente en una query. rp.nombre queda igual que antes
+  // para no romper nada que ya use el string compuesto.
   const base = `SELECT u.id_usuario, u.nombre_usuario, u.unidad_id_unidad, u.flg_vigencia, u.usuariocol, u.flg_comite, u.flg_propietario,
                        un.numero_unidad, tb.nombre_torre,
                        rd.id_residentediscapacitado, rd.numero_carnet,
                        u.tipo_residente_id_tiporesidente, tr.gls_tiporesidente,
-                       rp.rut, rp.fecha_nacimiento, rp.profesion, rp.foto_url
+                       rp.rut, rp.fecha_nacimiento, rp.profesion, rp.foto_url,
+                       rp.nombres, rp.apellido_paterno, rp.apellido_materno,
+                       rp.nacionalidad_id_nacionalidad, nac.gls_nacionalidad
                 FROM usuario u
                 JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
                 JOIN unidad un ON un.id_unidad = u.unidad_id_unidad
@@ -162,6 +169,7 @@ export async function listarResidentes(condominioId: number, unidadId?: number) 
                 LEFT JOIN residente_discapacitado rd ON rd.usuario_id_usuario = u.id_usuario AND rd.flg_vigencia = 1
                 LEFT JOIN tipo_residente tr ON tr.id_tiporesidente = u.tipo_residente_id_tiporesidente
                 LEFT JOIN residente_perfil rp ON rp.usuario_id_usuario = u.id_usuario
+                LEFT JOIN nacionalidad nac ON nac.id_nacionalidad = rp.nacionalidad_id_nacionalidad
                 WHERE tu.gls_tipousuario = 'Residente' AND u.condominio_id_condominio = ?`;
   if (unidadId) {
     return db.prepare(`${base} AND u.unidad_id_unidad = ? ORDER BY u.nombre_usuario`).all(condominioId, unidadId);
@@ -183,37 +191,91 @@ export interface PerfilResidenteInput {
   // de residente se vea su foto, su rut, su edad" — antes ningún
   // residente podía tener foto guardada.
   foto_url?: string | null;
+  // Ronda 77, a pedido explícito del usuario: nombre separado en 3 partes
+  // (apellido_materno opcional, hay extranjeros sin segundo apellido) para
+  // poder filtrar por apellido_paterno en una query, y nacionalidad (FK al
+  // catálogo "nacionalidad").
+  nombres?: string | null;
+  apellido_paterno?: string | null;
+  apellido_materno?: string | null;
+  nacionalidad_id_nacionalidad?: number | null;
 }
 
 async function actualizarPerfilResidente(idUsuario: number, input: PerfilResidenteInput) {
   const tocaAlgo =
-    input.rut !== undefined || input.fecha_nacimiento !== undefined || input.profesion !== undefined || input.foto_url !== undefined;
+    input.rut !== undefined ||
+    input.fecha_nacimiento !== undefined ||
+    input.profesion !== undefined ||
+    input.foto_url !== undefined ||
+    input.nombres !== undefined ||
+    input.apellido_paterno !== undefined ||
+    input.apellido_materno !== undefined ||
+    input.nacionalidad_id_nacionalidad !== undefined;
   if (!tocaAlgo) return;
 
   const existente = (await db
-    .prepare(`SELECT id_residenteperfil, rut, fecha_nacimiento, profesion, foto_url FROM residente_perfil WHERE usuario_id_usuario = ?`)
+    .prepare(
+      `SELECT id_residenteperfil, rut, fecha_nacimiento, profesion, foto_url, nombres, apellido_paterno, apellido_materno, nacionalidad_id_nacionalidad
+       FROM residente_perfil WHERE usuario_id_usuario = ?`
+    )
     .get(idUsuario)) as
-    | { id_residenteperfil: number; rut: string | null; fecha_nacimiento: string | null; profesion: string | null; foto_url: string | null }
+    | {
+        id_residenteperfil: number;
+        rut: string | null;
+        fecha_nacimiento: string | null;
+        profesion: string | null;
+        foto_url: string | null;
+        nombres: string | null;
+        apellido_paterno: string | null;
+        apellido_materno: string | null;
+        nacionalidad_id_nacionalidad: number | null;
+      }
     | undefined;
 
   const rut = input.rut !== undefined ? input.rut : existente?.rut ?? null;
   const fechaNacimiento = input.fecha_nacimiento !== undefined ? input.fecha_nacimiento : existente?.fecha_nacimiento ?? null;
   const profesion = input.profesion !== undefined ? input.profesion : existente?.profesion ?? null;
   const fotoUrl = input.foto_url !== undefined ? input.foto_url : existente?.foto_url ?? null;
+  const nombres = input.nombres !== undefined ? input.nombres : existente?.nombres ?? null;
+  const apellidoPaterno = input.apellido_paterno !== undefined ? input.apellido_paterno : existente?.apellido_paterno ?? null;
+  const apellidoMaterno = input.apellido_materno !== undefined ? input.apellido_materno : existente?.apellido_materno ?? null;
+  const nacionalidadId =
+    input.nacionalidad_id_nacionalidad !== undefined ? input.nacionalidad_id_nacionalidad : existente?.nacionalidad_id_nacionalidad ?? null;
 
   if (existente) {
     await db
-      .prepare(`UPDATE residente_perfil SET rut = ?, fecha_nacimiento = ?, profesion = ?, foto_url = ? WHERE id_residenteperfil = ?`)
-      .run(rut, fechaNacimiento, profesion, fotoUrl, existente.id_residenteperfil);
+      .prepare(
+        `UPDATE residente_perfil SET rut = ?, fecha_nacimiento = ?, profesion = ?, foto_url = ?, nombres = ?, apellido_paterno = ?, apellido_materno = ?, nacionalidad_id_nacionalidad = ?
+         WHERE id_residenteperfil = ?`
+      )
+      .run(rut, fechaNacimiento, profesion, fotoUrl, nombres, apellidoPaterno, apellidoMaterno, nacionalidadId, existente.id_residenteperfil);
   } else {
     await db
-      .prepare(`INSERT INTO residente_perfil (usuario_id_usuario, rut, fecha_nacimiento, profesion, foto_url) VALUES (?, ?, ?, ?, ?)`)
-      .run(idUsuario, rut, fechaNacimiento, profesion, fotoUrl);
+      .prepare(
+        `INSERT INTO residente_perfil (usuario_id_usuario, rut, fecha_nacimiento, profesion, foto_url, nombres, apellido_paterno, apellido_materno, nacionalidad_id_nacionalidad)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(idUsuario, rut, fechaNacimiento, profesion, fotoUrl, nombres, apellidoPaterno, apellidoMaterno, nacionalidadId);
   }
 }
 
+// Compone el string "para mostrar" (usuario.nombre_usuario) a partir de las
+// 3 partes separadas — se sigue guardando así porque login/header/listados
+// de TODOS los roles (no solo residentes) usan ese único campo.
+function componerNombreCompleto(nombres: string, apellidoPaterno: string, apellidoMaterno?: string | null): string {
+  const partes = [nombres.trim(), apellidoPaterno.trim()];
+  if (apellidoMaterno && apellidoMaterno.trim()) partes.push(apellidoMaterno.trim());
+  return partes.join(" ");
+}
+
 export async function crearResidente(input: {
-  nombre_usuario: string;
+  // Ronda 77, a pedido explícito del usuario: el nombre ya no llega como
+  // un único string — se arma acá mismo a partir de las 3 partes, y esas
+  // 3 partes también se guardan separadas en residente_perfil (ver
+  // componerNombreCompleto).
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno?: string;
   unidad_id_unidad: number;
   condominio_id_condominio: number;
   tipo_residente_id_tiporesidente?: number;
@@ -222,8 +284,10 @@ export async function crearResidente(input: {
   fecha_nacimiento?: string;
   profesion?: string;
   foto_url?: string;
+  nacionalidad_id_nacionalidad?: number;
 }) {
   const tipoResidenteUsuarioId = await getIdByGls("tipo_usuario", "id_tipousuario", "gls_tipousuario", "Residente");
+  const nombreUsuario = componerNombreCompleto(input.nombres, input.apellido_paterno, input.apellido_materno);
   // A lo más un dueño por unidad (ronda 15): si se crea directamente como
   // propietario, se le transfiere la condición a quien la tuviera antes en
   // la misma unidad — ver la misma lógica en actualizarResidente.
@@ -236,7 +300,7 @@ export async function crearResidente(input: {
        VALUES (?, ?, ?, ?, ?, ?)`
     )
     .run(
-      input.nombre_usuario,
+      nombreUsuario,
       tipoResidenteUsuarioId,
       input.unidad_id_unidad,
       input.condominio_id_condominio,
@@ -248,14 +312,16 @@ export async function crearResidente(input: {
   // usuariocol/password, ver activarAccesoResidente) pero ya le dejamos
   // lista su membresía a este condominio para cuando se active.
   await sincronizarMembresiaPrincipal(id);
-  if (input.rut || input.fecha_nacimiento || input.profesion || input.foto_url) {
-    await actualizarPerfilResidente(id, {
-      rut: input.rut ?? null,
-      fecha_nacimiento: input.fecha_nacimiento ?? null,
-      profesion: input.profesion ?? null,
-      foto_url: input.foto_url ?? null,
-    });
-  }
+  await actualizarPerfilResidente(id, {
+    rut: input.rut ?? null,
+    fecha_nacimiento: input.fecha_nacimiento ?? null,
+    profesion: input.profesion ?? null,
+    foto_url: input.foto_url ?? null,
+    nombres: input.nombres,
+    apellido_paterno: input.apellido_paterno,
+    apellido_materno: input.apellido_materno ?? null,
+    nacionalidad_id_nacionalidad: input.nacionalidad_id_nacionalidad ?? null,
+  });
   return db
     .prepare(
       `SELECT id_usuario, nombre_usuario, unidad_id_unidad, flg_vigencia, tipo_residente_id_tiporesidente, flg_propietario FROM usuario WHERE id_usuario = ?`
@@ -285,9 +351,32 @@ export async function actualizarResidente(
     fecha_nacimiento?: string | null;
     profesion?: string | null;
     foto_url?: string | null;
+    // Ronda 77, a pedido explícito del usuario.
+    nombres?: string | null;
+    apellido_paterno?: string | null;
+    apellido_materno?: string | null;
+    nacionalidad_id_nacionalidad?: number | null;
   }
 ) {
-  if (input.nombre_usuario !== undefined) {
+  // Ronda 77: si viene cualquier parte del nombre, se recompone
+  // usuario.nombre_usuario a partir de Nombres + Apellido Paterno +
+  // Apellido Materno (mezclando con lo que ya estaba guardado en
+  // residente_perfil para la parte que no vino en este PATCH). Si no viene
+  // ninguna parte, se respeta el viejo comportamiento de nombre_usuario
+  // directo (compatibilidad con otros llamadores que no manden partes).
+  if (input.nombres !== undefined || input.apellido_paterno !== undefined || input.apellido_materno !== undefined) {
+    const existentePerfil = (await db
+      .prepare(`SELECT nombres, apellido_paterno, apellido_materno FROM residente_perfil WHERE usuario_id_usuario = ?`)
+      .get(id)) as { nombres: string | null; apellido_paterno: string | null; apellido_materno: string | null } | undefined;
+    const nombres = input.nombres !== undefined ? input.nombres : existentePerfil?.nombres;
+    const apellidoPaterno = input.apellido_paterno !== undefined ? input.apellido_paterno : existentePerfil?.apellido_paterno;
+    const apellidoMaterno = input.apellido_materno !== undefined ? input.apellido_materno : existentePerfil?.apellido_materno;
+    if (nombres && apellidoPaterno) {
+      await db
+        .prepare(`UPDATE usuario SET nombre_usuario = ? WHERE id_usuario = ?`)
+        .run(componerNombreCompleto(nombres, apellidoPaterno, apellidoMaterno), id);
+    }
+  } else if (input.nombre_usuario !== undefined) {
     await db.prepare(`UPDATE usuario SET nombre_usuario = ? WHERE id_usuario = ?`).run(input.nombre_usuario, id);
   }
   if (input.unidad_id_unidad !== undefined) {
@@ -349,12 +438,21 @@ export async function actualizarResidente(
     fecha_nacimiento: input.fecha_nacimiento,
     profesion: input.profesion,
     foto_url: input.foto_url,
+    nombres: input.nombres,
+    apellido_paterno: input.apellido_paterno,
+    apellido_materno: input.apellido_materno,
+    nacionalidad_id_nacionalidad: input.nacionalidad_id_nacionalidad,
   });
   return db
     .prepare(
       `SELECT u.id_usuario, u.nombre_usuario, u.unidad_id_unidad, u.flg_vigencia, u.usuariocol, u.flg_comite, u.tipo_residente_id_tiporesidente, u.flg_propietario,
-              rp.rut, rp.fecha_nacimiento, rp.profesion, rp.foto_url
-       FROM usuario u LEFT JOIN residente_perfil rp ON rp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
+              rp.rut, rp.fecha_nacimiento, rp.profesion, rp.foto_url,
+              rp.nombres, rp.apellido_paterno, rp.apellido_materno,
+              rp.nacionalidad_id_nacionalidad, nac.gls_nacionalidad
+       FROM usuario u
+       LEFT JOIN residente_perfil rp ON rp.usuario_id_usuario = u.id_usuario
+       LEFT JOIN nacionalidad nac ON nac.id_nacionalidad = rp.nacionalidad_id_nacionalidad
+       WHERE u.id_usuario = ?`
     )
     .get(id);
 }

@@ -80,6 +80,16 @@ export async function listarProfesiones() {
     .all();
 }
 
+// Ronda 77, a pedido explícito del usuario: catálogo de nacionalidades (ver
+// migración 20260922030000_catalogo_nacionalidades) — mismo patrón que
+// listarProfesiones: combobox autocompletable, ordenado alfabéticamente.
+// `codigo` es un correlativo interno de esta tabla, no un código ISO.
+export async function listarNacionalidades() {
+  return db
+    .prepare(`SELECT id_nacionalidad, codigo, gls_nacionalidad FROM nacionalidad WHERE flg_vigencia = 1 ORDER BY gls_nacionalidad`)
+    .all();
+}
+
 // Residentes con carnet de discapacidad vigente — para que el guardia
 // pueda buscar/seleccionar quién va a usar el cupo (regla 1 de discapacitados).
 // Ronda 61, a pedido explícito del usuario: mismo bug exacto — no

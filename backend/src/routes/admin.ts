@@ -212,23 +212,39 @@ adminRouter.get("/residentes", async (req, res) => {
 
 adminRouter.post("/residentes", async (req, res) => {
   try {
-    const { nombre_usuario, unidad_id_unidad, tipo_residente_id_tiporesidente, flg_propietario, rut, fecha_nacimiento, profesion } = req.body;
-    if (!nombre_usuario || !unidad_id_unidad) {
-      return res.status(400).json({ error: "Faltan campos: nombre_usuario, unidad_id_unidad." });
+    // Ronda 77, a pedido explícito del usuario: el nombre llega separado
+    // en 3 partes (apellido_materno opcional) en vez de un solo string.
+    const {
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      unidad_id_unidad,
+      tipo_residente_id_tiporesidente,
+      flg_propietario,
+      rut,
+      fecha_nacimiento,
+      profesion,
+      nacionalidad_id_nacionalidad,
+    } = req.body;
+    if (!nombres || !apellido_paterno || !unidad_id_unidad) {
+      return res.status(400).json({ error: "Faltan campos: nombres, apellido_paterno, unidad_id_unidad." });
     }
     const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(
       await crearResidente({
-        nombre_usuario,
+        nombres,
+        apellido_paterno,
+        apellido_materno: apellido_materno || undefined,
         unidad_id_unidad: Number(unidad_id_unidad),
         condominio_id_condominio: condominioId,
         tipo_residente_id_tiporesidente: tipo_residente_id_tiporesidente !== undefined ? Number(tipo_residente_id_tiporesidente) : undefined,
         flg_propietario: flg_propietario !== undefined ? Number(flg_propietario) : undefined,
-        // Ronda 36: los 3 son opcionales a propósito — no todo residente
-        // los va a tener cargados.
+        // Ronda 36: opcionales a propósito — no todo residente los va a
+        // tener cargados.
         rut: rut || undefined,
         fecha_nacimiento: fecha_nacimiento || undefined,
         profesion: profesion || undefined,
+        nacionalidad_id_nacionalidad: nacionalidad_id_nacionalidad !== undefined ? Number(nacionalidad_id_nacionalidad) : undefined,
       })
     );
   } catch (err: any) {
@@ -238,8 +254,22 @@ adminRouter.post("/residentes", async (req, res) => {
 
 adminRouter.patch("/residentes/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
-    const { nombre_usuario, unidad_id_unidad, flg_vigencia, password, flg_comite, tipo_residente_id_tiporesidente, flg_propietario, rut, fecha_nacimiento, profesion } =
-      req.body;
+    const {
+      nombre_usuario,
+      unidad_id_unidad,
+      flg_vigencia,
+      password,
+      flg_comite,
+      tipo_residente_id_tiporesidente,
+      flg_propietario,
+      rut,
+      fecha_nacimiento,
+      profesion,
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      nacionalidad_id_nacionalidad,
+    } = req.body;
     // Nombrar/quitar gente del comité es una potestad exclusiva del
     // Administrador real (rol === "Administrador"), aunque el resto de esta
     // ruta también quede habilitada para un miembro del comité (vía
@@ -275,6 +305,19 @@ adminRouter.patch("/residentes/:id", requirePerteneceAlCondominio("usuario", "id
         rut: "rut" in req.body ? rut : undefined,
         fecha_nacimiento: "fecha_nacimiento" in req.body ? fecha_nacimiento : undefined,
         profesion: "profesion" in req.body ? profesion : undefined,
+        // Ronda 77: mismo criterio ('in req.body') que rut/fecha_nacimiento/
+        // profesion — nombres y apellido_paterno normalmente no se mandan
+        // vacíos, pero apellido_materno sí puede llegar como null explícito
+        // (borrar el segundo apellido, ej. si se corrigió a un extranjero).
+        nombres: "nombres" in req.body ? nombres : undefined,
+        apellido_paterno: "apellido_paterno" in req.body ? apellido_paterno : undefined,
+        apellido_materno: "apellido_materno" in req.body ? apellido_materno : undefined,
+        nacionalidad_id_nacionalidad:
+          "nacionalidad_id_nacionalidad" in req.body
+            ? nacionalidad_id_nacionalidad === null
+              ? null
+              : Number(nacionalidad_id_nacionalidad)
+            : undefined,
       })
     );
   } catch (err: any) {
