@@ -1,0 +1,167 @@
+// Ronda 74, a pedido explícito del usuario: catálogo de profesiones para
+// que el campo "profesión" de residente_perfil ya no sea texto libre —
+// se elige de una lista (combobox autocompletable, ver AdminResidentesScreen
+// y GET /profesiones), en vez de que cada administrador escriba lo que
+// quiera (mayúsculas distintas, abreviaturas, errores de tipeo, etc.).
+//
+// IMPORTANTE sobre el campo "codigo": es un código correlativo INTERNO de
+// esta tabla (001, 002...), NO el código oficial del Registro Civil ni el
+// clasificador CIUO-08.cl del INE (ese es un clasificador estadístico de
+// miles de ocupaciones muy detalladas, pensado para encuestas, no para un
+// selector práctico de "profesión" en un formulario). La lista de nombres
+// sí son profesiones/oficios reales y de uso común en Chile. Si en algún
+// momento se consigue la tabla oficial exacta que se necesite usar, esta
+// migración se reemplaza por otra que la siembre con los códigos reales.
+//
+// residente_perfil.profesion sigue siendo VARCHAR igual que antes — no se
+// tocó esa tabla (se sigue guardando el NOMBRE de la profesión elegida,
+// no el id ni el código), así que no hace falta ningún dato existente.
+exports.up = async function (knex) {
+  await knex.schema.createTable("profesion", (table) => {
+    table.increments("id_profesion").primary();
+    table.string("codigo", 10).notNullable().unique();
+    table.string("gls_profesion", 150).notNullable().unique();
+    table.integer("flg_vigencia").notNullable().defaultTo(1);
+  });
+
+  await knex("profesion").insert([
+  { codigo: "001", gls_profesion: 'Abogado/a' },
+  { codigo: "002", gls_profesion: 'Actor / Actriz' },
+  { codigo: "003", gls_profesion: 'Administrador/a Público/a' },
+  { codigo: "004", gls_profesion: 'Agrónomo/a' },
+  { codigo: "005", gls_profesion: 'Antropólogo/a' },
+  { codigo: "006", gls_profesion: 'Arqueólogo/a' },
+  { codigo: "007", gls_profesion: 'Arquitecto/a' },
+  { codigo: "008", gls_profesion: 'Asistente Social / Trabajador Social' },
+  { codigo: "009", gls_profesion: 'Auditor/a' },
+  { codigo: "010", gls_profesion: 'Bibliotecólogo/a' },
+  { codigo: "011", gls_profesion: 'Bioquímico/a' },
+  { codigo: "012", gls_profesion: 'Biólogo/a' },
+  { codigo: "013", gls_profesion: 'Biólogo/a Marino/a' },
+  { codigo: "014", gls_profesion: 'Cirujano/a Dentista' },
+  { codigo: "015", gls_profesion: 'Constructor/a Civil' },
+  { codigo: "016", gls_profesion: 'Contador/a Auditor/a' },
+  { codigo: "017", gls_profesion: 'Diseñador/a de Modas' },
+  { codigo: "018", gls_profesion: 'Diseñador/a Gráfico/a' },
+  { codigo: "019", gls_profesion: 'Diseñador/a Industrial' },
+  { codigo: "020", gls_profesion: 'Economista' },
+  { codigo: "021", gls_profesion: 'Educador/a de Párvulos' },
+  { codigo: "022", gls_profesion: 'Enfermero/a' },
+  { codigo: "023", gls_profesion: 'Estadístico/a' },
+  { codigo: "024", gls_profesion: 'Fonoaudiólogo/a' },
+  { codigo: "025", gls_profesion: 'Fotógrafo/a' },
+  { codigo: "026", gls_profesion: 'Físico/a' },
+  { codigo: "027", gls_profesion: 'Geógrafo/a' },
+  { codigo: "028", gls_profesion: 'Geólogo/a' },
+  { codigo: "029", gls_profesion: 'Historiador/a' },
+  { codigo: "030", gls_profesion: 'Ilustrador/a' },
+  { codigo: "031", gls_profesion: 'Ingeniero/a Agrícola' },
+  { codigo: "032", gls_profesion: 'Ingeniero/a Ambiental' },
+  { codigo: "033", gls_profesion: 'Ingeniero/a Civil' },
+  { codigo: "034", gls_profesion: 'Ingeniero/a Civil Industrial' },
+  { codigo: "035", gls_profesion: 'Ingeniero/a Comercial' },
+  { codigo: "036", gls_profesion: 'Ingeniero/a de Minas' },
+  { codigo: "037", gls_profesion: 'Ingeniero/a Eléctrico/a' },
+  { codigo: "038", gls_profesion: 'Ingeniero/a en Alimentos' },
+  { codigo: "039", gls_profesion: 'Ingeniero/a en Informática' },
+  { codigo: "040", gls_profesion: 'Ingeniero/a Forestal' },
+  { codigo: "041", gls_profesion: 'Ingeniero/a Mecánico/a' },
+  { codigo: "042", gls_profesion: 'Ingeniero/a Naval' },
+  { codigo: "043", gls_profesion: 'Ingeniero/a Químico/a' },
+  { codigo: "044", gls_profesion: 'Kinesiólogo/a' },
+  { codigo: "045", gls_profesion: 'Matemático/a' },
+  { codigo: "046", gls_profesion: 'Matrón/a (Obstetricia)' },
+  { codigo: "047", gls_profesion: 'Médico/a Cirujano/a' },
+  { codigo: "048", gls_profesion: 'Médico/a Veterinario/a' },
+  { codigo: "049", gls_profesion: 'Músico/a' },
+  { codigo: "050", gls_profesion: 'Nutricionista y Dietista' },
+  { codigo: "051", gls_profesion: 'Periodista' },
+  { codigo: "052", gls_profesion: 'Piloto Comercial' },
+  { codigo: "053", gls_profesion: 'Profesor/a de Educación Básica' },
+  { codigo: "054", gls_profesion: 'Profesor/a de Educación Física' },
+  { codigo: "055", gls_profesion: 'Profesor/a de Educación Media' },
+  { codigo: "056", gls_profesion: 'Profesor/a de Idiomas' },
+  { codigo: "057", gls_profesion: 'Psicólogo/a' },
+  { codigo: "058", gls_profesion: 'Psicopedagogo/a' },
+  { codigo: "059", gls_profesion: 'Publicista' },
+  { codigo: "060", gls_profesion: 'Químico/a' },
+  { codigo: "061", gls_profesion: 'Químico/a Farmacéutico/a' },
+  { codigo: "062", gls_profesion: 'Relacionador/a Público/a' },
+  { codigo: "063", gls_profesion: 'Sociólogo/a' },
+  { codigo: "064", gls_profesion: 'Tecnólogo/a Médico/a' },
+  { codigo: "065", gls_profesion: 'Terapeuta Ocupacional' },
+  { codigo: "066", gls_profesion: 'Traductor/a - Intérprete' },
+  { codigo: "067", gls_profesion: 'Técnico/a Agrícola' },
+  { codigo: "068", gls_profesion: 'Técnico/a en Administración' },
+  { codigo: "069", gls_profesion: 'Técnico/a en Computación e Informática' },
+  { codigo: "070", gls_profesion: 'Técnico/a en Contabilidad' },
+  { codigo: "071", gls_profesion: 'Técnico/a en Electricidad' },
+  { codigo: "072", gls_profesion: 'Técnico/a en Electrónica' },
+  { codigo: "073", gls_profesion: 'Técnico/a en Enfermería' },
+  { codigo: "074", gls_profesion: 'Técnico/a en Laboratorio Clínico' },
+  { codigo: "075", gls_profesion: 'Técnico/a en Prevención de Riesgos' },
+  { codigo: "076", gls_profesion: 'Técnico/a en Refrigeración y Climatización' },
+  { codigo: "077", gls_profesion: 'Técnico/a en Telecomunicaciones' },
+  { codigo: "078", gls_profesion: 'Técnico/a en Turismo' },
+  { codigo: "079", gls_profesion: 'Técnico/a Paramédico' },
+  { codigo: "080", gls_profesion: 'Guía Turístico/a' },
+  { codigo: "081", gls_profesion: 'Programador/a - Analista de Sistemas' },
+  { codigo: "082", gls_profesion: 'Albañil' },
+  { codigo: "083", gls_profesion: 'Carpintero/a' },
+  { codigo: "084", gls_profesion: 'Costurera/o - Modista' },
+  { codigo: "085", gls_profesion: 'Electricista' },
+  { codigo: "086", gls_profesion: 'Gásfiter' },
+  { codigo: "087", gls_profesion: 'Jardinero/a' },
+  { codigo: "088", gls_profesion: 'Maestro/a Pastelero/a' },
+  { codigo: "089", gls_profesion: 'Mecánico/a Automotriz' },
+  { codigo: "090", gls_profesion: 'Mecánico/a Industrial' },
+  { codigo: "091", gls_profesion: 'Minero/a' },
+  { codigo: "092", gls_profesion: 'Operador/a de Maquinaria Pesada' },
+  { codigo: "093", gls_profesion: 'Panadero/a' },
+  { codigo: "094", gls_profesion: 'Peluquero/a - Estilista' },
+  { codigo: "095", gls_profesion: 'Pintor/a (Construcción)' },
+  { codigo: "096", gls_profesion: 'Soldador/a' },
+  { codigo: "097", gls_profesion: 'Tapicero/a' },
+  { codigo: "098", gls_profesion: 'Zapatero/a' },
+  { codigo: "099", gls_profesion: 'Agente de Aduana' },
+  { codigo: "100", gls_profesion: 'Asesor/a del Hogar' },
+  { codigo: "101", gls_profesion: 'Cajero/a' },
+  { codigo: "102", gls_profesion: 'Chef / Cocinero/a' },
+  { codigo: "103", gls_profesion: 'Chofer / Conductor/a' },
+  { codigo: "104", gls_profesion: 'Comerciante' },
+  { codigo: "105", gls_profesion: 'Corredor/a de Propiedades' },
+  { codigo: "106", gls_profesion: 'Corredor/a de Seguros' },
+  { codigo: "107", gls_profesion: 'Empresario/a' },
+  { codigo: "108", gls_profesion: 'Garzón / Mesero/a' },
+  { codigo: "109", gls_profesion: 'Guardia de Seguridad' },
+  { codigo: "110", gls_profesion: 'Recepcionista' },
+  { codigo: "111", gls_profesion: 'Secretario/a' },
+  { codigo: "112", gls_profesion: 'Transportista' },
+  { codigo: "113", gls_profesion: 'Vendedor/a' },
+  { codigo: "114", gls_profesion: 'Vigilante Privado' },
+  { codigo: "115", gls_profesion: 'Bombero/a' },
+  { codigo: "116", gls_profesion: 'Carabinero/a' },
+  { codigo: "117", gls_profesion: 'Defensor/a Penal Público/a' },
+  { codigo: "118", gls_profesion: 'Fiscal' },
+  { codigo: "119", gls_profesion: 'Juez/a' },
+  { codigo: "120", gls_profesion: 'Militar' },
+  { codigo: "121", gls_profesion: 'Notario/a - Conservador/a' },
+  { codigo: "122", gls_profesion: 'Policía de Investigaciones (PDI)' },
+  { codigo: "123", gls_profesion: 'Procurador/a' },
+  { codigo: "124", gls_profesion: 'Relator/a' },
+  { codigo: "125", gls_profesion: 'Agricultor/a' },
+  { codigo: "126", gls_profesion: 'Artista Plástico/a' },
+  { codigo: "127", gls_profesion: 'Cesante' },
+  { codigo: "128", gls_profesion: 'Dueña/o de Casa' },
+  { codigo: "129", gls_profesion: 'Estudiante' },
+  { codigo: "130", gls_profesion: 'Jubilado/a - Pensionado/a' },
+  { codigo: "131", gls_profesion: 'Marino Mercante' },
+  { codigo: "132", gls_profesion: 'Pescador/a Artesanal' },
+  { codigo: "133", gls_profesion: 'Religioso/a (Sacerdote, Pastor, etc.)' },
+  { codigo: "134", gls_profesion: 'Otro (No especificado)' },
+  ]);
+};
+
+exports.down = async function (knex) {
+  await knex.schema.dropTableIfExists("profesion");
+};

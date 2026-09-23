@@ -68,6 +68,18 @@ export async function listarTiposResidente() {
   return db.prepare(`SELECT id_tiporesidente, gls_tiporesidente FROM tipo_residente WHERE flg_vigencia = 1 ORDER BY id_tiporesidente`).all();
 }
 
+// Ronda 74, a pedido explícito del usuario: catálogo de profesiones (ver
+// migración 20260922010000_catalogo_profesiones) — reemplaza el campo de
+// texto libre "Profesión" de AdminResidentesScreen por un combobox
+// autocompletable, ordenado alfabéticamente. `codigo` es un código
+// correlativo interno de esta tabla, no el código oficial del Registro
+// Civil/INE (ver la nota completa en la migración).
+export async function listarProfesiones() {
+  return db
+    .prepare(`SELECT id_profesion, codigo, gls_profesion FROM profesion WHERE flg_vigencia = 1 ORDER BY gls_profesion`)
+    .all();
+}
+
 // Residentes con carnet de discapacidad vigente — para que el guardia
 // pueda buscar/seleccionar quién va a usar el cupo (regla 1 de discapacitados).
 // Ronda 61, a pedido explícito del usuario: mismo bug exacto — no

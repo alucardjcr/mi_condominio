@@ -8,6 +8,7 @@ import {
   listarResidentesConCarnetDiscapacidad,
   listarTiposPaquete,
   listarTiposResidente,
+  listarProfesiones,
 } from "../services/catalogos.service";
 
 export const catalogosRouter = Router();
@@ -44,4 +45,8 @@ catalogosRouter.get("/tipos-paquete", async (req, res) => {
 
 catalogosRouter.get("/tipos-residente", async (_req, res) => {
   res.json(await listarTiposResidente());
+});
+
+catalogosRouter.get("/profesiones", async (_req, res) => {
+  res.json(await listarProfesiones());
 });
