@@ -41,9 +41,22 @@ miDeptoRouter.get("/residentes", soloResidente, async (req, res) => {
 miDeptoRouter.post("/residentes", soloResidente, async (req, res) => {
   try {
     if (rechazarSiNoEsPropietario(req, res)) return;
-    const { nombre_usuario, tipo_residente_id_tiporesidente, rut, fecha_nacimiento, profesion, foto } = req.body;
-    if (!nombre_usuario) {
-      return res.status(400).json({ error: "Falta el campo nombre_usuario." });
+    // Ronda 77, a pedido explícito del usuario: el nombre llega separado
+    // en 3 partes (apellido_materno opcional) igual que en /admin/residentes
+    // — ver la misma nota en routes/admin.ts.
+    const {
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      tipo_residente_id_tiporesidente,
+      rut,
+      fecha_nacimiento,
+      profesion,
+      nacionalidad_id_nacionalidad,
+      foto,
+    } = req.body;
+    if (!nombres || !apellido_paterno) {
+      return res.status(400).json({ error: "Faltan campos: nombres, apellido_paterno." });
     }
     // Ronda 62, a pedido explícito del usuario (encontrado revisando el
     // flujo de "agregar a alguien del hogar"): mismo bug de las rondas 44
@@ -60,7 +73,9 @@ miDeptoRouter.post("/residentes", soloResidente, async (req, res) => {
     const fotoUrl = foto ? await guardarImagenBase64(foto, "residente", "residentes") : undefined;
     res.status(201).json(
       await crearResidente({
-        nombre_usuario,
+        nombres,
+        apellido_paterno,
+        apellido_materno: apellido_materno || undefined,
         unidad_id_unidad: req.guardia!.unidad_id_unidad!,
         condominio_id_condominio: condominioId,
         tipo_residente_id_tiporesidente:
@@ -68,6 +83,7 @@ miDeptoRouter.post("/residentes", soloResidente, async (req, res) => {
         rut: rut || undefined,
         fecha_nacimiento: fecha_nacimiento || undefined,
         profesion: profesion || undefined,
+        nacionalidad_id_nacionalidad: nacionalidad_id_nacionalidad !== undefined ? Number(nacionalidad_id_nacionalidad) : undefined,
         foto_url: fotoUrl,
       })
     );
@@ -88,7 +104,19 @@ miDeptoRouter.patch("/residentes/:id", soloResidente, async (req, res) => {
         .status(400)
         .json({ error: "No puedes desactivarte a ti mismo desde acá. Pide al Administrador que lo haga si corresponde." });
     }
-    const { nombre_usuario, flg_vigencia, tipo_residente_id_tiporesidente, rut, fecha_nacimiento, profesion, foto } = req.body;
+    const {
+      nombre_usuario,
+      flg_vigencia,
+      tipo_residente_id_tiporesidente,
+      rut,
+      fecha_nacimiento,
+      profesion,
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      nacionalidad_id_nacionalidad,
+      foto,
+    } = req.body;
     // Deliberadamente NO se aceptan acá flg_comite ni flg_propietario: el
     // dueño administra a quién vive en su depto y a qué título, pero no
     // puede otorgarse (ni quitarle a otro) permisos de comité o de
@@ -108,6 +136,17 @@ miDeptoRouter.patch("/residentes/:id", soloResidente, async (req, res) => {
         rut: "rut" in req.body ? rut : undefined,
         fecha_nacimiento: "fecha_nacimiento" in req.body ? fecha_nacimiento : undefined,
         profesion: "profesion" in req.body ? profesion : undefined,
+        // Ronda 77, a pedido explícito del usuario: mismo criterio ('in
+        // req.body') que rut/fecha_nacimiento/profesion.
+        nombres: "nombres" in req.body ? nombres : undefined,
+        apellido_paterno: "apellido_paterno" in req.body ? apellido_paterno : undefined,
+        apellido_materno: "apellido_materno" in req.body ? apellido_materno : undefined,
+        nacionalidad_id_nacionalidad:
+          "nacionalidad_id_nacionalidad" in req.body
+            ? nacionalidad_id_nacionalidad === null
+              ? null
+              : Number(nacionalidad_id_nacionalidad)
+            : undefined,
         foto_url: fotoUrl,
       })
     );
