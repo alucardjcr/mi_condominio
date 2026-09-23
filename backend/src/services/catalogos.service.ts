@@ -8,10 +8,19 @@ export async function listarTorres(condominioId: number) {
     .all(condominioId);
 }
 
+// Ronda 74, a pedido explícito del usuario: los números de depto se vean
+// de menor a mayor. Un ORDER BY numero_unidad simple ordena como texto
+// (alfabético) — con deptos "1", "2"..."10", "11" eso deja "10" antes que
+// "2", que es justo lo que se reportó mal. CAST(... AS UNSIGNED) toma el
+// prefijo numérico de cada número para ordenar por su valor real; si el
+// número no empieza con dígito (ej. nombres de casas/parcelas con letras),
+// el CAST da 0 y ahí se cae de respaldo al orden alfabético normal —no
+// rompe esos casos, solo no los "arregla" (no hace falta, no son números).
 export async function listarUnidadesPorTorre(torreId: number) {
   return db
     .prepare(
-      `SELECT id_unidad, numero_unidad FROM unidad WHERE torre_block_id_torreblock = ? AND flg_vigencia = 1 ORDER BY numero_unidad`
+      `SELECT id_unidad, numero_unidad FROM unidad WHERE torre_block_id_torreblock = ? AND flg_vigencia = 1
+       ORDER BY CAST(numero_unidad AS UNSIGNED), numero_unidad`
     )
     .all(torreId);
 }

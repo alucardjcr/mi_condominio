@@ -166,7 +166,7 @@ export async function listarResidentes(condominioId: number, unidadId?: number) 
   if (unidadId) {
     return db.prepare(`${base} AND u.unidad_id_unidad = ? ORDER BY u.nombre_usuario`).all(condominioId, unidadId);
   }
-  return db.prepare(`${base} ORDER BY tb.nombre_torre, un.numero_unidad, u.nombre_usuario`).all(condominioId);
+  return db.prepare(`${base} ORDER BY tb.nombre_torre, CAST(un.numero_unidad AS UNSIGNED), un.numero_unidad, u.nombre_usuario`).all(condominioId);
 }
 
 // Ronda 36, a pedido explícito del usuario: datos adicionales opcionales
@@ -500,7 +500,7 @@ export async function listarPatentes(condominioId: number, unidadId?: number) {
   if (unidadId) {
     return db.prepare(`${base} AND p.unidad_id_unidad = ? ORDER BY p.patente`).all(condominioId, unidadId);
   }
-  return db.prepare(`${base} ORDER BY tb.nombre_torre, un.numero_unidad, p.patente`).all(condominioId);
+  return db.prepare(`${base} ORDER BY tb.nombre_torre, CAST(un.numero_unidad AS UNSIGNED), un.numero_unidad, p.patente`).all(condominioId);
 }
 
 export async function crearPatente(input: {
@@ -582,7 +582,7 @@ export async function listarUnidadesGastoComun(condominioId: number) {
        FROM unidad un
        JOIN torre_block tb ON tb.id_torreblock = un.torre_block_id_torreblock
        WHERE un.condominio_id_condominio = ? AND un.flg_vigencia = 1
-       ORDER BY tb.nombre_torre, un.numero_unidad`
+       ORDER BY tb.nombre_torre, CAST(un.numero_unidad AS UNSIGNED), un.numero_unidad`
     )
     .all(condominioId);
 }
