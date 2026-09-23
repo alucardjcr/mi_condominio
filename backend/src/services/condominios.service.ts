@@ -6,19 +6,22 @@ import { sembrarCatalogosAmonestacionMulta } from "./catalogos-default.service";
 // SeleccionarCondominioScreen / CrearCondominioScreen en la app). Queda
 // automáticamente vinculado a él vía `membresia` (ver auth.service.ts),
 // sin tocar a ningún otro usuario.
+// Ronda 73, a pedido explícito del usuario: ya no se manda la lista de
+// números de depto acá — antes la app generaba "101,102...201,202..." sola
+// y el administrador no tenía forma de acomodarla a la numeración real del
+// edificio. Ahora solo se manda la estructura (cuántos pisos, cuántos
+// deptos por piso) y cada unidad nace con un número PLACEHOLDER; el número
+// real se pone después, piso por piso, desde "Numerar torres" (ver
+// admin.service.ts -> numerarUnidadesTorre).
 export interface TorreInput {
   nombre_torre: string;
-  cantidad_pisos?: number;
-  // Números de depto de ESA torre (ej. ["101","102","201","202"]) — ya
-  // vienen separados/limpios desde el cliente (ver CrearCondominioScreen:
-  // acepta tanto una lista pegada tipo CSV como generación automática por
-  // patrón "pisos x deptos por piso").
-  numeros_unidad: string[];
+  cantidad_pisos: number;
+  deptos_por_piso: number;
 }
 
 export interface EdificioInput {
-  cantidad_pisos?: number;
-  numeros_unidad: string[];
+  cantidad_pisos: number;
+  deptos_por_piso: number;
 }
 
 // Ronda 26 (fase 2, a pedido del usuario): 3 formas de estructura, no 2 —
@@ -91,13 +94,19 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
       if (!t.nombre_torre?.trim()) {
         throw new Error("Cada torre necesita un nombre.");
       }
-      if (limpiarNumeros(t.numeros_unidad).length === 0) {
-        throw new Error(`La torre "${t.nombre_torre}" no tiene ningún número de depto cargado.`);
+      if (!t.cantidad_pisos || t.cantidad_pisos < 1) {
+        throw new Error(`La torre "${t.nombre_torre}" necesita al menos 1 piso.`);
+      }
+      if (!t.deptos_por_piso || t.deptos_por_piso < 1) {
+        throw new Error(`La torre "${t.nombre_torre}" necesita al menos 1 depto por piso.`);
       }
     }
   } else if (input.estructura === "edificio") {
-    if (!input.edificio || limpiarNumeros(input.edificio.numeros_unidad).length === 0) {
-      throw new Error("Agrega los números de depto del edificio.");
+    if (!input.edificio || !input.edificio.cantidad_pisos || input.edificio.cantidad_pisos < 1) {
+      throw new Error("Indica la cantidad de pisos del edificio.");
+    }
+    if (!input.edificio.deptos_por_piso || input.edificio.deptos_por_piso < 1) {
+      throw new Error("Indica la cantidad de deptos por piso del edificio.");
     }
   } else {
     if (limpiarNumeros(input.numeros_unidad_casas).length === 0) {
@@ -121,22 +130,28 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
 
     if (input.estructura === "torres") {
       for (const t of input.torres!) {
-        const numeros = limpiarNumeros(t.numeros_unidad);
         const insertTorre = await tx
           .prepare(
             `INSERT INTO torre_block (nombre_torre, cantidad_pisos, condominio_id_condominio) VALUES (?, ?, ?)`
           )
-          .run(t.nombre_torre.trim(), t.cantidad_pisos ?? null, condominioId);
+          .run(t.nombre_torre.trim(), t.cantidad_pisos, condominioId);
         const torreId = Number(insertTorre.lastInsertRowid);
         torresCreadas += 1;
 
-        for (const numero of numeros) {
-          await tx
-            .prepare(
-              `INSERT INTO unidad (numero_unidad, condominio_id_condominio, torre_block_id_torreblock) VALUES (?, ?, ?)`
-            )
-            .run(numero, condominioId, torreId);
-          unidadesCreadas += 1;
+        // Ronda 73: ya no se recibe la lista de números — se crea una
+        // unidad "placeholder" por cada (piso, posición), con el piso ya
+        // guardado (antes `piso` quedaba siempre NULL). El número real se
+        // completa después desde "Numerar torres" (admin.service.ts ->
+        // numerarUnidadesTorre).
+        for (let piso = 1; piso <= t.cantidad_pisos; piso++) {
+          for (let pos = 1; pos <= t.deptos_por_piso; pos++) {
+            await tx
+              .prepare(
+                `INSERT INTO unidad (numero_unidad, piso, condominio_id_condominio, torre_block_id_torreblock) VALUES (?, ?, ?, ?)`
+              )
+              .run(`Piso ${piso} · #${pos}`, piso, condominioId, torreId);
+            unidadesCreadas += 1;
+          }
         }
       }
     } else if (input.estructura === "edificio") {
@@ -145,22 +160,23 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
       // nombre propio que pedirle al usuario — se usa el mismo nombre del
       // condominio, aunque ninguna pantalla actual se lo muestra a nadie
       // (mismo criterio que la torre "Casas" del caso de abajo).
-      const numeros = limpiarNumeros(input.edificio!.numeros_unidad);
       const insertTorre = await tx
         .prepare(
           `INSERT INTO torre_block (nombre_torre, cantidad_pisos, condominio_id_condominio) VALUES (?, ?, ?)`
         )
-        .run(nombre, input.edificio!.cantidad_pisos ?? null, condominioId);
+        .run(nombre, input.edificio!.cantidad_pisos, condominioId);
       const torreId = Number(insertTorre.lastInsertRowid);
       torresCreadas = 0; // es un solo edificio, no se cuenta como "torres"
 
-      for (const numero of numeros) {
-        await tx
-          .prepare(
-            `INSERT INTO unidad (numero_unidad, condominio_id_condominio, torre_block_id_torreblock) VALUES (?, ?, ?)`
-          )
-          .run(numero, condominioId, torreId);
-        unidadesCreadas += 1;
+      for (let piso = 1; piso <= input.edificio!.cantidad_pisos; piso++) {
+        for (let pos = 1; pos <= input.edificio!.deptos_por_piso; pos++) {
+          await tx
+            .prepare(
+              `INSERT INTO unidad (numero_unidad, piso, condominio_id_condominio, torre_block_id_torreblock) VALUES (?, ?, ?, ?)`
+            )
+            .run(`Piso ${piso} · #${pos}`, piso, condominioId, torreId);
+          unidadesCreadas += 1;
+        }
       }
     } else {
       // Condominio de casas: no hay torres reales, pero la tabla `unidad`

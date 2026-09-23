@@ -597,6 +597,76 @@ export async function actualizarGastoComunUnidad(unidadId: number, flgGastocomun
 }
 
 // ---------------------------------------------------------------------------
+// Ronda 73, a pedido explícito del usuario: "Numerar torres" — reemplaza la
+// generación automática de números (101, 102, 201, 202...) que antes hacía
+// crearCondominioConEstructura. Ahora cada torre nace con unidades
+// "placeholder" (ver condominios.service.ts) y el administrador les pone el
+// número real acá, piso por piso, después de crear el condominio.
+// ---------------------------------------------------------------------------
+
+export async function listarUnidadesParaNumerar(condominioId: number, torreId: number) {
+  const torre = await db
+    .prepare(`SELECT id_torreblock, nombre_torre FROM torre_block WHERE id_torreblock = ? AND condominio_id_condominio = ?`)
+    .get(torreId, condominioId);
+  if (!torre) throw new Error("No existe esa torre.");
+
+  const unidades = await db
+    .prepare(
+      `SELECT id_unidad, numero_unidad, piso
+       FROM unidad
+       WHERE torre_block_id_torreblock = ? AND condominio_id_condominio = ? AND flg_vigencia = 1
+       ORDER BY piso ASC, id_unidad ASC`
+    )
+    .all(torreId, condominioId);
+
+  return { torre, unidades };
+}
+
+export interface AsignacionNumero {
+  id_unidad: number;
+  numero_unidad: string;
+}
+
+export async function numerarUnidadesTorre(
+  condominioId: number,
+  torreId: number,
+  asignaciones: AsignacionNumero[]
+) {
+  const torre = await db
+    .prepare(`SELECT id_torreblock FROM torre_block WHERE id_torreblock = ? AND condominio_id_condominio = ?`)
+    .get(torreId, condominioId);
+  if (!torre) throw new Error("No existe esa torre.");
+
+  if (!asignaciones || asignaciones.length === 0) {
+    throw new Error("No se recibió ningún número para guardar.");
+  }
+
+  const vistos = new Set<string>();
+  for (const a of asignaciones) {
+    const numero = String(a.numero_unidad ?? "").trim();
+    if (!numero) {
+      throw new Error("Todos los deptos necesitan un número.");
+    }
+    if (vistos.has(numero)) {
+      throw new Error(`El número "${numero}" está repetido.`);
+    }
+    vistos.add(numero);
+  }
+
+  for (const a of asignaciones) {
+    const unidad = await db
+      .prepare(`SELECT id_unidad FROM unidad WHERE id_unidad = ? AND torre_block_id_torreblock = ? AND condominio_id_condominio = ?`)
+      .get(a.id_unidad, torreId, condominioId);
+    if (!unidad) throw new Error(`La unidad ${a.id_unidad} no pertenece a esta torre.`);
+    await db
+      .prepare(`UPDATE unidad SET numero_unidad = ? WHERE id_unidad = ?`)
+      .run(String(a.numero_unidad).trim(), a.id_unidad);
+  }
+
+  return listarUnidadesParaNumerar(condominioId, torreId);
+}
+
+// ---------------------------------------------------------------------------
 // Ronda 28, a pedido explícito del usuario: administrar el estado de CADA
 // estacionamiento (Visita, Discapacitado y Residente) — hasta ahora no
 // existía ninguna pantalla para esto, solo se sembraban por seed.ts. El

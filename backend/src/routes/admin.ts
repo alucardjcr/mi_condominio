@@ -19,6 +19,8 @@ import {
   auditarPatente,
   listarUnidadesGastoComun,
   actualizarGastoComunUnidad,
+  listarUnidadesParaNumerar,
+  numerarUnidadesTorre,
   listarEstacionamientosAdmin,
   listarEstadosEstacionamiento,
   listarTiposEstacionamiento,
@@ -581,6 +583,40 @@ adminRouter.patch("/unidades/:id/gasto-comun", requirePerteneceAlCondominio("uni
     res.status(400).json({ error: err.message });
   }
 });
+
+// Ronda 73, a pedido explícito del usuario: "Numerar torres" — reemplaza la
+// numeración automática (101, 102, 201...) que hacía crearCondominioConEstructura.
+// Cada torre nace con unidades "placeholder" (ver condominios.service.ts) y
+// acá el administrador les pone el número real, piso por piso.
+adminRouter.get(
+  "/torres/:id/unidades-numerar",
+  requirePerteneceAlCondominio("torre_block", "id_torreblock"),
+  async (req, res) => {
+    try {
+      const condominioId = req.guardia!.condominio_id_condominio!;
+      res.json(await listarUnidadesParaNumerar(condominioId, Number(req.params.id)));
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
+
+adminRouter.patch(
+  "/torres/:id/numerar",
+  requirePerteneceAlCondominio("torre_block", "id_torreblock"),
+  async (req, res) => {
+    try {
+      const condominioId = req.guardia!.condominio_id_condominio!;
+      const { asignaciones } = req.body;
+      if (!Array.isArray(asignaciones)) {
+        return res.status(400).json({ error: "Falta la lista de asignaciones." });
+      }
+      res.json(await numerarUnidadesTorre(condominioId, Number(req.params.id), asignaciones));
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
 
 // Ronda 28, a pedido explícito del usuario: administrar el estado de cada
 // estacionamiento (ej. marcar el cupo 84 como "Fuera de servicio" porque
