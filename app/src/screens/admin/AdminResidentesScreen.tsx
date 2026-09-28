@@ -18,14 +18,19 @@ import {
   adminQuitarAccesoResidente,
   adminQuitarCarnetDiscapacidad,
   adminRegistrarCarnetDiscapacidad,
+  getNacionalidades,
+  getProfesiones,
   getTiposResidente,
   getTorres,
   getUnidadesPorTorre,
 } from "../../api/client";
-import { ResidenteAdmin, TipoResidente, Torre, Unidad } from "../../api/types";
+import { Nacionalidad, Profesion, ResidenteAdmin, TipoResidente, Torre, Unidad } from "../../api/types";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
+import DateField from "../../components/DateField";
+import IlustracionEdificios from "../../components/IlustracionEdificios";
+import { colors, radius, spacing, typography } from "../../theme/theme";
 
 export default function AdminResidentesScreen() {
   const { token, rol } = useAuth();
@@ -42,7 +47,13 @@ export default function AdminResidentesScreen() {
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [torreSel, setTorreSel] = useState<OpcionSelect | null>(null);
   const [unidadSel, setUnidadSel] = useState<OpcionSelect | null>(null);
-  const [nombre, setNombre] = useState("");
+  // Ronda 77, a pedido explícito del usuario: el nombre se separó en 3
+  // campos (apellido materno opcional, hay extranjeros sin segundo
+  // apellido) para poder filtrar por apellido_paterno directamente en una
+  // query — antes era un solo TextInput "Nombre completo".
+  const [nombresNuevo, setNombresNuevo] = useState("");
+  const [apellidoPaternoNuevo, setApellidoPaternoNuevo] = useState("");
+  const [apellidoMaternoNuevo, setApellidoMaternoNuevo] = useState("");
   const [creando, setCreando] = useState(false);
 
   // Tipo de residente (ronda 14): a qué título vive en el depto —
@@ -64,10 +75,31 @@ export default function AdminResidentesScreen() {
   const [fechaNacimientoNuevo, setFechaNacimientoNuevo] = useState("");
   const [profesionNuevo, setProfesionNuevo] = useState("");
 
+  // Ronda 74, a pedido explícito del usuario: la profesión deja de ser
+  // texto libre — se elige de un catálogo (combobox autocompletable, ver
+  // SelectModal), ordenado alfabéticamente desde el backend
+  // (GET /profesiones). `profesionNuevo`/`profesionEditar` (arriba/abajo)
+  // se mantienen como el string que se manda al backend (mismo campo
+  // VARCHAR de siempre) — estos "Sel" solo manejan qué opción se ve
+  // marcada en el selector.
+  const [profesiones, setProfesiones] = useState<Profesion[]>([]);
+  const [profesionSel, setProfesionSel] = useState<OpcionSelect | null>(null);
+
+  // Ronda 77, a pedido explícito del usuario: catálogo de nacionalidades
+  // (mismo patrón que profesiones) — combobox autocompletable, ordenado
+  // alfabéticamente desde el backend (GET /nacionalidades).
+  const [nacionalidades, setNacionalidades] = useState<Nacionalidad[]>([]);
+  const [nacionalidadSel, setNacionalidadSel] = useState<OpcionSelect | null>(null);
+
   const [perfilEnEdicion, setPerfilEnEdicion] = useState<number | null>(null);
   const [rutEditar, setRutEditar] = useState("");
   const [fechaNacimientoEditar, setFechaNacimientoEditar] = useState("");
   const [profesionEditar, setProfesionEditar] = useState("");
+  const [profesionEditarSel, setProfesionEditarSel] = useState<OpcionSelect | null>(null);
+  const [nombresEditar, setNombresEditar] = useState("");
+  const [apellidoPaternoEditar, setApellidoPaternoEditar] = useState("");
+  const [apellidoMaternoEditar, setApellidoMaternoEditar] = useState("");
+  const [nacionalidadEditarSel, setNacionalidadEditarSel] = useState<OpcionSelect | null>(null);
   const [guardandoPerfil, setGuardandoPerfil] = useState(false);
 
   // Acceso a la app (portal de residentes): activar por primera vez o
@@ -102,6 +134,38 @@ export default function AdminResidentesScreen() {
     getTiposResidente(token).then(setTiposResidente).catch((e) => Alert.alert("Error", e.message));
   }, [token]);
 
+  useEffect(() => {
+    if (!token) return;
+    getProfesiones(token).then(setProfesiones).catch((e) => Alert.alert("Error", e.message));
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    getNacionalidades(token).then(setNacionalidades).catch((e) => Alert.alert("Error", e.message));
+  }, [token]);
+
+  // Convierte el texto guardado en `residente_perfil.profesion` a la
+  // opción del catálogo que corresponde (para que el selector la muestre
+  // marcada). Si no matchea ninguna (ej. dato viejo escrito a mano antes
+  // de esta ronda), igual se muestra el texto tal cual con un id 0 — no
+  // se pierde el dato existente, solo no queda "conectado" al catálogo
+  // hasta que se elija de nuevo.
+  const profesionComoOpcion = (texto: string | null | undefined): OpcionSelect | null => {
+    if (!texto) return null;
+    const encontrada = profesiones.find((p) => p.gls_profesion === texto);
+    return encontrada ? { id: encontrada.id_profesion, label: encontrada.gls_profesion } : { id: 0, label: texto };
+  };
+
+  // Ronda 77: convierte el id + nombre de nacionalidad ya guardados en el
+  // residente a la opción que corresponde para el selector.
+  const nacionalidadComoOpcion = (
+    id: number | null | undefined,
+    gls: string | null | undefined
+  ): OpcionSelect | null => {
+    if (!id || !gls) return null;
+    return { id, label: gls };
+  };
+
   const handleSeleccionarTorre = async (opcion: OpcionSelect) => {
     setTorreSel(opcion);
     setUnidadSel(null);
@@ -111,27 +175,34 @@ export default function AdminResidentesScreen() {
   };
 
   const handleCrear = async () => {
-    if (!token || !nombre || !unidadSel) {
-      Alert.alert("Faltan datos", "Nombre, torre y depto son obligatorios.");
+    if (!token || !nombresNuevo.trim() || !apellidoPaternoNuevo.trim() || !unidadSel) {
+      Alert.alert("Faltan datos", "Nombres, apellido paterno, torre y depto son obligatorios.");
       return;
     }
     setCreando(true);
     try {
       await adminCrearResidente(token, {
-        nombre_usuario: nombre,
+        nombres: nombresNuevo.trim(),
+        apellido_paterno: apellidoPaternoNuevo.trim(),
+        apellido_materno: apellidoMaternoNuevo.trim() || undefined,
         unidad_id_unidad: unidadSel.id,
         tipo_residente_id_tiporesidente: tipoResidenteSel ? Number(tipoResidenteSel.id) : undefined,
         rut: rutNuevo.trim() || undefined,
         fecha_nacimiento: fechaNacimientoNuevo.trim() || undefined,
         profesion: profesionNuevo.trim() || undefined,
+        nacionalidad_id_nacionalidad: nacionalidadSel ? Number(nacionalidadSel.id) : undefined,
       });
-      setNombre("");
+      setNombresNuevo("");
+      setApellidoPaternoNuevo("");
+      setApellidoMaternoNuevo("");
       setTorreSel(null);
       setUnidadSel(null);
       setTipoResidenteSel(null);
       setRutNuevo("");
       setFechaNacimientoNuevo("");
       setProfesionNuevo("");
+      setProfesionSel(null);
+      setNacionalidadSel(null);
       cargar();
     } catch (e: any) {
       Alert.alert("Error", e.message);
@@ -140,11 +211,35 @@ export default function AdminResidentesScreen() {
     }
   };
 
+  // Ronda 76, a pedido explícito del usuario (nuevo diseño con botón
+  // "Cancelar" junto a "Guardar residente"): limpia el formulario sin
+  // guardar nada — mismo reseteo que ya se hacía después de crear con
+  // éxito.
+  const handleCancelarNuevo = () => {
+    setNombresNuevo("");
+    setApellidoPaternoNuevo("");
+    setApellidoMaternoNuevo("");
+    setTorreSel(null);
+    setUnidadSel(null);
+    setUnidades([]);
+    setTipoResidenteSel(null);
+    setRutNuevo("");
+    setFechaNacimientoNuevo("");
+    setProfesionNuevo("");
+    setProfesionSel(null);
+    setNacionalidadSel(null);
+  };
+
   const handleAbrirPerfil = (r: ResidenteAdmin) => {
     setPerfilEnEdicion(r.id_usuario);
     setRutEditar(r.rut ?? "");
     setFechaNacimientoEditar(r.fecha_nacimiento ?? "");
     setProfesionEditar(r.profesion ?? "");
+    setProfesionEditarSel(profesionComoOpcion(r.profesion));
+    setNombresEditar(r.nombres ?? "");
+    setApellidoPaternoEditar(r.apellido_paterno ?? "");
+    setApellidoMaternoEditar(r.apellido_materno ?? "");
+    setNacionalidadEditarSel(nacionalidadComoOpcion(r.nacionalidad_id_nacionalidad, r.gls_nacionalidad));
   };
 
   const handleGuardarPerfil = async (id: number) => {
@@ -155,6 +250,10 @@ export default function AdminResidentesScreen() {
         rut: rutEditar.trim() || null,
         fecha_nacimiento: fechaNacimientoEditar.trim() || null,
         profesion: profesionEditar.trim() || null,
+        nombres: nombresEditar.trim() || null,
+        apellido_paterno: apellidoPaternoEditar.trim() || null,
+        apellido_materno: apellidoMaternoEditar.trim() || null,
+        nacionalidad_id_nacionalidad: nacionalidadEditarSel ? Number(nacionalidadEditarSel.id) : null,
       });
       setPerfilEnEdicion(null);
       cargar();
@@ -347,54 +446,204 @@ export default function AdminResidentesScreen() {
       contentContainerStyle={{ padding: 16, gap: 10 }}
       ListHeaderComponent={
         <View>
-          <View style={styles.form}>
-            <Text style={styles.formTitulo}>Nuevo residente</Text>
-            <TextInput style={styles.input} placeholder="Nombre" value={nombre} onChangeText={setNombre} />
-            <SelectModal
-              label="Torre"
-              placeholder="Selecciona una torre"
-              opciones={torres.map((t) => ({ id: t.id_torreblock, label: t.nombre_torre }))}
-              valorSeleccionado={torreSel}
-              onSeleccionar={handleSeleccionarTorre}
-            />
-            <SelectModal
-              label="Depto"
-              placeholder={torreSel ? "Selecciona un depto" : "Primero elige la torre"}
-              opciones={unidades.map((u) => ({ id: u.id_unidad, label: u.numero_unidad }))}
-              valorSeleccionado={unidadSel}
-              onSeleccionar={setUnidadSel}
-              disabled={!torreSel}
-            />
-            <SelectModal
-              label="Tipo de residente"
-              placeholder="Ej: Propietario, arrendatario, roomie..."
-              opciones={tiposResidente.map((t) => ({ id: t.id_tiporesidente, label: t.gls_tiporesidente }))}
-              valorSeleccionado={tipoResidenteSel}
-              onSeleccionar={setTipoResidenteSel}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="RUT (opcional)"
-              value={rutNuevo}
-              onChangeText={setRutNuevo}
-              autoCapitalize="characters"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Fecha de nacimiento AAAA-MM-DD (opcional)"
-              value={fechaNacimientoNuevo}
-              onChangeText={setFechaNacimientoNuevo}
-              keyboardType="numbers-and-punctuation"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Profesión (opcional)"
-              value={profesionNuevo}
-              onChangeText={setProfesionNuevo}
-            />
-            <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
-              <Text style={styles.botonCrearTexto}>{creando ? "Creando..." : "Crear residente"}</Text>
-            </TouchableOpacity>
+          {/* Ronda 76, a pedido explícito del usuario: rediseño completo de
+              "Nuevo residente" — tarjeta "hero" celeste con ilustración +
+              tarjeta blanca con un ícono por campo, en vez del formulario
+              plano de antes. El orden de los campos (Torre → Depto →
+              Nombre → RUT → Tipo de residente → Fecha de nacimiento →
+              Profesión) es el mismo que se dejó en la ronda 74. */}
+          <View style={styles.heroCard}>
+            <View style={styles.heroTextWrap}>
+              <Text style={styles.heroEyebrow}>AGREGA UN NUEVO RESIDENTE</Text>
+              <Text style={styles.heroTitle}>Nuevo residente</Text>
+              <Text style={styles.heroSubtitle}>
+                Completa la información para registrar al nuevo residente en tu condominio.
+              </Text>
+            </View>
+            <IlustracionEdificios size={100} />
+          </View>
+
+          <View style={styles.formCard}>
+            <View style={styles.campoFila}>
+              <View style={styles.campoIcono}>
+                <Text style={styles.campoIconoTexto}>🏢</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <SelectModal
+                  label="Torre"
+                  placeholder="Selecciona una torre"
+                  opciones={torres.map((t) => ({ id: t.id_torreblock, label: t.nombre_torre }))}
+                  valorSeleccionado={torreSel}
+                  onSeleccionar={handleSeleccionarTorre}
+                />
+              </View>
+            </View>
+
+            <View style={styles.campoFila}>
+              <View style={styles.campoIcono}>
+                <Text style={styles.campoIconoTexto}>🚪</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <SelectModal
+                  label="Departamento"
+                  placeholder={torreSel ? "Selecciona un depto" : "Primero elige la torre"}
+                  opciones={unidades.map((u) => ({ id: u.id_unidad, label: u.numero_unidad }))}
+                  valorSeleccionado={unidadSel}
+                  onSeleccionar={setUnidadSel}
+                  disabled={!torreSel}
+                />
+              </View>
+            </View>
+
+            {/* Ronda 77, a pedido explícito del usuario: el nombre se
+                separó en 3 campos (Nombres, Apellido Paterno, Apellido
+                Materno opcional) para poder filtrar por apellido_paterno
+                directamente en una query — antes era un solo campo
+                "Nombre completo". */}
+            <View style={styles.campoFila}>
+              <View style={styles.campoIcono}>
+                <Text style={styles.campoIconoTexto}>🙍</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.campoLabel}>Nombres</Text>
+                <TextInput
+                  style={styles.campoInput}
+                  placeholder="Ej: Juan Andrés"
+                  placeholderTextColor={colors.textMuted}
+                  value={nombresNuevo}
+                  onChangeText={setNombresNuevo}
+                />
+              </View>
+            </View>
+
+            <View style={styles.campoFila}>
+              <View style={styles.campoIcono}>
+                <Text style={styles.campoIconoTexto}>🙍</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.campoLabel}>Apellido paterno</Text>
+                <TextInput
+                  style={styles.campoInput}
+                  placeholder="Ej: Pérez"
+                  placeholderTextColor={colors.textMuted}
+                  value={apellidoPaternoNuevo}
+                  onChangeText={setApellidoPaternoNuevo}
+                />
+              </View>
+            </View>
+
+            <View style={styles.campoFila}>
+              <View style={styles.campoIcono}>
+                <Text style={styles.campoIconoTexto}>🙍</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.campoLabel}>Apellido materno (opcional)</Text>
+                <TextInput
+                  style={styles.campoInput}
+                  placeholder="Ej: Soto"
+                  placeholderTextColor={colors.textMuted}
+                  value={apellidoMaternoNuevo}
+                  onChangeText={setApellidoMaternoNuevo}
+                />
+                <Text style={styles.campoAyuda}>Déjalo vacío si el residente es extranjero y no tiene segundo apellido.</Text>
+              </View>
+            </View>
+
+            <View style={styles.campoFila}>
+              <View style={styles.campoIcono}>
+                <Text style={styles.campoIconoTexto}>🪪</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.campoLabel}>RUT (opcional)</Text>
+                <TextInput
+                  style={styles.campoInput}
+                  placeholder="Ej: 12345678-9"
+                  placeholderTextColor={colors.textMuted}
+                  value={rutNuevo}
+                  onChangeText={setRutNuevo}
+                  autoCapitalize="characters"
+                />
+              </View>
+            </View>
+
+            <View style={styles.campoFila}>
+              <View style={styles.campoIcono}>
+                <Text style={styles.campoIconoTexto}>🌎</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <SelectModal
+                  label="Nacionalidad"
+                  placeholder="Selecciona una nacionalidad (opcional)"
+                  opciones={nacionalidades.map((n) => ({ id: n.id_nacionalidad, label: n.gls_nacionalidad }))}
+                  valorSeleccionado={nacionalidadSel}
+                  onSeleccionar={setNacionalidadSel}
+                />
+              </View>
+            </View>
+
+            <View style={styles.divisor} />
+
+            <View style={styles.campoFila}>
+              <View style={styles.campoIcono}>
+                <Text style={styles.campoIconoTexto}>👥</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <SelectModal
+                  label="Tipo de residente"
+                  placeholder="Ej: Propietario, arrendatario, roomie..."
+                  opciones={tiposResidente.map((t) => ({ id: t.id_tiporesidente, label: t.gls_tiporesidente }))}
+                  valorSeleccionado={tipoResidenteSel}
+                  onSeleccionar={setTipoResidenteSel}
+                />
+              </View>
+            </View>
+
+            <View style={styles.campoFila}>
+              <View style={styles.campoIcono}>
+                <Text style={styles.campoIconoTexto}>📅</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <DateField
+                  label="Fecha de nacimiento (opcional)"
+                  value={fechaNacimientoNuevo}
+                  onChange={setFechaNacimientoNuevo}
+                  maximumDate={new Date()}
+                />
+                <Text style={styles.campoAyuda}>Nos ayuda a personalizar la comunicación del condominio.</Text>
+              </View>
+            </View>
+
+            <View style={styles.campoFila}>
+              <View style={styles.campoIcono}>
+                <Text style={styles.campoIconoTexto}>💼</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <SelectModal
+                  label="Profesión"
+                  placeholder="Selecciona una profesión (opcional)"
+                  opciones={profesiones.map((p) => ({ id: p.id_profesion, label: `${p.codigo} · ${p.gls_profesion}` }))}
+                  valorSeleccionado={profesionSel}
+                  onSeleccionar={(opcion) => {
+                    setProfesionSel(opcion);
+                    setProfesionNuevo(profesiones.find((p) => p.id_profesion === opcion.id)?.gls_profesion ?? "");
+                  }}
+                />
+              </View>
+            </View>
+
+            <View style={styles.botonesFila}>
+              <TouchableOpacity style={styles.botonCancelar} onPress={handleCancelarNuevo} activeOpacity={0.8}>
+                <Text style={styles.botonCancelarTexto}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.botonGuardar, creando && styles.botonDeshabilitado]}
+                onPress={handleCrear}
+                disabled={creando}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.botonGuardarTexto}>{creando ? "Guardando..." : "Guardar residente  →"}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TextInput
@@ -513,23 +762,51 @@ export default function AdminResidentesScreen() {
             <View style={styles.carnetForm}>
               <TextInput
                 style={styles.input}
+                placeholder="Nombres"
+                value={nombresEditar}
+                onChangeText={setNombresEditar}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Apellido paterno"
+                value={apellidoPaternoEditar}
+                onChangeText={setApellidoPaternoEditar}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Apellido materno (opcional)"
+                value={apellidoMaternoEditar}
+                onChangeText={setApellidoMaternoEditar}
+              />
+              <SelectModal
+                label="Nacionalidad"
+                placeholder="Selecciona una nacionalidad (opcional)"
+                opciones={nacionalidades.map((n) => ({ id: n.id_nacionalidad, label: n.gls_nacionalidad }))}
+                valorSeleccionado={nacionalidadEditarSel}
+                onSeleccionar={setNacionalidadEditarSel}
+              />
+              <TextInput
+                style={styles.input}
                 placeholder="RUT (opcional)"
                 value={rutEditar}
                 onChangeText={setRutEditar}
                 autoCapitalize="characters"
               />
-              <TextInput
-                style={styles.input}
-                placeholder="Fecha de nacimiento AAAA-MM-DD (opcional)"
+              <DateField
+                label="Fecha de nacimiento (opcional)"
                 value={fechaNacimientoEditar}
-                onChangeText={setFechaNacimientoEditar}
-                keyboardType="numbers-and-punctuation"
+                onChange={setFechaNacimientoEditar}
+                maximumDate={new Date()}
               />
-              <TextInput
-                style={styles.input}
-                placeholder="Profesión (opcional)"
-                value={profesionEditar}
-                onChangeText={setProfesionEditar}
+              <SelectModal
+                label="Profesión"
+                placeholder="Selecciona una profesión (opcional)"
+                opciones={profesiones.map((p) => ({ id: p.id_profesion, label: `${p.codigo} · ${p.gls_profesion}` }))}
+                valorSeleccionado={profesionEditarSel}
+                onSeleccionar={(opcion) => {
+                  setProfesionEditarSel(opcion);
+                  setProfesionEditar(profesiones.find((p) => p.id_profesion === opcion.id)?.gls_profesion ?? "");
+                }}
               />
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
@@ -592,8 +869,62 @@ export default function AdminResidentesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f6f8" },
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 12 },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
+  // Ronda 76 — tarjeta "hero" + tarjeta de campos con ícono, "Nuevo residente"
+  heroCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.skyLight,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  heroTextWrap: { flex: 1, paddingRight: spacing.sm },
+  heroEyebrow: { color: colors.azulVivo, fontWeight: "800", fontSize: 11, letterSpacing: 1 },
+  heroTitle: { color: colors.textDark, fontWeight: "800", fontSize: 24, marginTop: 4 },
+  heroSubtitle: { color: colors.textMuted, fontSize: 13, marginTop: 6, lineHeight: 18 },
+  formCard: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
+  campoFila: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, marginBottom: spacing.sm },
+  campoIcono: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.skyBadge,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  campoIconoTexto: { fontSize: 20 },
+  campoLabel: { ...typography.label, color: colors.textDark, marginBottom: 4 },
+  campoInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: 12,
+    fontSize: 16,
+    color: colors.textDark,
+    backgroundColor: colors.offWhite,
+  },
+  campoAyuda: { ...typography.small, color: colors.textMuted, marginTop: 4 },
+  divisor: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
+  botonesFila: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+  botonCancelar: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: colors.navy900,
+    borderRadius: radius.sm,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  botonCancelarTexto: { color: colors.navy900, fontWeight: "700", fontSize: 15 },
+  botonGuardar: {
+    flex: 1.3,
+    backgroundColor: colors.navy900,
+    borderRadius: radius.sm,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  botonDeshabilitado: { opacity: 0.6 },
+  botonGuardarTexto: { color: colors.textOnNavy, fontWeight: "800", fontSize: 15 },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
@@ -611,8 +942,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginBottom: 8,
   },
-  botonCrear: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
   card: { backgroundColor: "#fff", borderRadius: 12, padding: 14 },
   cardHeader: { flexDirection: "row", alignItems: "center" },
   nombreItem: { fontSize: 16, fontWeight: "700" },

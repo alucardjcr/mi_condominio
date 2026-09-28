@@ -4,7 +4,9 @@ import { superAdminCrearAdministrador, superAdminGetCondominios } from "../../ap
 import { CondominioSimple } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import FotoCapture from "../../components/FotoCapture";
-import { esRutValido, formatearRut } from "../../utils/validarRut";
+import DateField from "../../components/DateField";
+import { esRutValido, formatearRut, formatearRutConPuntos } from "../../utils/validarRut";
+import { AYUDA_PASSWORD, validarPassword } from "../../utils/validarPassword";
 import { colors, radius, spacing, typography } from "../../theme/theme";
 
 // Ronda 27, a pedido explícito del usuario: "solo yo podré crear el rol de
@@ -17,6 +19,12 @@ import { colors, radius, spacing, typography } from "../../theme/theme";
 // El condominio también pasó a ser opcional (ronda 66): si no se elige
 // ninguno, el Administrador entra por el flujo de "crear mi primer
 // condominio" la primera vez que se loguea.
+//
+// Ronda 71, a pedido explícito del usuario: el RUT se ve con puntos de
+// miles en pantalla ("18.655.541-4") pero se sigue guardando/mandando al
+// backend igual que antes (sin puntos, "18655541-4", dígito verificador
+// pegado con guión — nunca aparte); y la fecha de nacimiento ahora tiene
+// selector de calendario además de poder escribirse a mano.
 export default function SuperAdminCrearAdminScreen({ navigation }: any) {
   const { token } = useAuth();
   const [condominios, setCondominios] = useState<CondominioSimple[]>([]);
@@ -51,6 +59,16 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
       setError("Completa nombre, usuario y contraseña.");
       return;
     }
+    // Ronda 72, a pedido explícito del usuario (hallazgo de seguridad): esta
+    // pantalla dejaba crear un Administrador con una clave de 4 caracteres
+    // — el backend ahora también lo rechaza (validarFortalezaPassword en
+    // crearAdministrador), pero se valida acá primero para dar el error al
+    // toque, sin esperar el viaje al servidor.
+    const errorPassword = validarPassword(password);
+    if (errorPassword) {
+      setError(errorPassword);
+      return;
+    }
     if (!rut.trim()) {
       setError("Falta el RUT del administrador.");
       return;
@@ -60,7 +78,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
       return;
     }
     if (!fechaNacimiento.trim()) {
-      setError("Falta la fecha de nacimiento (formato AAAA-MM-DD).");
+      setError("Falta la fecha de nacimiento.");
       return;
     }
     if (!correo.trim()) {
@@ -112,7 +130,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <FotoCapture label="Foto del administrador" value={foto} onChange={setFoto} />
+        <FotoCapture label="Foto del administrador" value={foto} onChange={setFoto} recorteCuadrado />
 
         <Text style={styles.label}>Nombre completo</Text>
         <TextInput
@@ -135,24 +153,21 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
             if (!rut.trim()) return;
             if (!esRutValido(rut)) {
               setRutError(true);
-              Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo (formato: 12345678-9).");
+              Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo (formato: 12.345.678-9).");
               return;
             }
-            setRut(formatearRut(rut));
+            // Se muestra con puntos en pantalla; lo que se guarda y se manda
+            // al backend sigue siendo sin puntos (formatearRut, en
+            // handleCrear) — el dígito verificador nunca se guarda aparte,
+            // siempre va pegado al cuerpo con el guión, en el mismo campo.
+            setRut(formatearRutConPuntos(rut));
           }}
-          placeholder="ej: 12345678-9"
+          placeholder="ej: 12.345.678-9"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="characters"
         />
 
-        <Text style={styles.label}>Fecha de nacimiento</Text>
-        <TextInput
-          style={styles.input}
-          value={fechaNacimiento}
-          onChangeText={setFechaNacimiento}
-          placeholder="AAAA-MM-DD"
-          placeholderTextColor={colors.textMuted}
-        />
+        <DateField label="Fecha de nacimiento" value={fechaNacimiento} onChange={setFechaNacimiento} maximumDate={new Date()} />
 
         <Text style={styles.label}>N° de registro RNAC (opcional)</Text>
         <Text style={styles.ayudaChica}>Registro Nacional de Administradores de Condominios.</Text>
@@ -196,11 +211,12 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
         />
 
         <Text style={styles.label}>Contraseña inicial</Text>
+        <Text style={styles.ayudaChica}>{AYUDA_PASSWORD}</Text>
         <TextInput
           style={styles.input}
           value={password}
           onChangeText={setPassword}
-          placeholder="Mínimo 4 caracteres"
+          placeholder="Mínimo 12 caracteres"
           placeholderTextColor={colors.textMuted}
           secureTextEntry
         />

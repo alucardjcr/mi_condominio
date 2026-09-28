@@ -6,6 +6,7 @@ import {
   eliminarPushToken,
   seleccionarCondominio as apiSeleccionarCondominio,
   completarOnboarding as apiCompletarOnboarding,
+  completarCambioPasswordInicial as apiCompletarCambioPasswordInicial,
   crearCondominioInicial as apiCrearCondominioInicial,
   setUnauthorizedHandler,
   setPagoPendienteHandler,
@@ -63,6 +64,13 @@ interface AuthContextValue {
   // de Login/Home mientras esto es true. Reutiliza tokenIntermedio (mismo
   // token, misma forma) para no duplicar ese estado.
   requiereOnboarding: boolean;
+  // Ronda 72, a pedido explícito del usuario: true cuando un Administrador
+  // recién creado por el SuperAdmin se logea por primera vez con la clave
+  // que le pusieron — App.tsx muestra CambiarPasswordObligatorioScreen en
+  // vez de Login/Home mientras esto es true. Igual que requiereOnboarding,
+  // reutiliza tokenIntermedio para no duplicar ese estado; a diferencia de
+  // ese, acá el usuariocol NO cambia, solo la contraseña.
+  requiereCambioPasswordInicial: boolean;
   // Ronda 66, a pedido explícito del usuario: true cuando un Administrador
   // se logea y todavía no tiene NINGÚN condominio (cuenta recién creada
   // por el SuperAdmin, sin condominio_id_condominio asignado) — App.tsx
@@ -96,6 +104,9 @@ interface AuthContextValue {
   // Ronda 37: paso 2 del onboarding obligatorio de un residente — usa el
   // mismo tokenIntermedio que ya tiene el contexto.
   completarOnboarding: (usuariocolNuevo: string, passwordNuevo: string) => Promise<void>;
+  // Ronda 72: paso 2 del cambio de contraseña obligatorio de un
+  // Administrador recién creado — usa el mismo tokenIntermedio.
+  completarCambioPasswordInicial: (passwordNuevo: string) => Promise<void>;
   seleccionarCondominio: (condominioId: number) => Promise<void>;
   // Ronda 66: crea el primer condominio de un Administrador sin ninguno
   // todavía (ver requiereCrearCondominioInicial) — a diferencia de crear
@@ -142,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // persiste ni se usa para llamar a ninguna otra ruta.
   const [tokenIntermedio, setTokenIntermedio] = useState<string | null>(null);
   const [requiereOnboarding, setRequiereOnboarding] = useState(false);
+  const [requiereCambioPasswordInicial, setRequiereCambioPasswordInicial] = useState(false);
   const [requiereCrearCondominioInicial, setRequiereCrearCondominioInicial] = useState(false);
   const [condominiosDisponibles, setCondominiosDisponibles] = useState<CondominioOpcion[]>([]);
   const [nombreCondominioActual, setNombreCondominioActual] = useState<string | null>(null);
@@ -167,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setRol(null);
     setTokenIntermedio(null);
     setRequiereOnboarding(false);
+    setRequiereCambioPasswordInicial(false);
     setCondominiosDisponibles([]);
     setNombreCondominioActual(null);
     setPagoPendiente(false);
@@ -180,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setRol(resultado.rol as Rol);
     setTokenIntermedio(null);
     setRequiereOnboarding(false);
+    setRequiereCambioPasswordInicial(false);
     setCondominiosDisponibles([]);
     setNombreCondominioActual(resultado.condominio_nombre ?? null);
     setPagoPendiente(false);
@@ -268,6 +282,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if ("requiereSeleccionCondominio" in resultado) {
       setTokenIntermedio(resultado.token);
       setRequiereOnboarding(false);
+      setRequiereCambioPasswordInicial(false);
       setRequiereCrearCondominioInicial(false);
       setCondominiosDisponibles(resultado.condominios);
       return;
@@ -275,10 +290,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if ("requiereCrearCondominioInicial" in resultado) {
       setTokenIntermedio(resultado.token);
       setRequiereOnboarding(false);
+      setRequiereCambioPasswordInicial(false);
       setRequiereCrearCondominioInicial(true);
       return;
     }
     setRequiereCrearCondominioInicial(false);
+    setRequiereCambioPasswordInicial(false);
     aplicarSesion(resultado);
   };
 
@@ -290,8 +307,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       esAdmin: rol === "Administrador" || guardia?.esComite === true,
       esPropietario: rol === "Residente" && guardia?.esPropietario === true,
       restaurandoSesion,
-      requiereSeleccionCondominio: tokenIntermedio !== null && !requiereOnboarding && !requiereCrearCondominioInicial,
+      requiereSeleccionCondominio:
+        tokenIntermedio !== null && !requiereOnboarding && !requiereCambioPasswordInicial && !requiereCrearCondominioInicial,
       requiereOnboarding,
+      requiereCambioPasswordInicial,
       requiereCrearCondominioInicial,
       condominiosDisponibles,
       pagoPendiente,
@@ -305,11 +324,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setRequiereOnboarding(true);
           return;
         }
+        if ("requiereCambioPasswordInicial" in resultado) {
+          setTokenIntermedio(resultado.token);
+          setRequiereCambioPasswordInicial(true);
+          return;
+        }
         manejarResultadoLogin(resultado);
       },
       completarOnboarding: async (usuariocolNuevo: string, passwordNuevo: string) => {
         if (!tokenIntermedio) return;
         const resultado = await apiCompletarOnboarding(tokenIntermedio, usuariocolNuevo, passwordNuevo);
+        manejarResultadoLogin(resultado);
+      },
+      completarCambioPasswordInicial: async (passwordNuevo: string) => {
+        if (!tokenIntermedio) return;
+        const resultado = await apiCompletarCambioPasswordInicial(tokenIntermedio, passwordNuevo);
         manejarResultadoLogin(resultado);
       },
       seleccionarCondominio: async (condominioId: number) => {
@@ -337,6 +366,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       restaurandoSesion,
       tokenIntermedio,
       requiereOnboarding,
+      requiereCambioPasswordInicial,
       requiereCrearCondominioInicial,
       condominiosDisponibles,
       nombreCondominioActual,

@@ -12,6 +12,7 @@ import AdminDrawerNavigator from "./src/navigation/AdminDrawerNavigator";
 import SuperAdminStackNavigator from "./src/navigation/SuperAdminStackNavigator";
 import PagoPendienteScreen from "./src/screens/PagoPendienteScreen";
 import OnboardingResidenteScreen from "./src/screens/OnboardingResidenteScreen";
+import CambiarPasswordObligatorioScreen from "./src/screens/CambiarPasswordObligatorioScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import RecuperarPasswordScreen from "./src/screens/RecuperarPasswordScreen";
 import AvisoPrivacidadScreen from "./src/screens/AvisoPrivacidadScreen";
@@ -55,8 +56,17 @@ import MiEquipoScreen from "./src/screens/jefeequipo/MiEquipoScreen";
 const Stack = createNativeStackNavigator();
 
 function AppNavigator() {
-  const { token, rol, esAdmin, restaurandoSesion, requiereSeleccionCondominio, pagoPendiente, requiereOnboarding, requiereCrearCondominioInicial } =
-    useAuth();
+  const {
+    token,
+    rol,
+    esAdmin,
+    restaurandoSesion,
+    requiereSeleccionCondominio,
+    pagoPendiente,
+    requiereOnboarding,
+    requiereCambioPasswordInicial,
+    requiereCrearCondominioInicial,
+  } = useAuth();
   const esSuperAdmin = rol === "SuperAdmin";
   // Un residente del comité (esAdmin=true aunque rol="Residente") navega
   // igual que Administrador, no por la rama de Residente.
@@ -128,6 +138,17 @@ function AppNavigator() {
         <Stack.Screen
           name="OnboardingResidente"
           component={OnboardingResidenteScreen}
+          options={{ headerShown: false }}
+        />
+      ) : !token && requiereCambioPasswordInicial ? (
+        // Ronda 72, a pedido explícito del usuario: Administrador recién
+        // creado por el SuperAdmin, con la clave que le asignaron todavía
+        // sin cambiar — mismo criterio que requiereOnboarding arriba (va
+        // antes que cualquier otra pantalla, ni siquiera el selector de
+        // condominio o el aviso de pago pendiente).
+        <Stack.Screen
+          name="CambiarPasswordObligatorio"
+          component={CambiarPasswordObligatorioScreen}
           options={{ headerShown: false }}
         />
       ) : !token && pagoPendiente ? (

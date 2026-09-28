@@ -1,7 +1,8 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -28,8 +29,8 @@ type EstructuraUI = EstructuraCondominio | "parcelas";
 
 interface TorreArmada {
   nombre_torre: string;
-  cantidad_pisos?: number;
-  numeros_unidad: string[];
+  cantidad_pisos: number;
+  deptos_por_piso: number;
 }
 
 // Separa una lista pegada tipo CSV: acepta comas, saltos de línea, o
@@ -44,17 +45,6 @@ function parsearNumeros(texto: string): string[] {
     if (!n || vistos.has(n)) continue;
     vistos.add(n);
     resultado.push(n);
-  }
-  return resultado;
-}
-
-// Patrón simple "N pisos x M deptos por piso" -> 101,102...,201,202...
-function generarPorPatron(pisos: number, deptosPorPiso: number): string[] {
-  const resultado: string[] = [];
-  for (let p = 1; p <= pisos; p++) {
-    for (let d = 1; d <= deptosPorPiso; d++) {
-      resultado.push(`${p}${String(d).padStart(2, "0")}`);
-    }
   }
   return resultado;
 }
@@ -123,6 +113,25 @@ export default function CrearCondominioScreen({ navigation }: any) {
   const [pisosTorre, setPisosTorre] = useState("");
   const [deptosPorPisoTorre, setDeptosPorPisoTorre] = useState("");
 
+  // Ronda 71, a pedido explícito del usuario: al pasar de una torre a la
+  // siguiente, el único cambio visible era el número en el texto "Torre 2
+  // de 6" — pasaba fácil desapercibido. Se agrega una animación de
+  // entrada (fade + slide) cada vez que cambia `torreIndiceActual`, más
+  // una fila de puntos de progreso arriba, para que el salto de torre se
+  // note de verdad.
+  const animTorre = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (etiquetaTorreBlock && cantidadTorresConfirmada !== null && torreIndiceActual <= cantidadTorresConfirmada) {
+      animTorre.setValue(0);
+      Animated.timing(animTorre, {
+        toValue: 1,
+        duration: 320,
+        useNativeDriver: true,
+      }).start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [torreIndiceActual, cantidadTorresConfirmada]);
+
   // --- estructura = "edificio": un solo bloque de pisos/deptos ---
   const [pisosEdificio, setPisosEdificio] = useState("");
   const [deptosPorPisoEdificio, setDeptosPorPisoEdificio] = useState("");
@@ -161,7 +170,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
     }
     setError(null);
     const nombre = `${etiquetaTorreBlock} ${torreIndiceActual}`;
-    setTorresAgregadas((prev) => [...prev, { nombre_torre: nombre, cantidad_pisos: pisos, numeros_unidad: generarPorPatron(pisos, deptosPorPiso) }]);
+    setTorresAgregadas((prev) => [...prev, { nombre_torre: nombre, cantidad_pisos: pisos, deptos_por_piso: deptosPorPiso }]);
     setPisosTorre("");
     setDeptosPorPisoTorre("");
     setTorreIndiceActual((i) => i + 1);
@@ -243,7 +252,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
       payload = {
         nombre_condominio: nombreCondominio.trim(),
         estructura,
-        edificio: { cantidad_pisos: pisos, numeros_unidad: generarPorPatron(pisos, deptosPorPiso) },
+        edificio: { cantidad_pisos: pisos, deptos_por_piso: deptosPorPiso },
       };
     } else if (estructura === "casas") {
       const numeros = parsearNumeros(casasTexto);
@@ -312,9 +321,13 @@ export default function CrearCondominioScreen({ navigation }: any) {
       // También le faltaba manejo de errores: si algo fallaba (sesión
       // vencida, sin conexión), la promesa quedaba sin atrapar y no se
       // veía ningún aviso.
+      const faltaNumerar = estructura === "torres" || estructura === "edificio";
       Alert.alert(
         "Condominio creado",
-        `"${resultado.nombre}" quedó creado con ${resultado.unidades_creadas} unidad(es). ¿Quieres entrar a administrarlo ahora?`,
+        `"${resultado.nombre}" quedó creado con ${resultado.unidades_creadas} unidad(es).` +
+          (faltaNumerar
+            ? ` Recuerda ponerle el número real a cada depto desde "Numerar torres" en el menú. ¿Quieres entrar a administrarlo ahora?`
+            : ` ¿Quieres entrar a administrarlo ahora?`),
         [
           { text: "Más tarde", style: "cancel", onPress: () => navigation.goBack() },
           {
@@ -487,40 +500,68 @@ export default function CrearCondominioScreen({ navigation }: any) {
             )}
 
             {/* Sub-pantalla C: un paso por cada torre/block, pidiendo solo
-                pisos + deptos por piso — la numeración se genera sola. */}
+                pisos + deptos por piso — la numeración se genera sola.
+                Ronda 71: puntos de progreso + badge grande + animación de
+                entrada, para que se note de verdad el cambio de torre. */}
             {etiquetaTorreBlock && cantidadTorresConfirmada !== null && torreIndiceActual <= cantidadTorresConfirmada && (
               <>
-                <Text style={styles.subtitulo}>
-                  {etiquetaTorreBlock} {torreIndiceActual} de {cantidadTorresConfirmada}
-                </Text>
-                <Text style={styles.label}>Pisos</Text>
-                <TextInput
-                  style={styles.input}
-                  value={pisosTorre}
-                  onChangeText={setPisosTorre}
-                  placeholder="ej: 5"
-                  placeholderTextColor={colors.textMuted}
-                  keyboardType="number-pad"
-                />
-                <Text style={styles.label}>Deptos por piso</Text>
-                <TextInput
-                  style={styles.input}
-                  value={deptosPorPisoTorre}
-                  onChangeText={setDeptosPorPisoTorre}
-                  placeholder="ej: 4"
-                  placeholderTextColor={colors.textMuted}
-                  keyboardType="number-pad"
-                />
-                <Text style={styles.ayuda}>
-                  Los números de depto (101, 102... 201, 202...) se generan solos — si necesitas números distintos
-                  (irregulares, saltados, con letra), lo ajustas después desde la administración del condominio.
-                </Text>
-                {error && <Text style={styles.error}>{error}</Text>}
-                <TouchableOpacity style={styles.boton} onPress={handleAgregarTorreActualYSeguir} activeOpacity={0.85}>
-                  <Text style={styles.botonTexto}>
-                    {torreIndiceActual < cantidadTorresConfirmada ? "Guardar y seguir con la siguiente" : "Guardar"}
+                <View style={styles.progresoTorres}>
+                  {Array.from({ length: cantidadTorresConfirmada }).map((_, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.progresoDot,
+                        i + 1 === torreIndiceActual && styles.progresoDotActivo,
+                        i + 1 < torreIndiceActual && styles.progresoDotCompletado,
+                      ]}
+                    />
+                  ))}
+                </View>
+
+                <Animated.View
+                  style={{
+                    opacity: animTorre,
+                    transform: [
+                      {
+                        translateY: animTorre.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }),
+                      },
+                    ],
+                  }}
+                >
+                  <View style={styles.torreBadge}>
+                    <Text style={styles.torreBadgeTexto}>
+                      {etiquetaTorreBlock} {torreIndiceActual} de {cantidadTorresConfirmada}
+                    </Text>
+                  </View>
+                  <Text style={styles.label}>Pisos</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={pisosTorre}
+                    onChangeText={setPisosTorre}
+                    placeholder="ej: 5"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="number-pad"
+                  />
+                  <Text style={styles.label}>Deptos por piso</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={deptosPorPisoTorre}
+                    onChangeText={setDeptosPorPisoTorre}
+                    placeholder="ej: 4"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="number-pad"
+                  />
+                  <Text style={styles.ayuda}>
+                    Los números de cada depto se ponen después, piso por piso, desde "Numerar torres" en el menú del
+                    administrador.
                   </Text>
-                </TouchableOpacity>
+                  {error && <Text style={styles.error}>{error}</Text>}
+                  <TouchableOpacity style={styles.boton} onPress={handleAgregarTorreActualYSeguir} activeOpacity={0.85}>
+                    <Text style={styles.botonTexto}>
+                      {torreIndiceActual < cantidadTorresConfirmada ? "Guardar y seguir con la siguiente" : "Guardar"}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
               </>
             )}
 
@@ -532,7 +573,10 @@ export default function CrearCondominioScreen({ navigation }: any) {
                   <View key={i} style={styles.torreResumen}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.torreResumenNombre}>{t.nombre_torre}</Text>
-                      <Text style={styles.torreResumenDetalle}>{t.numeros_unidad.length} unidad(es)</Text>
+                      <Text style={styles.torreResumenDetalle}>
+                        {t.cantidad_pisos} piso(s) · {t.deptos_por_piso} depto(s) por piso ·{" "}
+                        {t.cantidad_pisos * t.deptos_por_piso} unidad(es)
+                      </Text>
                     </View>
                     <TouchableOpacity onPress={() => handleQuitarTorre(i)}>
                       <Text style={styles.quitarTexto}>Quitar</Text>
@@ -580,8 +624,8 @@ export default function CrearCondominioScreen({ navigation }: any) {
               keyboardType="number-pad"
             />
             <Text style={styles.ayuda}>
-              Los números de depto (101, 102... 201, 202...) se generan solos — si necesitas números distintos
-              (irregulares, saltados, con letra), lo ajustas después desde la administración del condominio.
+              Los números de cada depto se ponen después, piso por piso, desde "Numerar torres" en el menú del
+              administrador.
             </Text>
 
             {error && <Text style={styles.error}>{error}</Text>}
@@ -712,6 +756,20 @@ const styles = StyleSheet.create({
   opcionLargaTitulo: { color: colors.textDark, fontWeight: "800", fontSize: 15 },
   opcionLargaAyuda: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   opcionTextoActivo: { color: colors.navy900 },
+  // Ronda 71 — feedback visual de cambio de torre
+  progresoTorres: { flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: spacing.md },
+  progresoDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
+  progresoDotActivo: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.gold },
+  progresoDotCompletado: { backgroundColor: colors.navy700 },
+  torreBadge: {
+    alignSelf: "center",
+    backgroundColor: colors.navy900,
+    borderRadius: radius.lg,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  torreBadgeTexto: { color: colors.gold, fontWeight: "800", fontSize: 18 },
   torreResumen: {
     flexDirection: "row",
     alignItems: "center",

@@ -55,6 +55,13 @@ export const colors = {
   danger: "#C0392B",
   info: "#0A2C6B",
   warning: "#D97706",
+
+  // Ronda 76, a pedido explícito del usuario: tarjetas "hero" claras sobre
+  // fondo blanco (ej. encabezado de un formulario, como "Nuevo residente")
+  // y el cuadrado de ícono que acompaña cada campo — un celeste suave
+  // derivado del azul institucional, no un color nuevo sin relación.
+  skyLight: "#EAF2FE",
+  skyBadge: "#DCEAFD",
 } as const;
 
 export const spacing = {

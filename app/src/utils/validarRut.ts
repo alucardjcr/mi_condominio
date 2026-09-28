@@ -1,8 +1,9 @@
 // Ronda 70, a pedido explícito del usuario: validar el RUT chileno de
 // TODAS las personas del sistema (residentes, guardias, personal,
 // administradores, vetados) al perder el foco del campo — algoritmo
-// estándar de dígito verificador módulo 11. Formato pedido: "12345678-9"
-// (sin puntos, con guión).
+// estándar de dígito verificador módulo 11. Formato guardado: "12345678-9"
+// (sin puntos, con guión) — es el que viaja al backend y el que usa
+// `esRutValido`/`formatearRut`.
 
 /** Deja el RUT solo con dígitos + "K" mayúscula, sin puntos ni guión. */
 function limpiarRut(rut: string): string {
@@ -38,9 +39,11 @@ export function esRutValido(rut: string): boolean {
 }
 
 /**
- * Formatea un RUT ya limpio al formato pedido "12345678-9" (sin puntos).
- * Si el texto no alcanza a tener cuerpo + DV, lo devuelve tal cual venía
- * (para no "romper" lo que la persona todavía está escribiendo).
+ * Formatea un RUT ya limpio al formato que se GUARDA "12345678-9" (sin
+ * puntos, con guión — el dígito verificador queda pegado al cuerpo con un
+ * guión en el mismo string, nunca se guarda aparte). Si el texto no
+ * alcanza a tener cuerpo + DV, lo devuelve tal cual venía (para no
+ * "romper" lo que la persona todavía está escribiendo).
  */
 export function formatearRut(rut: string): string {
   const limpio = limpiarRut(rut);
@@ -48,6 +51,23 @@ export function formatearRut(rut: string): string {
   const cuerpo = limpio.slice(0, -1);
   const dv = limpio.slice(-1);
   return `${cuerpo}-${dv}`;
+}
+
+/**
+ * Ronda 71, a pedido explícito del usuario: formatea un RUT para MOSTRARLO
+ * en pantalla con puntos de miles + guión, ej. "18.655.541-4" — solo
+ * cambia cómo se ve en el campo de texto; lo que se manda al backend
+ * sigue pasando por `formatearRut()` (sin puntos), que limpia cualquier
+ * punto antes de reconstruir el string, así que ambos formatos conviven
+ * sin duplicar el dato ni el dígito verificador en ningún lado aparte.
+ */
+export function formatearRutConPuntos(rut: string): string {
+  const limpio = limpiarRut(rut);
+  if (limpio.length < 2) return rut.trim();
+  const cuerpo = limpio.slice(0, -1);
+  const dv = limpio.slice(-1);
+  const cuerpoConPuntos = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${cuerpoConPuntos}-${dv}`;
 }
 
 /**

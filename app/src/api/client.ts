@@ -48,6 +48,8 @@ import {
   TipoPermiso,
   TipoPersonal,
   TipoResidente,
+  Profesion,
+  Nacionalidad,
   TipoTenenciaPatente,
   Torre,
   TareaPersonal,
@@ -60,6 +62,8 @@ import {
   TurnoPersonal,
   Unidad,
   UnidadGastoComun,
+  UnidadParaNumerar,
+  AsignacionNumero,
   Vetado,
   Visita,
   CondominioOpcion,
@@ -275,6 +279,10 @@ export const getResidentesConCarnetDiscapacidad = (token: string) =>
 
 export const getTiposResidente = (token: string) => get<TipoResidente[]>(`/tipos-residente`, token);
 
+export const getProfesiones = (token: string) => get<Profesion[]>(`/profesiones`, token);
+
+export const getNacionalidades = (token: string) => get<Nacionalidad[]>(`/nacionalidades`, token);
+
 export const getDisponibilidad = (token: string, condominioId: number) =>
   get<Estacionamiento[]>(`/estacionamientos/disponibilidad?condominio_id=${condominioId}`, token);
 
@@ -310,13 +318,18 @@ export const adminGetResidentes = (token: string) => get<ResidenteAdmin[]>(`/adm
 export const adminCrearResidente = (
   token: string,
   input: {
-    nombre_usuario: string;
+    // Ronda 77, a pedido explícito del usuario: nombre separado en 3
+    // partes (apellido_materno opcional) en vez de un solo string.
+    nombres: string;
+    apellido_paterno: string;
+    apellido_materno?: string;
     unidad_id_unidad: number;
     tipo_residente_id_tiporesidente?: number;
     flg_propietario?: number;
     rut?: string;
     fecha_nacimiento?: string;
     profesion?: string;
+    nacionalidad_id_nacionalidad?: number;
   }
 ) => send<ResidenteAdmin>(`/admin/residentes`, "POST", token, input);
 
@@ -334,6 +347,10 @@ export const adminActualizarResidente = (
     rut?: string | null;
     fecha_nacimiento?: string | null;
     profesion?: string | null;
+    nombres?: string | null;
+    apellido_paterno?: string | null;
+    apellido_materno?: string | null;
+    nacionalidad_id_nacionalidad?: number | null;
   }
 ) => send<ResidenteAdmin>(`/admin/residentes/${id}`, "PATCH", token, input);
 
@@ -557,6 +574,17 @@ export const adminGetUnidadesGastoComun = (token: string, condominioId: number) 
 
 export const adminActualizarGastoComunUnidad = (token: string, idUnidad: number, flgGastocomun: number) =>
   send<UnidadGastoComun>(`/admin/unidades/${idUnidad}/gasto-comun`, "PATCH", token, { flg_gastocomun: flgGastocomun });
+
+// --- Numerar torres (ronda 73, Administrador) -------------------------------
+// Reemplaza la generación automática de números (101, 102, 201...) — el
+// administrador pone el número real de cada depto, piso por piso, después
+// de crear el condominio.
+
+export const adminGetUnidadesParaNumerar = (token: string, idTorre: number) =>
+  get<{ torre: Torre; unidades: UnidadParaNumerar[] }>(`/admin/torres/${idTorre}/unidades-numerar`, token);
+
+export const adminNumerarUnidadesTorre = (token: string, idTorre: number, asignaciones: AsignacionNumero[]) =>
+  send<{ torre: Torre; unidades: UnidadParaNumerar[] }>(`/admin/torres/${idTorre}/numerar`, "PATCH", token, { asignaciones });
 
 // --- Personal externo (ronda 18, Administrador/Comité) ---------------------
 // Aseo, jardinería, mantención, etc. — ficha + especialidad, tareas puntuales

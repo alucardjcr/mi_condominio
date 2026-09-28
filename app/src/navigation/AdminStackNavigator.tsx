@@ -10,6 +10,7 @@ import DisponibilidadScreen from "../screens/DisponibilidadScreen";
 import PaqueteBusquedaScreen from "../screens/PaqueteBusquedaScreen";
 import AdminGuardiasScreen from "../screens/admin/AdminGuardiasScreen";
 import AdminResidentesScreen from "../screens/admin/AdminResidentesScreen";
+import AdminNumerarTorresScreen from "../screens/admin/AdminNumerarTorresScreen";
 import AdminPatentesScreen from "../screens/admin/AdminPatentesScreen";
 import AdminAuditoriaScreen from "../screens/admin/AdminAuditoriaScreen";
 import AdminReporteGastoComunScreen from "../screens/admin/AdminReporteGastoComunScreen";
@@ -139,6 +140,7 @@ export default function AdminStackNavigator() {
       <Stack.Screen name="PaqueteBusqueda" component={PaqueteBusquedaScreen} options={{ title: "Buscar paquetes" }} />
       <Stack.Screen name="AdminGuardias" component={AdminGuardiasScreen} options={{ title: "Guardias" }} />
       <Stack.Screen name="AdminResidentes" component={AdminResidentesScreen} options={{ title: "Residentes" }} />
+      <Stack.Screen name="AdminNumerarTorres" component={AdminNumerarTorresScreen} options={{ title: "Numerar torres" }} />
       <Stack.Screen name="AdminPatentes" component={AdminPatentesScreen} options={{ title: "Patentes de residentes" }} />
       <Stack.Screen name="AdminAuditoria" component={AdminAuditoriaScreen} options={{ title: "Auditoría por patente" }} />
       <Stack.Screen

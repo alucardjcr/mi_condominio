@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Se usa la cámara para fotografiar los paquetes que llegan a conserjería y a quien los retira."
+        "NSCameraUsageDescription": "Se usa la cámara para fotografiar los paquetes que llegan a conserjería y a quien los retira, y para fotos de perfil."
       }
     },
     "android": {
@@ -29,10 +29,14 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "Se usa la cámara para fotografiar los paquetes que llegan a conserjería y a quien los retira."
+          "cameraPermission": "Se usa la cámara para fotografiar los paquetes que llegan a conserjería y a quien los retira, y para fotos de perfil.",
+          "photosPermission": "Se usa tu galería para elegir una foto ya existente en vez de tomar una nueva."
         }
       ],
-      ["expo-notifications", {}],
+      [
+        "expo-notifications",
+        {}
+      ],
       [
         "expo-splash-screen",
         {
@@ -41,7 +45,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#0A2C6B"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

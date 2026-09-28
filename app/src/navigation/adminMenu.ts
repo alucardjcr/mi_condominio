@@ -23,6 +23,7 @@ export const SECCIONES_MENU_ADMIN: SeccionMenu[] = [
     titulo: "Gestión de residentes",
     items: [
       { label: "Residentes", route: "AdminResidentes", icon: "🏠" },
+      { label: "Numerar torres", route: "AdminNumerarTorres", icon: "🔢" },
       { label: "Patentes de residentes", route: "AdminPatentes", icon: "🔎" },
       { label: "Mascotas", route: "Mascotas", icon: "🐾" },
       { label: "Vetados", route: "AdminVetados", icon: "⛔" },

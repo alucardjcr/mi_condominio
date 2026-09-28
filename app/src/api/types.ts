@@ -41,6 +41,20 @@ export interface Unidad {
   numero_unidad: string;
 }
 
+// Ronda 73: unidad "placeholder" pendiente de numerar (ver
+// AdminNumerarTorresScreen) — nace con numero_unidad tipo "Piso 1 · #1" y
+// el piso ya guardado, sin número real todavía.
+export interface UnidadParaNumerar {
+  id_unidad: number;
+  numero_unidad: string;
+  piso: number | null;
+}
+
+export interface AsignacionNumero {
+  id_unidad: number;
+  numero_unidad: string;
+}
+
 export interface Residente {
   id_usuario: number;
   nombre_usuario: string;
@@ -156,6 +170,18 @@ export interface RequiereOnboardingResponse {
   token: string; // token intermedio: solo sirve para POST /auth/completar-onboarding
 }
 
+// Ronda 72, a pedido explícito del usuario: cuando el SuperAdmin crea un
+// Administrador, esa cuenta queda con el cambio de contraseña pendiente —
+// la PRIMERA vez que hace login, POST /auth/login devuelve esto en vez de
+// LoginResponse, y la app lo manda a elegir su propia clave (mínimo 12
+// caracteres, etc.) antes de dejarlo ver cualquier otra cosa. A diferencia
+// de RequiereOnboardingResponse, acá el usuariocol NO cambia. Ver
+// CambiarPasswordObligatorioScreen.
+export interface RequiereCambioPasswordInicialResponse {
+  requiereCambioPasswordInicial: true;
+  token: string; // token intermedio: solo sirve para POST /auth/completar-cambio-password-inicial
+}
+
 // Ronda 26 (fase 2): ya no es exclusivo de Administrador — cualquier rol
 // puede tener más de un condominio con la MISMA cuenta.
 export interface RequiereSeleccionCondominioResponse {
@@ -180,15 +206,19 @@ export interface CondominioOpcion {
   codigo_postal?: string | null;
 }
 
+// Ronda 73, a pedido explícito del usuario: ya no se manda la lista de
+// números de depto — solo la estructura (pisos, deptos por piso). Cada
+// unidad nace "sin numerar" y el número real se pone después desde
+// "Numerar torres" (ver AdminNumerarTorresScreen).
 export interface CrearCondominioTorreInput {
   nombre_torre: string;
-  cantidad_pisos?: number;
-  numeros_unidad: string[];
+  cantidad_pisos: number;
+  deptos_por_piso: number;
 }
 
 export interface CrearCondominioEdificioInput {
-  cantidad_pisos?: number;
-  numeros_unidad: string[];
+  cantidad_pisos: number;
+  deptos_por_piso: number;
 }
 
 // Ronda 26 (fase 2, a pedido del usuario): 3 formas de estructura —
@@ -265,6 +295,16 @@ export interface ResidenteAdmin {
   profesion: string | null;
   // Ronda 70, a pedido explícito del usuario.
   foto_url: string | null;
+  // Ronda 77, a pedido explícito del usuario: nombre separado en 3 partes
+  // (apellido_materno opcional — extranjeros sin segundo apellido) y
+  // nacionalidad. nombre_usuario sigue existiendo como el string compuesto
+  // (se arma en el backend), estos campos son para mostrar/editar por
+  // separado y para que el administrador pueda filtrar por apellido.
+  nombres: string | null;
+  apellido_paterno: string | null;
+  apellido_materno: string | null;
+  nacionalidad_id_nacionalidad: number | null;
+  gls_nacionalidad: string | null;
   // Ronda 37: SOLO viene presente en la respuesta de
   // adminActivarAccesoResidente — la clave temporal recién generada, para
   // que el administrador se la comunique al residente. No se puede volver
@@ -275,6 +315,24 @@ export interface ResidenteAdmin {
 export interface TipoResidente {
   id_tiporesidente: number;
   gls_tiporesidente: string;
+}
+
+// Ronda 74: catálogo de profesiones (combobox autocompletable en
+// AdminResidentesScreen) — `codigo` es un código correlativo interno de la
+// tabla, no un código oficial del Registro Civil/INE.
+export interface Profesion {
+  id_profesion: number;
+  codigo: string;
+  gls_profesion: string;
+}
+
+// Ronda 77: catálogo de nacionalidades (combobox autocompletable en
+// AdminResidentesScreen) — mismo patrón que Profesion; `codigo` es un
+// correlativo interno de la tabla, no un código ISO.
+export interface Nacionalidad {
+  id_nacionalidad: number;
+  codigo: string;
+  gls_nacionalidad: string;
 }
 
 export interface PatenteAdmin {
