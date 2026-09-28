@@ -204,6 +204,11 @@ export default function AdminResidentesScreen() {
       setProfesionSel(null);
       setNacionalidadSel(null);
       cargar();
+      // Ronda 78, a pedido explícito del usuario: confirmación visible al
+      // centro de la pantalla después de guardar (Alert.alert se muestra
+      // como un modal centrado, igual que el resto de los avisos de la
+      // app — no hacía falta agregar una librería de toasts nueva).
+      Alert.alert("¡Listo!", "Residente agregado correctamente");
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
