@@ -19,6 +19,7 @@ import {
   LoginResponse,
   Mantencion,
   Mascota,
+  EspecieMascota,
   VacunaMascota,
   Notificacion,
   Paquete,
@@ -919,6 +920,11 @@ export const actualizarMascota = (
 ) => send<Mascota>(`/mascotas/${id}`, "PATCH", token, input);
 
 export const eliminarMascota = (token: string, id: number) => send<void>(`/mascotas/${id}`, "DELETE", token);
+
+// Ronda 78, a pedido explícito del usuario ("que tengamos en la bd las
+// razas y las especies"): catálogo de especies con sus razas anidadas,
+// para los combobox en cascada de especie/raza.
+export const getEspeciesMascota = (token: string) => get<EspecieMascota[]>(`/especies-mascota`, token);
 
 // Ronda 50, a pedido explícito del usuario, con referencia visual.
 export const getVacunasMascota = (token: string, mascotaId: number) => get<VacunaMascota[]>(`/mascotas/${mascotaId}/vacunas`, token);

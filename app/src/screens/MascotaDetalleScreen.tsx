@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
 import * as Clipboard from "expo-clipboard";
@@ -7,12 +7,15 @@ import {
   actualizarVacunaMascota,
   crearVacunaMascota,
   eliminarVacunaMascota,
+  getEspeciesMascota,
   getMascotas,
   getVacunasMascota,
 } from "../api/client";
-import { Mascota, VacunaMascota } from "../api/types";
+import { EspecieMascota, Mascota, VacunaMascota } from "../api/types";
 import { useAuth } from "../context/AuthContext";
-import { tomarFoto } from "../utils/camara";
+import { elegirDeGaleria, tomarFoto } from "../utils/camara";
+import SelectModal, { OpcionSelect } from "../components/SelectModal";
+import { OPCION_OTRA, opcionesEspeciesDesde, opcionesRazasDesde, opcionParaValor } from "../utils/catalogoMascotas";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
@@ -33,10 +36,37 @@ export default function MascotaDetalleScreen({ navigation }: any) {
 
   const [editando, setEditando] = useState(false);
   const [nombre, setNombre] = useState(mascota.nombre);
-  const [especie, setEspecie] = useState(mascota.especie ?? "");
-  const [raza, setRaza] = useState(mascota.raza ?? "");
+  const [especieSel, setEspecieSel] = useState<OpcionSelect | null>(null);
+  const [especieOtra, setEspecieOtra] = useState("");
+  const [razaSel, setRazaSel] = useState<OpcionSelect | null>(null);
+  const [razaOtra, setRazaOtra] = useState("");
   const [numeroChip, setNumeroChip] = useState(mascota.numero_chip ?? "");
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+  const [especies, setEspecies] = useState<EspecieMascota[]>([]);
+
+  useEffect(() => {
+    if (!token) return;
+    getEspeciesMascota(token).then(setEspecies).catch(() => {});
+  }, [token]);
+
+  const opcionesEspecies = opcionesEspeciesDesde(especies);
+  const opcionesRazas = especieSel && especieSel.label !== "Otra" ? opcionesRazasDesde(especies, especieSel.label) : [];
+
+  // Ronda 78: la especie/raza preseleccionada se calcula recién al abrir el
+  // formulario de edición (no al montar la pantalla), porque depende del
+  // catálogo que llega de la API (`especies`) — si se calculara antes de
+  // que llegue, todo quedaría marcado como "Otra".
+  const abrirEdicion = () => {
+    setNombre(mascota.nombre);
+    setNumeroChip(mascota.numero_chip ?? "");
+    const ei = opcionParaValor(mascota.especie, opcionesEspeciesDesde(especies));
+    setEspecieSel(ei.sel);
+    setEspecieOtra(ei.otro);
+    const ri = opcionParaValor(mascota.raza, opcionesRazasDesde(especies, ei.sel?.label));
+    setRazaSel(ri.sel);
+    setRazaOtra(ri.otro);
+    setEditando(true);
+  };
 
   const [mostrarFormVacuna, setMostrarFormVacuna] = useState(false);
   const [vacunaEditandoId, setVacunaEditandoId] = useState<number | null>(null);
@@ -66,11 +96,14 @@ export default function MascotaDetalleScreen({ navigation }: any) {
     }, [cargar])
   );
 
-  const handleCambiarFoto = async () => {
+  // Ronda 78, a pedido explícito del usuario: la foto de la mascota se
+  // cambia igual que la foto de perfil de un residente — cámara O galería,
+  // ambas con recorte cuadrado nativo antes de aceptar la foto.
+  const obtenerYSubirFoto = async (obtenerFoto: () => Promise<string | null>) => {
     if (!token) return;
     setSubiendoFoto(true);
     try {
-      const foto = await tomarFoto();
+      const foto = await obtenerFoto();
       if (!foto) return;
       const actualizada = await actualizarMascota(token, mascota.id_mascota, { foto });
       setMascota(actualizada);
@@ -81,17 +114,27 @@ export default function MascotaDetalleScreen({ navigation }: any) {
     }
   };
 
+  const handleCambiarFoto = () => {
+    Alert.alert("Foto de la mascota", undefined, [
+      { text: "📷 Tomar foto", onPress: () => obtenerYSubirFoto(() => tomarFoto({ editable: true, aspecto: [1, 1] })) },
+      { text: "🖼️ Elegir de galería", onPress: () => obtenerYSubirFoto(() => elegirDeGaleria({ editable: true, aspecto: [1, 1] })) },
+      { text: "Cancelar", style: "cancel" },
+    ]);
+  };
+
   const handleGuardarEdicion = async () => {
     if (!token || !nombre.trim()) {
       Alert.alert("Falta el nombre", "El nombre de la mascota es obligatorio.");
       return;
     }
+    const especieFinal = especieSel?.label === "Otra" ? especieOtra.trim() : especieSel?.label ?? "";
+    const razaFinal = razaSel?.label === "Otra" ? razaOtra.trim() : razaSel?.label ?? "";
     setGuardandoEdicion(true);
     try {
       const actualizada = await actualizarMascota(token, mascota.id_mascota, {
         nombre: nombre.trim(),
-        especie: especie.trim() || undefined,
-        raza: raza.trim() || undefined,
+        especie: especieFinal || undefined,
+        raza: razaFinal || undefined,
         numero_chip: numeroChip.trim() || undefined,
       });
       setMascota(actualizada);
@@ -207,7 +250,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
 
       <View style={styles.filaNombreEditar}>
         <Text style={styles.nombreGrande}>{mascota.nombre} 🐾</Text>
-        <TouchableOpacity style={styles.botonEditar} onPress={() => setEditando((v) => !v)}>
+        <TouchableOpacity style={styles.botonEditar} onPress={() => (editando ? setEditando(false) : abrirEdicion())}>
           <Text style={styles.botonEditarTexto}>{editando ? "✕ Cerrar" : "✏️ Editar"}</Text>
         </TouchableOpacity>
       </View>
@@ -224,10 +267,48 @@ export default function MascotaDetalleScreen({ navigation }: any) {
         <View style={styles.card}>
           <Text style={styles.label}>Nombre</Text>
           <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Ej: Firulais" placeholderTextColor={colors.textMuted} />
-          <Text style={styles.label}>Especie</Text>
-          <TextInput style={styles.input} value={especie} onChangeText={setEspecie} placeholder="Ej: Perro, Gato" placeholderTextColor={colors.textMuted} />
-          <Text style={styles.label}>Raza</Text>
-          <TextInput style={styles.input} value={raza} onChangeText={setRaza} placeholder="Ej: Golden Retriever" placeholderTextColor={colors.textMuted} />
+          <SelectModal
+            label="Especie"
+            placeholder="Selecciona una especie"
+            opciones={opcionesEspecies}
+            valorSeleccionado={especieSel}
+            onSeleccionar={(o) => {
+              setEspecieSel(o);
+              setEspecieOtra("");
+              setRazaSel(null);
+              setRazaOtra("");
+            }}
+            extraFooterLabel="Otra especie / no está en la lista"
+            onExtraFooter={() => {
+              setEspecieSel(OPCION_OTRA);
+              setEspecieOtra("");
+              setRazaSel(null);
+              setRazaOtra("");
+            }}
+          />
+          {especieSel?.label === "Otra" && (
+            <TextInput style={styles.input} value={especieOtra} onChangeText={setEspecieOtra} placeholder="Escribe la especie" placeholderTextColor={colors.textMuted} />
+          )}
+
+          <SelectModal
+            label="Raza"
+            placeholder={especieSel ? "Selecciona una raza" : "Primero elige una especie"}
+            opciones={opcionesRazas}
+            valorSeleccionado={razaSel}
+            onSeleccionar={(o) => {
+              setRazaSel(o);
+              setRazaOtra("");
+            }}
+            disabled={!especieSel}
+            extraFooterLabel="Otra raza / no está en la lista"
+            onExtraFooter={() => {
+              setRazaSel(OPCION_OTRA);
+              setRazaOtra("");
+            }}
+          />
+          {razaSel?.label === "Otra" && (
+            <TextInput style={styles.input} value={razaOtra} onChangeText={setRazaOtra} placeholder="Escribe la raza" placeholderTextColor={colors.textMuted} />
+          )}
           <Text style={styles.label}>N° de chip</Text>
           <TextInput
             style={styles.input}

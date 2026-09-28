@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,11 +12,13 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { crearMascota, eliminarMascota, getMascotas } from "../api/client";
-import { Mascota } from "../api/types";
+import { crearMascota, eliminarMascota, getEspeciesMascota, getMascotas } from "../api/client";
+import { EspecieMascota, Mascota } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import FotoCapture from "../components/FotoCapture";
+import SelectModal, { OpcionSelect } from "../components/SelectModal";
+import { OPCION_OTRA, opcionesEspeciesDesde, opcionesRazasDesde } from "../utils/catalogoMascotas";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 
 // Ronda 20: mascotas por depto. Autoservicio de cualquier residente activo
@@ -32,10 +34,21 @@ export default function MascotasScreen({ navigation }: any) {
   const [guardando, setGuardando] = useState(false);
 
   const [nombre, setNombre] = useState("");
-  const [especie, setEspecie] = useState("");
-  const [raza, setRaza] = useState("");
+  const [especieSel, setEspecieSel] = useState<OpcionSelect | null>(null);
+  const [especieOtra, setEspecieOtra] = useState("");
+  const [razaSel, setRazaSel] = useState<OpcionSelect | null>(null);
+  const [razaOtra, setRazaOtra] = useState("");
   const [numeroChip, setNumeroChip] = useState("");
   const [foto, setFoto] = useState<string | null>(null);
+  const [especies, setEspecies] = useState<EspecieMascota[]>([]);
+
+  useEffect(() => {
+    if (!token) return;
+    getEspeciesMascota(token).then(setEspecies).catch(() => {});
+  }, [token]);
+
+  const opcionesEspecies = opcionesEspeciesDesde(especies);
+  const opcionesRazas = especieSel && especieSel.label !== "Otra" ? opcionesRazasDesde(especies, especieSel.label) : [];
 
   const cargar = useCallback(
     async (mostrarRefresh = false) => {
@@ -61,8 +74,10 @@ export default function MascotasScreen({ navigation }: any) {
 
   const limpiarFormulario = () => {
     setNombre("");
-    setEspecie("");
-    setRaza("");
+    setEspecieSel(null);
+    setEspecieOtra("");
+    setRazaSel(null);
+    setRazaOtra("");
     setNumeroChip("");
     setFoto(null);
   };
@@ -72,12 +87,14 @@ export default function MascotasScreen({ navigation }: any) {
       Alert.alert("Falta el nombre", "El nombre de la mascota es obligatorio.");
       return;
     }
+    const especieFinal = especieSel?.label === "Otra" ? especieOtra.trim() : especieSel?.label ?? "";
+    const razaFinal = razaSel?.label === "Otra" ? razaOtra.trim() : razaSel?.label ?? "";
     setGuardando(true);
     try {
       await crearMascota(token, {
         nombre,
-        especie: especie || undefined,
-        raza: raza || undefined,
+        especie: especieFinal || undefined,
+        raza: razaFinal || undefined,
         numero_chip: numeroChip || undefined,
         foto: foto || undefined,
       });
@@ -135,16 +152,53 @@ export default function MascotasScreen({ navigation }: any) {
           <Text style={styles.label}>Nombre *</Text>
           <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Ej: Firulais" />
 
-          <Text style={styles.label}>Especie</Text>
-          <TextInput style={styles.input} value={especie} onChangeText={setEspecie} placeholder="Ej: Perro, Gato" />
+          <SelectModal
+            label="Especie"
+            placeholder="Selecciona una especie"
+            opciones={opcionesEspecies}
+            valorSeleccionado={especieSel}
+            onSeleccionar={(o) => {
+              setEspecieSel(o);
+              setEspecieOtra("");
+              setRazaSel(null);
+              setRazaOtra("");
+            }}
+            extraFooterLabel="Otra especie / no está en la lista"
+            onExtraFooter={() => {
+              setEspecieSel(OPCION_OTRA);
+              setEspecieOtra("");
+              setRazaSel(null);
+              setRazaOtra("");
+            }}
+          />
+          {especieSel?.label === "Otra" && (
+            <TextInput style={styles.input} value={especieOtra} onChangeText={setEspecieOtra} placeholder="Escribe la especie" />
+          )}
 
-          <Text style={styles.label}>Raza</Text>
-          <TextInput style={styles.input} value={raza} onChangeText={setRaza} placeholder="Ej: Mestizo, Labrador" />
+          <SelectModal
+            label="Raza"
+            placeholder={especieSel ? "Selecciona una raza" : "Primero elige una especie"}
+            opciones={opcionesRazas}
+            valorSeleccionado={razaSel}
+            onSeleccionar={(o) => {
+              setRazaSel(o);
+              setRazaOtra("");
+            }}
+            disabled={!especieSel}
+            extraFooterLabel="Otra raza / no está en la lista"
+            onExtraFooter={() => {
+              setRazaSel(OPCION_OTRA);
+              setRazaOtra("");
+            }}
+          />
+          {razaSel?.label === "Otra" && (
+            <TextInput style={styles.input} value={razaOtra} onChangeText={setRazaOtra} placeholder="Escribe la raza" />
+          )}
 
           <Text style={styles.label}>Número de chip</Text>
           <TextInput style={styles.input} value={numeroChip} onChangeText={setNumeroChip} placeholder="Si tiene chip identificatorio" />
 
-          <FotoCapture label="Foto de la mascota" value={foto} onChange={setFoto} />
+          <FotoCapture label="Foto de la mascota" value={foto} onChange={setFoto} recorteCuadrado />
 
           <TouchableOpacity style={styles.botonGuardar} onPress={handleAgregar} disabled={guardando}>
             <Text style={styles.botonTexto}>{guardando ? "Guardando..." : "Guardar"}</Text>

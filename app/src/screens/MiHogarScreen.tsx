@@ -254,7 +254,7 @@ export default function MiHogarScreen({ navigation }: any) {
       {mostrarFormAgregar && (
         <View style={styles.form}>
           <Text style={styles.formTitulo}>Agregar persona</Text>
-          <FotoCapture label="Foto (opcional)" value={fotoNuevo} onChange={setFotoNuevo} />
+          <FotoCapture label="Foto (opcional)" value={fotoNuevo} onChange={setFotoNuevo} recorteCuadrado />
           <TextInput style={styles.input} placeholder="Nombre" placeholderTextColor={colors.textMuted} value={nombre} onChangeText={setNombre} />
           <SelectModal
             label="Tipo de residente"
@@ -369,7 +369,7 @@ export default function MiHogarScreen({ navigation }: any) {
 
           {perfilEnEdicion === item.id_usuario ? (
             <View style={styles.subForm}>
-              <FotoCapture label="Foto nueva (opcional, reemplaza la actual)" value={fotoEditar} onChange={setFotoEditar} />
+              <FotoCapture label="Foto nueva (opcional, reemplaza la actual)" value={fotoEditar} onChange={setFotoEditar} recorteCuadrado />
               <TextInput
                 style={[styles.input, rutEditarError && styles.inputConError]}
                 placeholder="RUT (opcional) — ej: 12345678-9"

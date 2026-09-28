@@ -90,6 +90,30 @@ export async function listarNacionalidades() {
     .all();
 }
 
+// Ronda 78, a pedido explícito del usuario ("que tengamos en la bd las
+// razas y las especies"): catálogo de especies/razas de mascotas (ver
+// migración 20260928210000_catalogo_especies_razas_mascota) — mismo patrón
+// que listarProfesiones/listarNacionalidades. Se devuelve todo anidado
+// (cada especie con su arreglo de razas) en una sola llamada porque el
+// catálogo es chico (unas pocas decenas de filas en total): así la app
+// arma el combobox en cascada sin ida y vuelta al servidor cada vez que
+// cambia la especie elegida.
+export async function listarEspeciesMascota() {
+  const especies = await db
+    .prepare(`SELECT id_especiemascota, gls_especie FROM especie_mascota WHERE flg_vigencia = 1 ORDER BY gls_especie`)
+    .all();
+  const razas = await db
+    .prepare(`SELECT id_razamascota, fk_idespeciemascota, gls_raza FROM raza_mascota WHERE flg_vigencia = 1 ORDER BY gls_raza`)
+    .all();
+  return especies.map((e: any) => ({
+    id_especiemascota: e.id_especiemascota,
+    gls_especie: e.gls_especie,
+    razas: razas
+      .filter((r: any) => r.fk_idespeciemascota === e.id_especiemascota)
+      .map((r: any) => ({ id_razamascota: r.id_razamascota, gls_raza: r.gls_raza })),
+  }));
+}
+
 // Residentes con carnet de discapacidad vigente — para que el guardia
 // pueda buscar/seleccionar quién va a usar el cupo (regla 1 de discapacitados).
 // Ronda 61, a pedido explícito del usuario: mismo bug exacto — no

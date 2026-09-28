@@ -13,7 +13,6 @@ import {
 import { Mascota, ResidenteAdmin } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { colors, radius, spacing, typography } from "../theme/theme";
-import IlustracionEdificios from "../components/IlustracionEdificios";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 
 // Ronda 78, a pedido explícito del usuario, con referencia visual: rediseño
@@ -139,6 +138,10 @@ export default function HomeScreen({ navigation }: any) {
     }, [token, esResidente])
   );
   const residentesHogarActivos = residentesHogar.filter((r) => r.flg_vigencia);
+  // Ronda 79, a pedido explícito del usuario: la propia foto en el hero del
+  // Home — se busca dentro de lo que ya trae /mi-depto/residentes (la
+  // misma lista de "Personas del hogar"), no hace falta un endpoint nuevo.
+  const yo = residentesHogar.find((r) => r.id_usuario === guardia?.id_usuario);
 
   const handleAbrirAjustes = () => {
     Alert.alert("Ajustes", undefined, [
@@ -226,7 +229,17 @@ export default function HomeScreen({ navigation }: any) {
               </Pressable>
             </View>
             <View style={styles.heroRow}>
-              <View style={{ flex: 1 }}>
+              {/* Ronda 79, a pedido explícito del usuario: la propia foto
+                  (o iniciales si todavía no tiene una cargada) en vez del
+                  dibujo de edificios que había antes acá. */}
+              {fuenteImagenPrivada(yo?.foto_url, token) ? (
+                <Image source={fuenteImagenPrivada(yo?.foto_url, token)!} style={styles.heroAvatarFoto} />
+              ) : (
+                <View style={[styles.heroAvatar, { backgroundColor: colorAvatar(guardia?.id_usuario ?? 0) }]}>
+                  <Text style={styles.heroAvatarTexto}>{iniciales(guardia?.nombre_usuario ?? "")}</Text>
+                </View>
+              )}
+              <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text style={styles.heroCondominio}>{nombreCondominioActual ?? "Mi condominio"}</Text>
                 <Text style={styles.heroSaludo}>
                   {saludoSegunHora()}, {primerNombre(guardia?.nombre_usuario)} 👋
@@ -237,7 +250,6 @@ export default function HomeScreen({ navigation }: any) {
                   </Text>
                 )}
               </View>
-              <IlustracionEdificios size={84} />
             </View>
           </View>
 
@@ -540,6 +552,9 @@ const styles = StyleSheet.create({
   heroCaption: { color: colors.textMutedOnNavy, fontSize: 12, fontWeight: "700" },
   heroGear: { fontSize: 20 },
   heroRow: { flexDirection: "row", alignItems: "center" },
+  heroAvatar: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
+  heroAvatarTexto: { fontWeight: "800", fontSize: 18, color: colors.navy900 },
+  heroAvatarFoto: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.navy700 },
   heroCondominio: { ...typography.title, color: colors.textOnNavy },
   heroSaludo: { color: colors.textOnNavy, fontSize: 15, fontWeight: "600", marginTop: 4 },
   heroDepto: { color: colors.textMutedOnNavy, fontSize: 13, marginTop: 4 },

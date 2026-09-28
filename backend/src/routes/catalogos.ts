@@ -10,6 +10,7 @@ import {
   listarTiposResidente,
   listarProfesiones,
   listarNacionalidades,
+  listarEspeciesMascota,
 } from "../services/catalogos.service";
 
 export const catalogosRouter = Router();
@@ -54,4 +55,8 @@ catalogosRouter.get("/profesiones", async (_req, res) => {
 
 catalogosRouter.get("/nacionalidades", async (_req, res) => {
   res.json(await listarNacionalidades());
+});
+
+catalogosRouter.get("/especies-mascota", async (_req, res) => {
+  res.json(await listarEspeciesMascota());
 });

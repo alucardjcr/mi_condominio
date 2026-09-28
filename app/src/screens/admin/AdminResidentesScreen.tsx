@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -30,7 +31,20 @@ import { useAuth } from "../../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
 import DateField from "../../components/DateField";
 import IlustracionEdificios from "../../components/IlustracionEdificios";
+import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
 import { colors, radius, spacing, typography } from "../../theme/theme";
+
+// Ronda 79, a pedido explícito del usuario: mismos helpers de avatar que ya
+// usan MiHogarScreen/HomeScreen — foto si el residente tiene una cargada
+// (residente_perfil.foto_url, ronda 70), si no, iniciales sobre un color.
+const PALETA_AVATAR = ["#DCEBFF", "#FFE8CC", "#E4F7D8", "#FBE0E8", "#EAE0FB", "#FFF3B0"];
+function colorAvatar(id: number) {
+  return PALETA_AVATAR[id % PALETA_AVATAR.length];
+}
+function iniciales(nombre: string) {
+  const partes = nombre.trim().split(/\s+/);
+  return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
+}
 
 export default function AdminResidentesScreen() {
   const { token, rol } = useAuth();
@@ -662,6 +676,16 @@ export default function AdminResidentesScreen() {
       renderItem={({ item }) => (
         <View style={styles.card}>
           <View style={styles.cardHeader}>
+            {/* Ronda 79, a pedido explícito del usuario: foto del residente
+                (si la tiene cargada) en el listado del admin — mismo dato
+                que ya se ve en "Mi hogar"/Home, solo que acá era puro texto. */}
+            {fuenteImagenPrivada(item.foto_url, token) ? (
+              <Image source={fuenteImagenPrivada(item.foto_url, token)!} style={styles.avatarFotoItem} />
+            ) : (
+              <View style={[styles.avatarItem, { backgroundColor: colorAvatar(item.id_usuario) }]}>
+                <Text style={styles.avatarItemTexto}>{iniciales(item.nombre_usuario)}</Text>
+              </View>
+            )}
             <View style={{ flex: 1 }}>
               <Text style={styles.nombreItem}>{item.nombre_usuario}</Text>
               <Text style={styles.detalle}>
@@ -948,7 +972,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   card: { backgroundColor: "#fff", borderRadius: 12, padding: 14 },
-  cardHeader: { flexDirection: "row", alignItems: "center" },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  avatarItem: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  avatarItemTexto: { fontWeight: "800", fontSize: 15, color: colors.navy900 },
+  avatarFotoItem: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.offWhite },
   nombreItem: { fontSize: 16, fontWeight: "700" },
   detalle: { color: "#666", marginTop: 2, fontSize: 13 },
   carnetTexto: { color: "#014BD2", marginTop: 4, fontSize: 12, fontWeight: "600" },

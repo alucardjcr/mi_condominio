@@ -944,6 +944,22 @@ export interface Mascota {
   nombre_torre?: string;
 }
 
+// Ronda 78, a pedido explícito del usuario ("que tengamos en la bd las
+// razas y las especies"): catálogo de especies de mascotas con sus razas
+// anidadas (ver GET /especies-mascota) — alimenta los combobox en cascada
+// de MascotasScreen/MascotaDetalleScreen. Mascota.especie/Mascota.raza
+// (arriba) siguen siendo texto libre: este catálogo solo ordena qué se
+// puede elegir, mismo criterio que TipoResidente/Profesion/Nacionalidad.
+export interface RazaMascota {
+  id_razamascota: number;
+  gls_raza: string;
+}
+export interface EspecieMascota {
+  id_especiemascota: number;
+  gls_especie: string;
+  razas: RazaMascota[];
+}
+
 // Ronda 50, a pedido explícito del usuario, con referencia visual.
 export interface VacunaMascota {
   id_mascotavacuna: number;
