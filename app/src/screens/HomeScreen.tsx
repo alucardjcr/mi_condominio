@@ -6,17 +6,19 @@ import {
   getMascotas,
   getMisResidentesDelHogar,
   getNotificaciones,
+  getVacunasMascota,
   personalFinalizarTurno,
   personalGetTurnoActual,
   personalIniciarTurno,
 } from "../api/client";
-import { Mascota, ResidenteAdmin } from "../api/types";
+import { Mascota, ResidenteAdmin, VacunaMascota } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { colors, radius, spacing, typography } from "../theme/theme";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 import { calcularEdad } from "../utils/validarRut";
 import { nacionalidadConBandera } from "../utils/banderas";
 import { textoEdadMascota } from "../utils/edadMascota";
+import { formatearFecha } from "../utils/fechas";
 
 // Ronda 78, a pedido explícito del usuario, con referencia visual: rediseño
 // del Home del residente/propietario (dashboard con tarjeta "Mi hogar",
@@ -116,11 +118,16 @@ function detallePersona(r: ResidenteAdmin): string | null {
   return [linea1, linea2].filter(Boolean).join("\n") || null;
 }
 
-// Ronda 79: bajo el nombre de cada mascota, "edad · chip".
-function detalleMascota(m: Mascota): string | null {
+// Ronda 79: bajo el nombre de cada mascota — N° de chip, luego "raza · edad"
+// y una línea por vacuna (nombre · fecha · vigente/vencida).
+function detalleMascota(m: Mascota, vacunas: VacunaMascota[]): string | null {
   const edad = textoEdadMascota(m.fecha_nacimiento);
-  const partes = [edad ? `🎂 ${edad}` : null, m.numero_chip ? `Chip: ${m.numero_chip}` : null].filter(Boolean);
-  return partes.length > 0 ? partes.join("  ·  ") : null;
+  const lineas = [
+    m.numero_chip ? `Chip: ${m.numero_chip}` : null,
+    [m.raza, edad ? `🎂 ${edad}` : null].filter(Boolean).join("  ·  ") || null,
+    ...vacunas.map((v) => `💉 ${v.nombre_vacuna} · ${formatearFecha(v.fecha_aplicacion)} · ${v.vigente ? "Vigente" : "Vencida"}`),
+  ].filter(Boolean);
+  return lineas.length > 0 ? lineas.join("\n") : null;
 }
 
 export default function HomeScreen({ navigation }: any) {
@@ -157,6 +164,7 @@ export default function HomeScreen({ navigation }: any) {
   // (/mi-depto/residentes y /mascotas), solo que acá se muestran resumidos.
   const [residentesHogar, setResidentesHogar] = useState<ResidenteAdmin[]>([]);
   const [mascotasHogar, setMascotasHogar] = useState<Mascota[]>([]);
+  const [vacunasHogar, setVacunasHogar] = useState<Record<number, VacunaMascota[]>>({});
   useFocusEffect(
     useCallback(() => {
       if (!token || !esResidente) return;
@@ -164,6 +172,14 @@ export default function HomeScreen({ navigation }: any) {
         .then(([r, m]) => {
           setResidentesHogar(r);
           setMascotasHogar(m);
+          // Vacunas de cada mascota (si una falla, esa queda sin lista).
+          Promise.all(m.map((x) => getVacunasMascota(token, x.id_mascota).catch(() => [] as VacunaMascota[])))
+            .then((listas) => {
+              const mapa: Record<number, VacunaMascota[]> = {};
+              m.forEach((x, i) => (mapa[x.id_mascota] = listas[i]));
+              setVacunasHogar(mapa);
+            })
+            .catch(() => {});
         })
         .catch(() => {});
     }, [token, esResidente])
@@ -431,7 +447,9 @@ export default function HomeScreen({ navigation }: any) {
                         </View>
                       </View>
                     )}
-                    {detalleMascota(m) && <Text style={styles.filaPersonaDetalle}>{detalleMascota(m)}</Text>}
+                    {detalleMascota(m, vacunasHogar[m.id_mascota] ?? []) && (
+                      <Text style={styles.filaPersonaDetalle}>{detalleMascota(m, vacunasHogar[m.id_mascota] ?? [])}</Text>
+                    )}
                   </View>
                   <Text style={styles.chevron}>›</Text>
                 </Pressable>
