@@ -230,12 +230,21 @@ export default function MiHogarScreen({ navigation }: any) {
 
   const activos = residentes.filter((r) => r.flg_vigencia);
 
+  // Tipo de condominio, deducido del nombre de la torre (la estructura no
+  // se guarda como columna): "Casas" = condominio de casas; torre con el
+  // mismo nombre que el condominio = un solo edificio (ahí repetir el
+  // nombre no aporta); cualquier otro nombre = condominio de torres.
+  const norm = (t?: string | null) => (t ?? "").trim().toLowerCase();
+  const esCasas = norm(guardia?.nombre_torre) === "casas";
+  const esEdificioUnico = !esCasas && norm(guardia?.nombre_torre) === norm(nombreCondominioActual);
+  const iconoHogar = esCasas ? "🏠" : "🏢";
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
       <View style={styles.filaTitulo}>
         <View style={{ flex: 1 }}>
           <Text style={styles.tituloPagina}>Mi hogar</Text>
-          <Text style={styles.subtituloPagina}>Integrantes del departamento</Text>
+          <Text style={styles.subtituloPagina}>{esCasas ? "Integrantes de la casa" : "Integrantes del departamento"}</Text>
         </View>
         <TouchableOpacity style={styles.botonAgregar} onPress={() => setMostrarFormAgregar((v) => !v)}>
           <Text style={styles.botonAgregarTexto}>{mostrarFormAgregar ? "✕ Cerrar" : "+ Agregar integrante"}</Text>
@@ -244,11 +253,18 @@ export default function MiHogarScreen({ navigation }: any) {
 
       <View style={styles.cardResumen}>
         <Text style={styles.cardResumenTitulo}>{nombreCondominioActual ?? "Mi condominio"}</Text>
-        <Text style={styles.cardResumenSubtitulo}>
-          {guardia?.nombre_torre ? `${guardia.nombre_torre} | Departamento ${guardia.numero_unidad}` : "Sin depto asociado"}
-        </Text>
+        {guardia?.nombre_torre ? (
+          <>
+            {!esCasas && !esEdificioUnico && <Text style={styles.cardResumenSubtitulo}>{guardia.nombre_torre}</Text>}
+            <Text style={styles.cardResumenUnidad}>
+              {esCasas ? "Casa" : "Departamento"} {guardia.numero_unidad}
+            </Text>
+          </>
+        ) : (
+          <Text style={styles.cardResumenSubtitulo}>Sin depto asociado</Text>
+        )}
         <View style={styles.filaStats}>
-          <Text style={styles.statTexto}>🏠 {activos.length} personas</Text>
+          <Text style={styles.statTexto}>{iconoHogar} {activos.length} personas</Text>
           <Text style={styles.statTexto}>🐾 {mascotas.length} mascota{mascotas.length === 1 ? "" : "s"}</Text>
         </View>
       </View>
@@ -502,6 +518,7 @@ const styles = StyleSheet.create({
 
   cardResumen: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
   cardResumenTitulo: { ...typography.heading, color: colors.textDark },
+  cardResumenUnidad: { fontSize: 24, fontWeight: "800", color: colors.textDark, marginTop: 4 },
   cardResumenSubtitulo: { ...typography.small, color: colors.textMuted, marginTop: 2 },
   filaStats: { flexDirection: "row", gap: spacing.lg, marginTop: spacing.sm },
   statTexto: { ...typography.small, color: colors.textDark, fontWeight: "700" },
