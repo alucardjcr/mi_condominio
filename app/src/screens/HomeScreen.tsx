@@ -127,6 +127,13 @@ export default function HomeScreen({ navigation }: any) {
   // Un residente del comité (esAdmin=true aunque rol="Residente") navega
   // igual que Administrador, no por la rama de Residente.
   const esResidente = rol === "Residente" && !esAdmin;
+  // Misma deducción que en Mi hogar: la torre "Casas" = condominio de casas;
+  // torre con el nombre del condominio = un solo edificio (no se repite).
+  const normNombre = (t?: string | null) => (t ?? "").trim().toLowerCase();
+  const esCasas = normNombre(guardia?.nombre_torre) === "casas";
+  const esEdificioUnico = !esCasas && normNombre(guardia?.nombre_torre) === normNombre(nombreCondominioActual);
+  const etiquetaUnidad = `${esCasas ? "Casa" : "Departamento"} ${guardia?.numero_unidad ?? ""}`;
+  const torreVisible = guardia?.nombre_torre && !esCasas && !esEdificioUnico ? guardia.nombre_torre : null;
   const esComite = rol === "Residente" && esAdmin;
   const esPersonal = rol === "Personal";
   const esJefeGuardias = rol === "JefeGuardias";
@@ -246,8 +253,8 @@ export default function HomeScreen({ navigation }: any) {
               pedido explícito del usuario, con referencia visual) */}
           <View style={styles.heroCard}>
             <View style={styles.heroTopRow}>
-              <Text style={styles.heroCaption}>🏢 Mi Condominio</Text>
-              <Pressable onPress={handleAbrirAjustes} hitSlop={10}>
+              <Text style={styles.heroCaption} numberOfLines={1}>{nombreCondominioActual ?? "Mi condominio"}</Text>
+              <Pressable style={styles.heroGearPos} onPress={handleAbrirAjustes} hitSlop={10}>
                 <Text style={styles.heroGear}>⚙️</Text>
               </Pressable>
             </View>
@@ -263,13 +270,13 @@ export default function HomeScreen({ navigation }: any) {
                 </View>
               )}
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                <Text style={styles.heroCondominio}>{nombreCondominioActual ?? "Mi condominio"}</Text>
                 <Text style={styles.heroSaludo}>
                   {saludoSegunHora()}, {primerNombre(guardia?.nombre_usuario)} 👋
                 </Text>
                 {guardia?.nombre_torre && (
                   <Text style={styles.heroDepto}>
-                    {guardia.nombre_torre} · Departamento {guardia.numero_unidad}
+                    {torreVisible ? `${torreVisible} · ` : ""}
+                    {etiquetaUnidad}
                   </Text>
                 )}
               </View>
@@ -286,10 +293,10 @@ export default function HomeScreen({ navigation }: any) {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.hogarTitulo}>Mi hogar</Text>
-                <Text style={styles.hogarSubtitulo}>{nombreCondominioActual ?? "Mi condominio"}</Text>
                 {guardia?.nombre_torre && (
                   <Text style={styles.hogarSubtitulo}>
-                    {guardia.nombre_torre} · Departamento {guardia.numero_unidad}
+                    {torreVisible ? `${torreVisible} · ` : ""}
+                    {etiquetaUnidad}
                   </Text>
                 )}
               </View>
@@ -339,7 +346,7 @@ export default function HomeScreen({ navigation }: any) {
           </View>
 
           <View style={styles.filaSeccionConBoton}>
-            <Text style={styles.seccionTitulo}>Personas del hogar</Text>
+            <Text style={[styles.seccionTitulo, { marginBottom: 0 }]}>Personas del hogar</Text>
             {esPropietario && (
               <Pressable style={styles.botonAgregarChico} onPress={() => navigation.navigate("MiHogar")}>
                 <Text style={styles.botonAgregarChicoTexto}>+ Agregar integrante</Text>
@@ -577,16 +584,17 @@ const styles = StyleSheet.create({
 
   // Ronda 78 — hero "Mi Condominio" + saludo, con referencia visual
   heroCard: { marginBottom: spacing.sm },
-  heroTopRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm },
-  heroCaption: { color: colors.textMutedOnNavy, fontSize: 12, fontWeight: "700" },
+  heroTopRow: { alignItems: "center", justifyContent: "center", marginBottom: spacing.sm, minHeight: 24 },
+  heroCaption: { color: colors.textMutedOnNavy, fontSize: 12, fontWeight: "700", textAlign: "center", marginHorizontal: 32 },
+  heroGearPos: { position: "absolute", right: 0, top: 0 },
   heroGear: { fontSize: 20 },
   heroRow: { flexDirection: "row", alignItems: "center" },
   heroAvatar: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
   heroAvatarTexto: { fontWeight: "800", fontSize: 18, color: colors.navy900 },
   heroAvatarFoto: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.navy700 },
   heroCondominio: { ...typography.title, color: colors.textOnNavy },
-  heroSaludo: { color: colors.textOnNavy, fontSize: 15, fontWeight: "600", marginTop: 4 },
-  heroDepto: { color: colors.textMutedOnNavy, fontSize: 13, marginTop: 4 },
+  heroSaludo: { color: colors.textOnNavy, fontSize: 26, fontWeight: "800", lineHeight: 32 },
+  heroDepto: { color: colors.textMutedOnNavy, fontSize: 17, fontWeight: "700", marginTop: 6 },
 
   // Tarjeta "Mi hogar" tappable, con stats de residentes/mascotas
   hogarCard: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
@@ -617,7 +625,7 @@ const styles = StyleSheet.create({
 
   // Accesos rápidos (grilla 2x2)
   seccionTitulo: { ...typography.heading, color: colors.textOnNavy, fontSize: 16, marginBottom: spacing.sm },
-  filaSeccionConBoton: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  filaSeccionConBoton: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
   accesosGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
   accesoRapido: {
     width: "47%",
@@ -637,8 +645,8 @@ const styles = StyleSheet.create({
   accesoRapidoLabel: { color: colors.textDark, fontWeight: "700", fontSize: 13 },
 
   // Personas / mascotas del hogar (preview, se edita entrando a "Mi hogar")
-  botonAgregarChico: { backgroundColor: colors.white, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 8 },
-  botonAgregarChicoTexto: { color: colors.navy900, fontWeight: "800", fontSize: 11 },
+  botonAgregarChico: { backgroundColor: colors.white, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: colors.gold, elevation: 3, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+  botonAgregarChicoTexto: { color: colors.navy900, fontWeight: "800", fontSize: 12 },
   cardBlanca: { backgroundColor: colors.white, borderRadius: radius.lg, marginBottom: spacing.md, overflow: "hidden" },
   filaPersona: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md },
   filaPersonaConLinea: { borderTopWidth: 1, borderTopColor: colors.border },
