@@ -107,12 +107,13 @@ function EnlaceSecundario({ label, onPress }: { label: string; onPress: () => vo
 // opcional por persona).
 function detallePersona(r: ResidenteAdmin): string | null {
   const edad = calcularEdad(r.fecha_nacimiento);
-  const partes = [
-    r.rut ? `👤 ${r.rut}` : null,
-    edad !== null ? `${edad} años` : null,
-    nacionalidadConBandera(r.gls_nacionalidad),
-  ].filter(Boolean);
-  return partes.length > 0 ? partes.join("  ·  ") : null;
+  // Dos líneas: "RUT · edad" y debajo "nacionalidad · profesión" (un país
+  // de nombre largo ya no empuja la bandera a otra línea).
+  const linea1 = [r.rut ? `👤 ${r.rut}` : null, edad !== null ? `${edad} años` : null].filter(Boolean).join("  ·  ");
+  const linea2 = [nacionalidadConBandera(r.gls_nacionalidad), r.profesion ? `💼 ${r.profesion}` : null]
+    .filter(Boolean)
+    .join("  ·  ");
+  return [linea1, linea2].filter(Boolean).join("\n") || null;
 }
 
 // Ronda 79: bajo el nombre de cada mascota, "edad · chip".
@@ -167,7 +168,10 @@ export default function HomeScreen({ navigation }: any) {
         .catch(() => {});
     }, [token, esResidente])
   );
-  const residentesHogarActivos = residentesHogar.filter((r) => r.flg_vigencia);
+  // El propietario siempre va primero; el resto conserva su orden.
+  const residentesHogarActivos = residentesHogar
+    .filter((r) => r.flg_vigencia)
+    .sort((a, b) => Number(!!b.flg_propietario) - Number(!!a.flg_propietario));
   // Ronda 79, a pedido explícito del usuario: la propia foto en el hero del
   // Home — se busca dentro de lo que ya trae /mi-depto/residentes (la
   // misma lista de "Personas del hogar"), no hace falta un endpoint nuevo.

@@ -37,6 +37,17 @@ function iniciales(nombre: string) {
   return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
 }
 
+// Campo de formulario con su nombre arriba y el recuadro debajo, con aire
+// entre un campo y el siguiente (a pedido explícito del usuario).
+function Campo({ label, children }: { label?: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.campo}>
+      {label ? <Text style={styles.campoLabel}>{label}</Text> : null}
+      {children}
+    </View>
+  );
+}
+
 // Autoadministración del hogar por el dueño del depto (ronda 15, a pedido
 // explícito del usuario): cualquier residente del hogar puede VER esta
 // pantalla (ronda 48, ahora es la pantalla de entrada de todo Residente),
@@ -273,6 +284,8 @@ export default function MiHogarScreen({ navigation }: any) {
   }
 
   const activos = residentes.filter((r) => r.flg_vigencia);
+  // El propietario siempre va primero; el resto conserva su orden.
+  const residentesOrdenados = [...residentes].sort((a, b) => Number(!!b.flg_propietario) - Number(!!a.flg_propietario));
 
   // Tipo de condominio, deducido del nombre de la torre (la estructura no
   // se guarda como columna): "Casas" = condominio de casas; torre con el
@@ -317,9 +330,6 @@ export default function MiHogarScreen({ navigation }: any) {
         <View style={styles.form}>
           <Text style={styles.formTitulo}>Agregar persona</Text>
           <FotoCapture label="Foto (opcional)" value={fotoNuevo} onChange={setFotoNuevo} recorteCuadrado />
-          <TextInput style={styles.input} placeholder="Nombres" placeholderTextColor={colors.textMuted} value={nombresNuevo} onChangeText={setNombresNuevo} />
-          <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor={colors.textMuted} value={apPaternoNuevo} onChangeText={setApPaternoNuevo} />
-          <TextInput style={styles.input} placeholder="Apellido materno (opcional)" placeholderTextColor={colors.textMuted} value={apMaternoNuevo} onChangeText={setApMaternoNuevo} />
           <SelectModal
             label="Tipo de residente"
             placeholder="Ej: Cónyuge, hijo/a, arrendatario..."
@@ -327,18 +337,29 @@ export default function MiHogarScreen({ navigation }: any) {
             valorSeleccionado={tipoResidenteSel}
             onSeleccionar={setTipoResidenteSel}
           />
-          <TextInput
-            style={[styles.input, rutNuevoError && styles.inputConError]}
-            placeholder="RUT (opcional) — ej: 12345678-9"
-            placeholderTextColor={colors.textMuted}
-            value={rutNuevo}
-            onChangeText={(t) => {
-              setRutNuevo(t);
-              setRutNuevoError(false);
-            }}
-            onBlur={handleBlurRutNuevo}
-            autoCapitalize="characters"
-          />
+          <Campo label="RUT (opcional)">
+            <TextInput
+              style={[styles.input, { marginBottom: 0 }, rutNuevoError && styles.inputConError]}
+              placeholder="Ej: 12345678-9"
+              placeholderTextColor={colors.textMuted}
+              value={rutNuevo}
+              onChangeText={(t) => {
+                setRutNuevo(t);
+                setRutNuevoError(false);
+              }}
+              onBlur={handleBlurRutNuevo}
+              autoCapitalize="characters"
+            />
+          </Campo>
+          <Campo label="Nombres">
+            <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Ej: María José" placeholderTextColor={colors.textMuted} value={nombresNuevo} onChangeText={setNombresNuevo} />
+          </Campo>
+          <Campo label="Apellido paterno">
+            <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido paterno" placeholderTextColor={colors.textMuted} value={apPaternoNuevo} onChangeText={setApPaternoNuevo} />
+          </Campo>
+          <Campo label="Apellido materno (opcional)">
+            <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido materno" placeholderTextColor={colors.textMuted} value={apMaternoNuevo} onChangeText={setApMaternoNuevo} />
+          </Campo>
           <SelectModal
             label="Nacionalidad"
             placeholder="Selecciona una nacionalidad (opcional)"
@@ -362,7 +383,7 @@ export default function MiHogarScreen({ navigation }: any) {
 
       <Text style={styles.seccionTitulo}>Personas del hogar</Text>
       {residentes.length === 0 && <Text style={styles.vacio}>Todavía no tienes a nadie registrado en tu depto.</Text>}
-      {residentes.map((item) => (
+      {residentesOrdenados.map((item) => (
         <View key={item.id_usuario} style={styles.card}>
           <View style={styles.cardHeader}>
             {fuenteImagenPrivada(item.foto_url, token) ? (
@@ -394,15 +415,16 @@ export default function MiHogarScreen({ navigation }: any) {
                   </View>
                 )}
               </View>
-              {(item.rut || calcularEdad(item.fecha_nacimiento) !== null || item.gls_nacionalidad) && (
+              {(item.rut || calcularEdad(item.fecha_nacimiento) !== null) && (
                 <Text style={styles.detalle}>
-                  {[
-                    item.rut ? `👤 ${item.rut}` : null,
-                    calcularEdad(item.fecha_nacimiento) !== null ? `${calcularEdad(item.fecha_nacimiento)} años` : null,
-                    nacionalidadConBandera(item.gls_nacionalidad),
-                  ]
+                  {[item.rut ? `👤 ${item.rut}` : null, calcularEdad(item.fecha_nacimiento) !== null ? `${calcularEdad(item.fecha_nacimiento)} años` : null]
                     .filter(Boolean)
                     .join("  ·  ")}
+                </Text>
+              )}
+              {(item.gls_nacionalidad || item.profesion) && (
+                <Text style={styles.detalle}>
+                  {[nacionalidadConBandera(item.gls_nacionalidad), item.profesion ? `💼 ${item.profesion}` : null].filter(Boolean).join("  ·  ")}
                 </Text>
               )}
             </View>
@@ -438,9 +460,38 @@ export default function MiHogarScreen({ navigation }: any) {
           {perfilEnEdicion === item.id_usuario ? (
             <View style={styles.subForm}>
               <FotoCapture label="Foto nueva (opcional, reemplaza la actual)" value={fotoEditar} onChange={setFotoEditar} recorteCuadrado />
-              <TextInput style={styles.input} placeholder="Nombres" placeholderTextColor={colors.textMuted} value={nombresEditar} onChangeText={setNombresEditar} />
-              <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor={colors.textMuted} value={apPaternoEditar} onChangeText={setApPaternoEditar} />
-              <TextInput style={styles.input} placeholder="Apellido materno (opcional)" placeholderTextColor={colors.textMuted} value={apMaternoEditar} onChangeText={setApMaternoEditar} />
+              {rutYaCargado ? (
+                <Campo label="RUT">
+                  <View style={[styles.input, styles.inputBloqueado, { marginBottom: 0 }]}>
+                    <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "700" }}>{rutEditar}</Text>
+                    <Text style={{ color: colors.textMuted, fontSize: 11, marginTop: 2 }}>Solo el Administrador o el Comité puede cambiarlo</Text>
+                  </View>
+                </Campo>
+              ) : (
+                <Campo label="RUT (opcional)">
+                  <TextInput
+                    style={[styles.input, { marginBottom: 0 }, rutEditarError && styles.inputConError]}
+                    placeholder="Ej: 12345678-9"
+                    placeholderTextColor={colors.textMuted}
+                    value={rutEditar}
+                    onChangeText={(t) => {
+                      setRutEditar(t);
+                      setRutEditarError(false);
+                    }}
+                    onBlur={handleBlurRutEditar}
+                    autoCapitalize="characters"
+                  />
+                </Campo>
+              )}
+              <Campo label="Nombres">
+                <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Nombres" placeholderTextColor={colors.textMuted} value={nombresEditar} onChangeText={setNombresEditar} />
+              </Campo>
+              <Campo label="Apellido paterno">
+                <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido paterno" placeholderTextColor={colors.textMuted} value={apPaternoEditar} onChangeText={setApPaternoEditar} />
+              </Campo>
+              <Campo label="Apellido materno (opcional)">
+                <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido materno" placeholderTextColor={colors.textMuted} value={apMaternoEditar} onChangeText={setApMaternoEditar} />
+              </Campo>
               <SelectModal
                 label="Nacionalidad"
                 placeholder="Selecciona una nacionalidad (opcional)"
@@ -448,24 +499,6 @@ export default function MiHogarScreen({ navigation }: any) {
                 valorSeleccionado={nacionalidadEditarSel}
                 onSeleccionar={setNacionalidadEditarSel}
               />
-              {rutYaCargado ? (
-                <View style={[styles.input, styles.inputBloqueado]}>
-                  <Text style={{ color: colors.textMuted, fontSize: 15 }}>RUT: {rutEditar} (solo el Administrador o el Comité puede cambiarlo)</Text>
-                </View>
-              ) : (
-                <TextInput
-                  style={[styles.input, rutEditarError && styles.inputConError]}
-                  placeholder="RUT (opcional) — ej: 12345678-9"
-                  placeholderTextColor={colors.textMuted}
-                  value={rutEditar}
-                  onChangeText={(t) => {
-                    setRutEditar(t);
-                    setRutEditarError(false);
-                  }}
-                  onBlur={handleBlurRutEditar}
-                  autoCapitalize="characters"
-                />
-              )}
               <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimientoEditar} onChange={setFechaNacimientoEditar} maximumDate={new Date()} opcional />
               <SelectModal
                 label="Profesión"
@@ -474,6 +507,7 @@ export default function MiHogarScreen({ navigation }: any) {
                 valorSeleccionado={profesionEditarSel}
                 onSeleccionar={setProfesionEditarSel}
               />
+              <View style={{ height: spacing.md }} />
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
                   style={[styles.botonToggle, styles.botonActivar, { flex: 1 }]}
@@ -583,6 +617,8 @@ const styles = StyleSheet.create({
 
   form: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
   formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textDark },
+  campo: { marginTop: spacing.md },
+  campoLabel: { ...typography.label, color: colors.textDark, marginBottom: 6 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -595,7 +631,7 @@ const styles = StyleSheet.create({
   },
   inputBloqueado: { backgroundColor: colors.offWhite, opacity: 0.8 },
   inputConError: { borderColor: colors.danger, borderWidth: 1.5 },
-  botonCrear: { backgroundColor: colors.success, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: 4 },
+  botonCrear: { backgroundColor: colors.success, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
   botonCrearTexto: { color: "#fff", fontWeight: "700" },
 
   card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md },
