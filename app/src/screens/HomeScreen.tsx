@@ -341,6 +341,8 @@ export default function HomeScreen({ navigation }: any) {
               label="Estac. en arriendo"
               onPress={() => navigation.navigate("EstacionamientosArriendo")}
             />
+            <AccesoRapido icon="🚶" color="#FDE9C8" label="Visitas" onPress={() => navigation.navigate("MisVisitas")} />
+            <AccesoRapido icon="📋" color="#E4D9FB" label="Quién viene hoy" onPress={() => navigation.navigate("QuienVieneHoy")} />
             <AccesoRapido
               icon="🔔"
               color="#DCFCE7"
@@ -445,7 +447,6 @@ export default function HomeScreen({ navigation }: any) {
           </View>
 
           <EnlaceSecundario label="Ver mis reservas" onPress={() => navigation.navigate("MisReservas")} />
-          <EnlaceSecundario label="Quién viene hoy" onPress={() => navigation.navigate("QuienVieneHoy")} />
         </>
       ) : esPersonal ? (
         <>

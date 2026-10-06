@@ -312,6 +312,20 @@ export interface ResidenteAdmin {
   password_temporal?: string;
 }
 
+// Ronda 79: visita registrada por el guardia para el depto del residente
+// (GET /mi-depto/visitas). Las fechas llegan en ISO (UTC).
+export interface VisitaHogar {
+  id_visita: number;
+  fecha_entrada: string;
+  fecha_salida: string | null;
+  patente: string | null;
+  nombre_visita: string;
+  nombre_residente_visitado: string | null;
+  numero_estacionamiento: string | null;
+  gls_tipovisita: string; // 'Vehicular' | 'Peatonal'
+  gls_tipopermiso: string;
+}
+
 export interface TipoResidente {
   id_tiporesidente: number;
   gls_tiporesidente: string;

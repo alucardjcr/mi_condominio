@@ -39,6 +39,35 @@ miDeptoRouter.get("/residentes", soloResidente, async (req, res) => {
   res.json(await listarResidentes(req.guardia!.condominio_id_condominio!, req.guardia!.unidad_id_unidad));
 });
 
+// Ronda 79, a pedido explícito del usuario: "Mis visitas" — cualquier
+// residente de la unidad (no solo el propietario) puede ver las visitas que
+// el guardia registró para SU depto: las que están adentro ahora primero y
+// luego las más recientes. No se devuelve el RUT de la visita (dato personal
+// de un tercero que el residente no necesita para reconocerla).
+miDeptoRouter.get("/visitas", soloResidente, async (req, res) => {
+  try {
+    const unidadId = req.guardia!.unidad_id_unidad;
+    if (!unidadId) return res.json([]);
+    const filas = await db
+      .prepare(
+        `SELECT v.id_visita, v.fecha_entrada, v.fecha_salida, v.patente, v.nombre_visita,
+                v.nombre_residente_visitado, e.numero_estacionamiento,
+                tv.gls_tipovisita, tp.gls_tipopermiso
+         FROM visita v
+         JOIN tipo_visita tv ON tv.id_tipovisita = v.tipo_visita_id_tipovisita
+         JOIN tipo_permiso_visita tp ON tp.id_tipopermiso = v.tipo_permiso_id_tipopermiso
+         LEFT JOIN estacionamiento e ON e.id_estacionamiento = v.estacionamiento_id_estacionamiento
+         WHERE v.unidad_id_unidad = ? AND v.condominio_id_condominio = ? AND v.tipo_ocupante = 'Visita'
+         ORDER BY (v.fecha_salida IS NULL) DESC, v.fecha_entrada DESC
+         LIMIT 100`
+      )
+      .all(unidadId, req.guardia!.condominio_id_condominio!);
+    res.json(filas);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 miDeptoRouter.post("/residentes", soloResidente, async (req, res) => {
   try {
     if (rechazarSiNoEsPropietario(req, res)) return;

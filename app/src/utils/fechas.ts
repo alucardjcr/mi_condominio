@@ -10,6 +10,16 @@ export function formatearFecha(iso: string | null | undefined): string {
   return y && m && d ? `${d}/${m}/${y}` : "";
 }
 
+// ISO con zona (ej. '2026-10-06T22:15:00.000Z', como guarda las visitas el
+// servidor) -> 'DD/MM/AAAA HH:MM' en la hora local del teléfono.
+export function formatearFechaHoraISO(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 // 'YYYY-MM-DD HH:MM:SS' -> 'DD/MM/AAAA HH:MM'.
 export function formatearFechaHora(valor: string | null | undefined): string {
   if (!valor) return "";

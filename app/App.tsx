@@ -34,6 +34,7 @@ import PaquetePendientesScreen from "./src/screens/PaquetePendientesScreen";
 import PaqueteEntregaScreen from "./src/screens/PaqueteEntregaScreen";
 import PaqueteBusquedaScreen from "./src/screens/PaqueteBusquedaScreen";
 import MisPaquetesScreen from "./src/screens/MisPaquetesScreen";
+import MisVisitasScreen from "./src/screens/MisVisitasScreen";
 import CambiarPasswordScreen from "./src/screens/CambiarPasswordScreen";
 import ReservasEspaciosScreen from "./src/screens/ReservasEspaciosScreen";
 import ReservaCrearScreen from "./src/screens/ReservaCrearScreen";
@@ -239,6 +240,7 @@ function AppNavigator() {
           />
           {esResidente ? (
             <>
+              <Stack.Screen name="MisVisitas" component={MisVisitasScreen} options={{ title: "Mis visitas" }} />
               <Stack.Screen
                 name="MisPaquetes"
                 component={MisPaquetesScreen}
