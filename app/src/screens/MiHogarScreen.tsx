@@ -9,8 +9,9 @@ import {
   getNacionalidades,
   getProfesiones,
   getTiposResidente,
+  getVacunasMascota,
 } from "../api/client";
-import { Mascota, Nacionalidad, Profesion, ResidenteAdmin, TipoResidente } from "../api/types";
+import { Mascota, Nacionalidad, Profesion, ResidenteAdmin, TipoResidente, VacunaMascota } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
 import FotoCapture from "../components/FotoCapture";
@@ -19,6 +20,7 @@ import { esRutValido, formatearRut, calcularEdad } from "../utils/validarRut";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 import { nacionalidadConBandera } from "../utils/banderas";
 import { textoEdadMascota } from "../utils/edadMascota";
+import { formatearFecha } from "../utils/fechas";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
 // Ronda 49, a pedido explícito del usuario, con referencia visual: rediseño
@@ -57,6 +59,7 @@ export default function MiHogarScreen({ navigation }: any) {
   const { token, guardia, nombreCondominioActual } = useAuth();
   const [residentes, setResidentes] = useState<ResidenteAdmin[]>([]);
   const [mascotas, setMascotas] = useState<Mascota[]>([]);
+  const [vacunasPorMascota, setVacunasPorMascota] = useState<Record<number, VacunaMascota[]>>({});
   const [tiposResidente, setTiposResidente] = useState<TipoResidente[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -99,6 +102,12 @@ export default function MiHogarScreen({ navigation }: any) {
       const [r, m] = await Promise.all([getMisResidentesDelHogar(token), getMascotas(token)]);
       setResidentes(r);
       setMascotas(m);
+      // Vacunas de cada mascota para mostrarlas en su tarjeta (si alguna
+      // falla, esa mascota simplemente queda sin lista).
+      const vacunas = await Promise.all(m.map((x) => getVacunasMascota(token, x.id_mascota).catch(() => [] as VacunaMascota[])));
+      const mapa: Record<number, VacunaMascota[]> = {};
+      m.forEach((x, i) => (mapa[x.id_mascota] = vacunas[i]));
+      setVacunasPorMascota(mapa);
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
@@ -433,7 +442,7 @@ export default function MiHogarScreen({ navigation }: any) {
                 style={[styles.botonToggle, item.flg_vigencia ? styles.botonDesactivar : styles.botonActivar]}
                 onPress={() => handleToggle(item)}
               >
-                <Text style={styles.botonToggleTexto}>{item.flg_vigencia ? "Quitar" : "Activar"}</Text>
+                <Text style={[styles.botonToggleTexto, !item.flg_vigencia && styles.botonActivarTexto]}>{item.flg_vigencia ? "Quitar" : "Activar"}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -514,7 +523,7 @@ export default function MiHogarScreen({ navigation }: any) {
                   onPress={() => handleGuardarPerfil(item.id_usuario)}
                   disabled={guardandoPerfil}
                 >
-                  <Text style={styles.botonToggleTexto}>{guardandoPerfil ? "Guardando..." : "Guardar"}</Text>
+                  <Text style={[styles.botonToggleTexto, styles.botonActivarTexto]}>{guardandoPerfil ? "Guardando..." : "Guardar"}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]}
@@ -560,6 +569,11 @@ export default function MiHogarScreen({ navigation }: any) {
                   {[m.raza, textoEdadMascota(m.fecha_nacimiento) ? `🎂 ${textoEdadMascota(m.fecha_nacimiento)}` : null].filter(Boolean).join("  ·  ")}
                 </Text>
               )}
+              {(vacunasPorMascota[m.id_mascota] ?? []).map((v) => (
+                <Text key={v.id_mascotavacuna} style={styles.detalle}>
+                  💉 {v.nombre_vacuna} · {formatearFecha(v.fecha_aplicacion)} · {v.vigente ? "Vigente" : "Vencida"}
+                </Text>
+              ))}
             </View>
           </View>
           <TouchableOpacity style={styles.filaEditar} onPress={() => navigation?.navigate("MascotaDetalle", { mascota: m })}>
@@ -601,10 +615,10 @@ const styles = StyleSheet.create({
   filaTitulo: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
   tituloPagina: { ...typography.title, color: colors.textOnNavy },
   subtituloPagina: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
-  botonAgregar: { backgroundColor: colors.white, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 10 },
-  botonAgregarTexto: { color: colors.navy900, fontWeight: "800", fontSize: 12 },
+  botonAgregar: { backgroundColor: colors.botonNaranja, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: colors.botonNaranjaBorde, elevation: 3, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+  botonAgregarTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 12 },
 
-  cardResumen: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
+  cardResumen: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, padding: spacing.lg },
   nombreCondominioArriba: { ...typography.heading, color: colors.textOnNavy, textAlign: "center" },
   cardResumenTitulo: { ...typography.heading, color: colors.textDark },
   cardResumenUnidad: { fontSize: 24, fontWeight: "800", color: colors.textDark, marginTop: 4 },
@@ -615,26 +629,26 @@ const styles = StyleSheet.create({
   seccionTitulo: { ...typography.heading, color: colors.textOnNavy, marginTop: spacing.sm, fontSize: 16 },
   vacio: { color: colors.textMutedOnNavy, fontStyle: "italic" },
 
-  form: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
+  form: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, padding: spacing.lg },
   formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textDark },
   campo: { marginTop: spacing.md },
   campoLabel: { ...typography.label, color: colors.textDark, marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.cardBlueBorder,
     borderRadius: radius.sm,
     padding: 12,
     fontSize: 15,
     marginBottom: 10,
     color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    backgroundColor: colors.white,
   },
-  inputBloqueado: { backgroundColor: colors.offWhite, opacity: 0.8 },
+  inputBloqueado: { backgroundColor: colors.cardBlueBorder, opacity: 0.8 },
   inputConError: { borderColor: colors.danger, borderWidth: 1.5 },
   botonCrear: { backgroundColor: colors.success, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
   botonCrearTexto: { color: "#fff", fontWeight: "700" },
 
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md },
+  card: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, padding: spacing.md },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   avatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   avatarTexto: { fontWeight: "800", fontSize: 16, color: colors.navy900 },
@@ -643,14 +657,15 @@ const styles = StyleSheet.create({
   filaBadges: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
   badgeTexto: { fontSize: 11, fontWeight: "700", color: colors.textDark },
-  detalle: { color: colors.textMuted, marginTop: 4, fontSize: 12 },
+  detalle: { color: "#344054", fontWeight: "700", marginTop: 4, fontSize: 12 },
 
   botonToggle: { borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 8 },
   botonActivar: { backgroundColor: colors.success },
+  botonActivarTexto: { color: "#fff" },
   botonDesactivar: { backgroundColor: colors.danger },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12 },
 
-  subForm: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
+  subForm: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.cardBlueBorder, paddingTop: spacing.sm },
   enlaceCerrar: { color: colors.info, fontSize: 12, fontWeight: "600" },
   filaEditar: {
     flexDirection: "row",
@@ -659,7 +674,7 @@ const styles = StyleSheet.create({
     gap: 4,
     marginTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.cardBlueBorder,
     paddingTop: spacing.sm,
   },
   enlaceEditar: { color: colors.info, fontSize: 13, fontWeight: "700" },

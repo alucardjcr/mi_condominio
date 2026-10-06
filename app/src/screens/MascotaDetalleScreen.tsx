@@ -17,7 +17,8 @@ import { elegirDeGaleria, tomarFoto } from "../utils/camara";
 import DateField from "../components/DateField";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
 import { OPCION_OTRA, opcionesEspeciesDesde, opcionesRazasDesde, opcionParaValor } from "../utils/catalogoMascotas";
-import { fechaNacimientoMascotaValida, formatearFechaMascota, textoEdadMascota } from "../utils/edadMascota";
+import { fechaNacimientoMascotaValida, textoEdadMascota } from "../utils/edadMascota";
+import { formatearFecha } from "../utils/fechas";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
@@ -132,7 +133,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
       return;
     }
     if (!fechaNacimientoMascotaValida(fechaNacimiento)) {
-      Alert.alert("Fecha inválida", "Escribe la fecha de nacimiento como DD-MM-AAAA (ej: 15-03-2022), sin fechas futuras.");
+      Alert.alert("Fecha inválida", "Escribe la fecha de nacimiento como DD/MM/AAAA (ej: 15/03/2022), sin fechas futuras.");
       return;
     }
     const especieFinal = especieSel?.label === "Otra" ? especieOtra.trim() : especieSel?.label ?? "";
@@ -318,7 +319,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
           {razaSel?.label === "Otra" && (
             <TextInput style={styles.input} value={razaOtra} onChangeText={setRazaOtra} placeholder="Escribe la raza" placeholderTextColor={colors.textMuted} />
           )}
-          <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimiento} onChange={setFechaNacimiento} maximumDate={new Date()} separador="-" opcional />
+          <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimiento} onChange={setFechaNacimiento} maximumDate={new Date()} opcional />
           <Text style={styles.label}>N° de chip</Text>
           <TextInput
             style={styles.input}
@@ -363,7 +364,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
           {mascota.raza && <Text style={styles.infoTextoSecundario}>Raza: {mascota.raza}</Text>}
           {textoEdadMascota(mascota.fecha_nacimiento) && (
             <Text style={styles.infoTextoSecundario}>
-              Edad: {textoEdadMascota(mascota.fecha_nacimiento)} (nació el {formatearFechaMascota(mascota.fecha_nacimiento)})
+              Edad: {textoEdadMascota(mascota.fecha_nacimiento)} (nació el {formatearFecha(mascota.fecha_nacimiento)})
             </Text>
           )}
         </View>
@@ -397,10 +398,8 @@ export default function MascotaDetalleScreen({ navigation }: any) {
               value={descripcionVacuna}
               onChangeText={setDescripcionVacuna}
             />
-            <Text style={styles.label}>Fecha de aplicación</Text>
-            <TextInput style={styles.input} placeholder="AAAA-MM-DD" value={fechaAplicacion} onChangeText={setFechaAplicacion} />
-            <Text style={styles.label}>Fecha de vencimiento (opcional)</Text>
-            <TextInput style={styles.input} placeholder="AAAA-MM-DD" value={fechaVencimiento} onChangeText={setFechaVencimiento} />
+            <DateField key={`aplic-${vacunaEditandoId ?? "nueva"}`} label="Fecha de aplicación" value={fechaAplicacion} onChange={setFechaAplicacion} maximumDate={new Date()} />
+            <DateField key={`venc-${vacunaEditandoId ?? "nueva"}`} label="Fecha de vencimiento (opcional)" value={fechaVencimiento} onChange={setFechaVencimiento} opcional />
             <TouchableOpacity style={styles.botonGuardar} onPress={handleGuardarVacuna} disabled={guardandoVacuna}>
               <Text style={styles.botonGuardarTexto}>
                 {guardandoVacuna ? "Guardando..." : vacunaEditandoId ? "Guardar cambios" : "Guardar vacuna"}
@@ -426,7 +425,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
                 )}
               </View>
               <View style={{ alignItems: "flex-end", gap: 4 }}>
-                <Text style={styles.vacunaFecha}>📅 {v.fecha_aplicacion}</Text>
+                <Text style={styles.vacunaFecha}>📅 {formatearFecha(v.fecha_aplicacion)}</Text>
                 <View style={[styles.badgeVigencia, { backgroundColor: v.vigente ? "#DCFCE7" : "#FEE2E2" }]}>
                   <Text style={[styles.badgeVigenciaTexto, { color: v.vigente ? "#166534" : "#991B1B" }]}>
                     {v.vigente ? "Vigente" : "Vencida"}

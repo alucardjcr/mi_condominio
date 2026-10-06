@@ -92,7 +92,7 @@ export default function MascotasScreen({ navigation }: any) {
       return;
     }
     if (!fechaNacimientoMascotaValida(fechaNacimiento)) {
-      Alert.alert("Fecha inválida", "Escribe la fecha de nacimiento como DD-MM-AAAA (ej: 15-03-2022), sin fechas futuras.");
+      Alert.alert("Fecha inválida", "Escribe la fecha de nacimiento como DD/MM/AAAA (ej: 15/03/2022), sin fechas futuras.");
       return;
     }
     const especieFinal = especieSel?.label === "Otra" ? especieOtra.trim() : especieSel?.label ?? "";
@@ -204,7 +204,7 @@ export default function MascotasScreen({ navigation }: any) {
             <TextInput style={styles.input} value={razaOtra} onChangeText={setRazaOtra} placeholder="Escribe la raza" />
           )}
 
-          <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimiento} onChange={setFechaNacimiento} maximumDate={new Date()} separador="-" opcional />
+          <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimiento} onChange={setFechaNacimiento} maximumDate={new Date()} opcional />
 
           <Text style={styles.label}>Número de chip</Text>
           <TextInput style={styles.input} value={numeroChip} onChangeText={setNumeroChip} placeholder="Si tiene chip identificatorio" />

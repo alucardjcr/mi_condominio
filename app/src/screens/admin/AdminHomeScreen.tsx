@@ -6,6 +6,7 @@ import { ActividadRecienteItem, DashboardAdmin } from "../../api/types";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import { colors, radius, spacing, typography } from "../../theme/theme";
+import { formatearFechaHora } from "../../utils/fechas";
 
 // Ronda 47, a pedido explícito del usuario, con una referencia visual que
 // mandó: el Home de Administrador pasa de un aviso genérico + contador de
@@ -24,8 +25,7 @@ function saludoSegunHora(): string {
 
 function formatFechaHora(fecha: string | null): string {
   if (!fecha) return "Sin registros";
-  const [f, h] = fecha.split(" ");
-  return `${f} ${h?.slice(0, 5) ?? ""}`;
+  return formatearFechaHora(fecha);
 }
 
 function TarjetaStat({ titulo, valor, subtitulo, colorSubtitulo }: { titulo: string; valor: string; subtitulo: string; colorSubtitulo?: string }) {

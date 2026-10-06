@@ -28,10 +28,3 @@ export function fechaNacimientoMascotaValida(texto: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || isNaN(new Date(v).getTime())) return false;
   return v <= new Date().toISOString().slice(0, 10);
 }
-
-// 'YYYY-MM-DD' -> 'DD-MM-YYYY' (formato pedido por el usuario para mostrar fechas de mascotas).
-export function formatearFechaMascota(iso: string | null | undefined): string {
-  if (!iso) return "";
-  const [y, m, d] = iso.slice(0, 10).split("-");
-  return y && m && d ? `${d}-${m}-${y}` : "";
-}

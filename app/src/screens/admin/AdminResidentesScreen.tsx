@@ -33,6 +33,7 @@ import DateField from "../../components/DateField";
 import IlustracionEdificios from "../../components/IlustracionEdificios";
 import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
 import { colors, radius, spacing, typography } from "../../theme/theme";
+import { formatearFecha } from "../../utils/fechas";
 
 // Ronda 79, a pedido explícito del usuario: mismos helpers de avatar que ya
 // usan MiHogarScreen/HomeScreen — foto si el residente tiene una cargada
@@ -857,7 +858,7 @@ export default function AdminResidentesScreen() {
             <TouchableOpacity style={styles.enlaceCarnet} onPress={() => handleAbrirPerfil(item)}>
               <Text style={styles.enlaceCarnetTexto}>
                 {item.rut || item.fecha_nacimiento || item.profesion
-                  ? `RUT ${item.rut ?? "—"} · Nac. ${item.fecha_nacimiento ?? "—"} · ${item.profesion ?? "Sin profesión"}`
+                  ? `RUT ${item.rut ?? "—"} · Nac. ${formatearFecha(item.fecha_nacimiento) || "—"} · ${item.profesion ?? "Sin profesión"}`
                   : "Agregar RUT / fecha de nacimiento / profesión"}
               </Text>
             </TouchableOpacity>
