@@ -52,8 +52,8 @@ function AccesoRapido({ icon, label, color, onPress }: { icon: string; color: st
       onPress={onPress}
       style={({ pressed }) => [styles.accesoRapido, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
     >
-      <View style={[styles.accesoRapidoIcono, { backgroundColor: color }]}>
-        <Text style={{ fontSize: 20 }}>{icon}</Text>
+      <View style={styles.accesoRapidoIcono}>
+        <Text style={{ fontSize: 34 }}>{icon}</Text>
       </View>
       <Text style={styles.accesoRapidoLabel}>{label}</Text>
     </Pressable>
@@ -597,13 +597,13 @@ const styles = StyleSheet.create({
   heroDepto: { color: colors.textMutedOnNavy, fontSize: 17, fontWeight: "700", marginTop: 6 },
 
   // Tarjeta "Mi hogar" tappable, con stats de residentes/mascotas
-  hogarCard: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
+  hogarCard: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
   hogarCardTop: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   hogarIconBadge: {
     width: 44,
     height: 44,
     borderRadius: radius.md,
-    backgroundColor: colors.skyBadge,
+    backgroundColor: colors.white,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.cardBlueBorder,
   },
   hogarStat: { flexDirection: "row", alignItems: "center", gap: 6 },
   hogarStatBadge: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
@@ -629,27 +629,37 @@ const styles = StyleSheet.create({
   accesosGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
   accesoRapido: {
     width: "47%",
-    backgroundColor: colors.white,
+    backgroundColor: colors.botonNaranja,
     borderRadius: radius.lg,
-    padding: spacing.md,
-    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   accesoRapidoIcono: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: "rgba(255,255,255,0.85)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.sm,
   },
-  accesoRapidoLabel: { color: colors.textDark, fontWeight: "700", fontSize: 13 },
+  accesoRapidoLabel: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 14, textAlign: "center" },
 
   // Personas / mascotas del hogar (preview, se edita entrando a "Mi hogar")
-  botonAgregarChico: { backgroundColor: colors.white, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: colors.gold, elevation: 3, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
-  botonAgregarChicoTexto: { color: colors.navy900, fontWeight: "800", fontSize: 12 },
-  cardBlanca: { backgroundColor: colors.white, borderRadius: radius.lg, marginBottom: spacing.md, overflow: "hidden" },
+  botonAgregarChico: { backgroundColor: colors.botonNaranja, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: colors.botonNaranjaBorde, elevation: 3, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+  botonAgregarChicoTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 12 },
+  cardBlanca: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, marginBottom: spacing.md, overflow: "hidden" },
   filaPersona: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md },
-  filaPersonaConLinea: { borderTopWidth: 1, borderTopColor: colors.border },
+  filaPersonaConLinea: { borderTopWidth: 1, borderTopColor: colors.cardBlueBorder },
   filaPersonaNombre: { fontSize: 14, fontWeight: "700", color: colors.textDark },
   filaPersonaDetalle: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
   avatar: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
@@ -661,7 +671,7 @@ const styles = StyleSheet.create({
   chevron: { color: colors.textMuted, fontSize: 18, fontWeight: "300" },
 
   cardVacia: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBlue,
     borderRadius: radius.lg,
     padding: spacing.lg,
     alignItems: "center",
@@ -670,14 +680,15 @@ const styles = StyleSheet.create({
   vacioTitulo: { fontSize: 15, fontWeight: "800", color: colors.textDark, marginTop: spacing.sm, textAlign: "center" },
   vacioSubtitulo: { fontSize: 12, color: colors.textMuted, marginTop: 4, textAlign: "center" },
   botonAgregarGrande: {
-    borderWidth: 1.5,
-    borderColor: colors.navy900,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: radius.pill,
     paddingHorizontal: 18,
     paddingVertical: 10,
     marginTop: spacing.md,
   },
-  botonAgregarGrandeTexto: { color: colors.navy900, fontWeight: "800", fontSize: 13 },
+  botonAgregarGrandeTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 13 },
 
   banner: { backgroundColor: colors.navy700, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md },
   bannerTexto: { color: colors.textOnNavy, fontSize: 12, lineHeight: 18 },

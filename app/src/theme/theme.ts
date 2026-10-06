@@ -62,6 +62,16 @@ export const colors = {
   // derivado del azul institucional, no un color nuevo sin relación.
   skyLight: "#EAF2FE",
   skyBadge: "#DCEAFD",
+
+  // Ronda 79, a pedido explícito del usuario (prueba en la pantalla de
+  // Inicio del residente): tarjetas en un azul claro y cálido en vez de
+  // blanco puro, y botones en naranja cálido para que se note que se
+  // tocan. Todo en un solo lugar para poder ajustar el tono fácilmente.
+  cardBlue: "#D9E6F9",
+  cardBlueBorder: "#B9CFEE",
+  botonNaranja: "#F59E42",
+  botonNaranjaBorde: "#E08A2B",
+  botonNaranjaTexto: "#3A1F00",
 } as const;
 
 export const spacing = {
