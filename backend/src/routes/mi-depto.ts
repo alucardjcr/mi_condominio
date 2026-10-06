@@ -2,6 +2,7 @@ import { Router } from "express";
 import { actualizarResidente, crearResidente, listarResidentes, residentePerteneceAUnidad } from "../services/admin.service";
 import { requireRol } from "../middleware/auth";
 import { guardarImagenBase64 } from "../utils/imagenes";
+import { db } from "../db/client";
 
 export const miDeptoRouter = Router();
 
@@ -123,6 +124,16 @@ miDeptoRouter.patch("/residentes/:id", soloResidente, async (req, res) => {
     // propiedad — eso sigue siendo exclusivo del panel de Administrador/
     // Comité (ver admin.ts).
     const fotoUrl = foto ? await guardarImagenBase64(foto, "residente", "residentes") : undefined;
+    // Ronda 79, a pedido explícito del usuario: un RUT ya cargado solo lo
+    // puede cambiar el Administrador/Comité (/admin/residentes). Desde acá
+    // solo se puede completar si todavía está vacío.
+    let rutPermitido = "rut" in req.body;
+    if (rutPermitido) {
+      const actual = (await db
+        .prepare(`SELECT rut FROM residente_perfil WHERE usuario_id_usuario = ?`)
+        .get(idResidente)) as { rut: string | null } | undefined;
+      if (actual?.rut && actual.rut.trim()) rutPermitido = false;
+    }
     res.json(
       await actualizarResidente(idResidente, {
         nombre_usuario,
@@ -133,7 +144,7 @@ miDeptoRouter.patch("/residentes/:id", soloResidente, async (req, res) => {
               ? null
               : Number(tipo_residente_id_tiporesidente)
             : undefined,
-        rut: "rut" in req.body ? rut : undefined,
+        rut: rutPermitido ? rut : undefined,
         fecha_nacimiento: "fecha_nacimiento" in req.body ? fecha_nacimiento : undefined,
         profesion: "profesion" in req.body ? profesion : undefined,
         // Ronda 77, a pedido explícito del usuario: mismo criterio ('in

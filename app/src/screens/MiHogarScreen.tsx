@@ -6,12 +6,15 @@ import {
   crearResidenteDelHogar,
   getMascotas,
   getMisResidentesDelHogar,
+  getNacionalidades,
+  getProfesiones,
   getTiposResidente,
 } from "../api/client";
-import { Mascota, ResidenteAdmin, TipoResidente } from "../api/types";
+import { Mascota, Nacionalidad, Profesion, ResidenteAdmin, TipoResidente } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
 import FotoCapture from "../components/FotoCapture";
+import DateField from "../components/DateField";
 import { esRutValido, formatearRut, calcularEdad } from "../utils/validarRut";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 import { nacionalidadConBandera } from "../utils/banderas";
@@ -47,21 +50,33 @@ export default function MiHogarScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
 
   const [mostrarFormAgregar, setMostrarFormAgregar] = useState(false);
-  const [nombre, setNombre] = useState("");
+  const [nombresNuevo, setNombresNuevo] = useState("");
+  const [apPaternoNuevo, setApPaternoNuevo] = useState("");
+  const [apMaternoNuevo, setApMaternoNuevo] = useState("");
+  const [nacionalidadNuevaSel, setNacionalidadNuevaSel] = useState<OpcionSelect | null>(null);
+  const [profesionNuevaSel, setProfesionNuevaSel] = useState<OpcionSelect | null>(null);
+  const [profesiones, setProfesiones] = useState<Profesion[]>([]);
+  const [nacionalidades, setNacionalidades] = useState<Nacionalidad[]>([]);
   const [tipoResidenteSel, setTipoResidenteSel] = useState<OpcionSelect | null>(null);
   const [creando, setCreando] = useState(false);
 
   const [rutNuevo, setRutNuevo] = useState("");
   const [rutNuevoError, setRutNuevoError] = useState(false);
   const [fechaNacimientoNuevo, setFechaNacimientoNuevo] = useState("");
-  const [profesionNuevo, setProfesionNuevo] = useState("");
   const [fotoNuevo, setFotoNuevo] = useState<string | null>(null);
 
   const [perfilEnEdicion, setPerfilEnEdicion] = useState<number | null>(null);
   const [rutEditar, setRutEditar] = useState("");
   const [rutEditarError, setRutEditarError] = useState(false);
   const [fechaNacimientoEditar, setFechaNacimientoEditar] = useState("");
-  const [profesionEditar, setProfesionEditar] = useState("");
+  const [nombresEditar, setNombresEditar] = useState("");
+  const [apPaternoEditar, setApPaternoEditar] = useState("");
+  const [apMaternoEditar, setApMaternoEditar] = useState("");
+  const [nacionalidadEditarSel, setNacionalidadEditarSel] = useState<OpcionSelect | null>(null);
+  const [profesionEditarSel, setProfesionEditarSel] = useState<OpcionSelect | null>(null);
+  // RUT del perfil que se está editando (solo se puede escribir si todavía
+  // no tiene uno cargado — ver nota en handleAbrirPerfil).
+  const [rutYaCargado, setRutYaCargado] = useState(false);
   const [fotoEditar, setFotoEditar] = useState<string | null>(null);
   const [guardandoPerfil, setGuardandoPerfil] = useState(false);
 
@@ -89,6 +104,12 @@ export default function MiHogarScreen({ navigation }: any) {
 
   useEffect(() => {
     if (!token) return;
+    getProfesiones(token).then(setProfesiones).catch(() => {});
+    getNacionalidades(token).then(setNacionalidades).catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
     getTiposResidente(token).then(setTiposResidente).catch((e) => Alert.alert("Error", e.message));
   }, [token]);
 
@@ -107,8 +128,8 @@ export default function MiHogarScreen({ navigation }: any) {
   };
 
   const handleCrear = async () => {
-    if (!token || !nombre.trim()) {
-      Alert.alert("Falta el nombre", "Ingresa el nombre de la persona que vive en tu depto.");
+    if (!token || !nombresNuevo.trim() || !apPaternoNuevo.trim()) {
+      Alert.alert("Faltan datos", "Ingresa los nombres y el apellido paterno de la persona que vive en tu depto.");
       return;
     }
     if (rutNuevo.trim() && !esRutValido(rutNuevo)) {
@@ -118,18 +139,24 @@ export default function MiHogarScreen({ navigation }: any) {
     setCreando(true);
     try {
       await crearResidenteDelHogar(token, {
-        nombre_usuario: nombre.trim(),
+        nombres: nombresNuevo.trim(),
+        apellido_paterno: apPaternoNuevo.trim(),
+        apellido_materno: apMaternoNuevo.trim() || undefined,
+        nacionalidad_id_nacionalidad: nacionalidadNuevaSel ? Number(nacionalidadNuevaSel.id) : undefined,
         tipo_residente_id_tiporesidente: tipoResidenteSel ? Number(tipoResidenteSel.id) : undefined,
         rut: rutNuevo.trim() ? formatearRut(rutNuevo) : undefined,
         fecha_nacimiento: fechaNacimientoNuevo.trim() || undefined,
-        profesion: profesionNuevo.trim() || undefined,
+        profesion: profesionNuevaSel?.label || undefined,
         foto: fotoNuevo || undefined,
       });
-      setNombre("");
+      setNombresNuevo("");
+      setApPaternoNuevo("");
+      setApMaternoNuevo("");
+      setNacionalidadNuevaSel(null);
+      setProfesionNuevaSel(null);
       setTipoResidenteSel(null);
       setRutNuevo("");
       setFechaNacimientoNuevo("");
-      setProfesionNuevo("");
       setFotoNuevo(null);
       setMostrarFormAgregar(false);
       cargar();
@@ -144,8 +171,16 @@ export default function MiHogarScreen({ navigation }: any) {
     setPerfilEnEdicion(r.id_usuario);
     setRutEditar(r.rut ?? "");
     setRutEditarError(false);
+    // Solo el Administrador/Comité puede cambiar un RUT ya cargado; acá solo
+    // se puede completar si todavía está vacío.
+    setRutYaCargado(!!r.rut);
     setFechaNacimientoEditar(r.fecha_nacimiento ?? "");
-    setProfesionEditar(r.profesion ?? "");
+    setNombresEditar(r.nombres ?? "");
+    setApPaternoEditar(r.apellido_paterno ?? "");
+    setApMaternoEditar(r.apellido_materno ?? "");
+    setNacionalidadEditarSel(r.nacionalidad_id_nacionalidad && r.gls_nacionalidad ? { id: r.nacionalidad_id_nacionalidad, label: r.gls_nacionalidad } : null);
+    const prof = r.profesion ? profesiones.find((p) => p.gls_profesion === r.profesion) : null;
+    setProfesionEditarSel(r.profesion ? { id: prof ? prof.id_profesion : 0, label: r.profesion } : null);
     setFotoEditar(null);
   };
 
@@ -165,16 +200,25 @@ export default function MiHogarScreen({ navigation }: any) {
 
   const handleGuardarPerfil = async (id: number) => {
     if (!token) return;
-    if (rutEditar.trim() && !esRutValido(rutEditar)) {
+    if (!rutYaCargado && rutEditar.trim() && !esRutValido(rutEditar)) {
       Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo antes de guardar.");
+      return;
+    }
+    if (!nombresEditar.trim() || !apPaternoEditar.trim()) {
+      Alert.alert("Faltan datos", "Los nombres y el apellido paterno no pueden quedar vacíos.");
       return;
     }
     setGuardandoPerfil(true);
     try {
       await actualizarResidenteDelHogar(token, id, {
-        rut: rutEditar.trim() ? formatearRut(rutEditar) : null,
+        // Con RUT ya cargado no se manda (el backend también lo ignora).
+        ...(rutYaCargado ? {} : { rut: rutEditar.trim() ? formatearRut(rutEditar) : null }),
         fecha_nacimiento: fechaNacimientoEditar.trim() || null,
-        profesion: profesionEditar.trim() || null,
+        profesion: profesionEditarSel?.label || null,
+        nombres: nombresEditar.trim(),
+        apellido_paterno: apPaternoEditar.trim(),
+        apellido_materno: apMaternoEditar.trim() || null,
+        nacionalidad_id_nacionalidad: nacionalidadEditarSel ? Number(nacionalidadEditarSel.id) : null,
         foto: fotoEditar || undefined,
       });
       setPerfilEnEdicion(null);
@@ -241,6 +285,7 @@ export default function MiHogarScreen({ navigation }: any) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
+      <Text style={styles.nombreCondominioArriba}>{nombreCondominioActual ?? "Mi condominio"}</Text>
       <View style={styles.filaTitulo}>
         <View style={{ flex: 1 }}>
           <Text style={styles.tituloPagina}>Mi hogar</Text>
@@ -252,7 +297,6 @@ export default function MiHogarScreen({ navigation }: any) {
       </View>
 
       <View style={styles.cardResumen}>
-        <Text style={styles.cardResumenTitulo}>{nombreCondominioActual ?? "Mi condominio"}</Text>
         {guardia?.nombre_torre ? (
           <>
             {!esCasas && !esEdificioUnico && <Text style={styles.cardResumenSubtitulo}>{guardia.nombre_torre}</Text>}
@@ -273,7 +317,9 @@ export default function MiHogarScreen({ navigation }: any) {
         <View style={styles.form}>
           <Text style={styles.formTitulo}>Agregar persona</Text>
           <FotoCapture label="Foto (opcional)" value={fotoNuevo} onChange={setFotoNuevo} recorteCuadrado />
-          <TextInput style={styles.input} placeholder="Nombre" placeholderTextColor={colors.textMuted} value={nombre} onChangeText={setNombre} />
+          <TextInput style={styles.input} placeholder="Nombres" placeholderTextColor={colors.textMuted} value={nombresNuevo} onChangeText={setNombresNuevo} />
+          <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor={colors.textMuted} value={apPaternoNuevo} onChangeText={setApPaternoNuevo} />
+          <TextInput style={styles.input} placeholder="Apellido materno (opcional)" placeholderTextColor={colors.textMuted} value={apMaternoNuevo} onChangeText={setApMaternoNuevo} />
           <SelectModal
             label="Tipo de residente"
             placeholder="Ej: Cónyuge, hijo/a, arrendatario..."
@@ -293,20 +339,20 @@ export default function MiHogarScreen({ navigation }: any) {
             onBlur={handleBlurRutNuevo}
             autoCapitalize="characters"
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Fecha de nacimiento AAAA-MM-DD (opcional)"
-            placeholderTextColor={colors.textMuted}
-            value={fechaNacimientoNuevo}
-            onChangeText={setFechaNacimientoNuevo}
-            keyboardType="numbers-and-punctuation"
+          <SelectModal
+            label="Nacionalidad"
+            placeholder="Selecciona una nacionalidad (opcional)"
+            opciones={nacionalidades.map((n) => ({ id: n.id_nacionalidad, label: n.gls_nacionalidad }))}
+            valorSeleccionado={nacionalidadNuevaSel}
+            onSeleccionar={setNacionalidadNuevaSel}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Profesión (opcional)"
-            placeholderTextColor={colors.textMuted}
-            value={profesionNuevo}
-            onChangeText={setProfesionNuevo}
+          <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimientoNuevo} onChange={setFechaNacimientoNuevo} maximumDate={new Date()} opcional />
+          <SelectModal
+            label="Profesión"
+            placeholder="Selecciona una profesión (opcional)"
+            opciones={profesiones.map((p) => ({ id: p.id_profesion, label: p.gls_profesion }))}
+            valorSeleccionado={profesionNuevaSel}
+            onSeleccionar={setProfesionNuevaSel}
           />
           <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
             <Text style={styles.botonCrearTexto}>{creando ? "Agregando..." : "Agregar"}</Text>
@@ -392,32 +438,41 @@ export default function MiHogarScreen({ navigation }: any) {
           {perfilEnEdicion === item.id_usuario ? (
             <View style={styles.subForm}>
               <FotoCapture label="Foto nueva (opcional, reemplaza la actual)" value={fotoEditar} onChange={setFotoEditar} recorteCuadrado />
-              <TextInput
-                style={[styles.input, rutEditarError && styles.inputConError]}
-                placeholder="RUT (opcional) — ej: 12345678-9"
-                placeholderTextColor={colors.textMuted}
-                value={rutEditar}
-                onChangeText={(t) => {
-                  setRutEditar(t);
-                  setRutEditarError(false);
-                }}
-                onBlur={handleBlurRutEditar}
-                autoCapitalize="characters"
+              <TextInput style={styles.input} placeholder="Nombres" placeholderTextColor={colors.textMuted} value={nombresEditar} onChangeText={setNombresEditar} />
+              <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor={colors.textMuted} value={apPaternoEditar} onChangeText={setApPaternoEditar} />
+              <TextInput style={styles.input} placeholder="Apellido materno (opcional)" placeholderTextColor={colors.textMuted} value={apMaternoEditar} onChangeText={setApMaternoEditar} />
+              <SelectModal
+                label="Nacionalidad"
+                placeholder="Selecciona una nacionalidad (opcional)"
+                opciones={nacionalidades.map((n) => ({ id: n.id_nacionalidad, label: n.gls_nacionalidad }))}
+                valorSeleccionado={nacionalidadEditarSel}
+                onSeleccionar={setNacionalidadEditarSel}
               />
-              <TextInput
-                style={styles.input}
-                placeholder="Fecha de nacimiento AAAA-MM-DD (opcional)"
-                placeholderTextColor={colors.textMuted}
-                value={fechaNacimientoEditar}
-                onChangeText={setFechaNacimientoEditar}
-                keyboardType="numbers-and-punctuation"
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Profesión (opcional)"
-                placeholderTextColor={colors.textMuted}
-                value={profesionEditar}
-                onChangeText={setProfesionEditar}
+              {rutYaCargado ? (
+                <View style={[styles.input, styles.inputBloqueado]}>
+                  <Text style={{ color: colors.textMuted, fontSize: 15 }}>RUT: {rutEditar} (solo el Administrador o el Comité puede cambiarlo)</Text>
+                </View>
+              ) : (
+                <TextInput
+                  style={[styles.input, rutEditarError && styles.inputConError]}
+                  placeholder="RUT (opcional) — ej: 12345678-9"
+                  placeholderTextColor={colors.textMuted}
+                  value={rutEditar}
+                  onChangeText={(t) => {
+                    setRutEditar(t);
+                    setRutEditarError(false);
+                  }}
+                  onBlur={handleBlurRutEditar}
+                  autoCapitalize="characters"
+                />
+              )}
+              <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimientoEditar} onChange={setFechaNacimientoEditar} maximumDate={new Date()} opcional />
+              <SelectModal
+                label="Profesión"
+                placeholder="Selecciona una profesión (opcional)"
+                opciones={profesiones.map((p) => ({ id: p.id_profesion, label: p.gls_profesion }))}
+                valorSeleccionado={profesionEditarSel}
+                onSeleccionar={setProfesionEditarSel}
               />
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
@@ -465,11 +520,10 @@ export default function MiHogarScreen({ navigation }: any) {
                   </View>
                 )}
               </View>
-              {(m.raza || m.numero_chip || textoEdadMascota(m.fecha_nacimiento)) && (
+              {!!m.numero_chip && <Text style={styles.detalle}>Chip: {m.numero_chip}</Text>}
+              {(m.raza || textoEdadMascota(m.fecha_nacimiento)) && (
                 <Text style={styles.detalle}>
-                  {[m.raza, textoEdadMascota(m.fecha_nacimiento) ? `🎂 ${textoEdadMascota(m.fecha_nacimiento)}` : null, m.numero_chip ? `Chip: ${m.numero_chip}` : null]
-                    .filter(Boolean)
-                    .join("  ·  ")}
+                  {[m.raza, textoEdadMascota(m.fecha_nacimiento) ? `🎂 ${textoEdadMascota(m.fecha_nacimiento)}` : null].filter(Boolean).join("  ·  ")}
                 </Text>
               )}
             </View>
@@ -517,6 +571,7 @@ const styles = StyleSheet.create({
   botonAgregarTexto: { color: colors.navy900, fontWeight: "800", fontSize: 12 },
 
   cardResumen: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
+  nombreCondominioArriba: { ...typography.heading, color: colors.textOnNavy, textAlign: "center" },
   cardResumenTitulo: { ...typography.heading, color: colors.textDark },
   cardResumenUnidad: { fontSize: 24, fontWeight: "800", color: colors.textDark, marginTop: 4 },
   cardResumenSubtitulo: { ...typography.small, color: colors.textMuted, marginTop: 2 },
@@ -538,6 +593,7 @@ const styles = StyleSheet.create({
     color: colors.textDark,
     backgroundColor: colors.offWhite,
   },
+  inputBloqueado: { backgroundColor: colors.offWhite, opacity: 0.8 },
   inputConError: { borderColor: colors.danger, borderWidth: 1.5 },
   botonCrear: { backgroundColor: colors.success, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: 4 },
   botonCrearTexto: { color: "#fff", fontWeight: "700" },

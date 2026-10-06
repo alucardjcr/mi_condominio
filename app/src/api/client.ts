@@ -527,7 +527,11 @@ export const getMisResidentesDelHogar = (token: string) => get<ResidenteAdmin[]>
 export const crearResidenteDelHogar = (
   token: string,
   input: {
-    nombre_usuario: string;
+    // Ronda 77: el nombre va separado (el backend exige nombres + apellido_paterno).
+    nombres: string;
+    apellido_paterno: string;
+    apellido_materno?: string;
+    nacionalidad_id_nacionalidad?: number;
     tipo_residente_id_tiporesidente?: number;
     rut?: string;
     fecha_nacimiento?: string;
@@ -547,6 +551,10 @@ export const actualizarResidenteDelHogar = (
     rut?: string | null;
     fecha_nacimiento?: string | null;
     profesion?: string | null;
+    nombres?: string | null;
+    apellido_paterno?: string | null;
+    apellido_materno?: string | null;
+    nacionalidad_id_nacionalidad?: number | null;
     foto?: string;
   }
 ) => send<ResidenteAdmin>(`/mi-depto/residentes/${id}`, "PATCH", token, input);
