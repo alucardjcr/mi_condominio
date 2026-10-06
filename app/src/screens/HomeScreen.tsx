@@ -273,8 +273,8 @@ export default function HomeScreen({ navigation }: any) {
                   <Text style={styles.heroAvatarTexto}>{iniciales(guardia?.nombre_usuario ?? "")}</Text>
                 </View>
               )}
-              <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                <Text style={styles.heroSaludo}>
+              <View style={{ flex: 1, marginLeft: spacing.md, justifyContent: "center" }}>
+                <Text style={styles.heroSaludo} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                   {saludoSegunHora()}, {primerNombre(guardia?.nombre_usuario)} 👋
                 </Text>
                 {guardia?.nombre_torre && (
@@ -588,17 +588,17 @@ const styles = StyleSheet.create({
   cerrarSesionTexto: { color: colors.textMutedOnNavy, fontSize: 13 },
 
   // Ronda 78 — hero "Mi Condominio" + saludo, con referencia visual
-  heroCard: { marginBottom: spacing.sm },
+  heroCard: { marginBottom: spacing.lg },
   heroTopRow: { alignItems: "center", justifyContent: "center", marginBottom: spacing.sm, minHeight: 24 },
   heroCaption: { color: colors.textMutedOnNavy, fontSize: 12, fontWeight: "700", textAlign: "center", marginHorizontal: 32 },
   heroGearPos: { position: "absolute", right: 0, top: 0 },
   heroGear: { fontSize: 20 },
   heroRow: { flexDirection: "row", alignItems: "center" },
-  heroAvatar: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
-  heroAvatarTexto: { fontWeight: "800", fontSize: 18, color: colors.navy900 },
-  heroAvatarFoto: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.navy700 },
+  heroAvatar: { width: 92, height: 92, borderRadius: 46, alignItems: "center", justifyContent: "center" },
+  heroAvatarTexto: { fontWeight: "800", fontSize: 30, color: colors.navy900 },
+  heroAvatarFoto: { width: 92, height: 92, borderRadius: 46, backgroundColor: colors.navy700 },
   heroCondominio: { ...typography.title, color: colors.textOnNavy },
-  heroSaludo: { color: colors.textOnNavy, fontSize: 26, fontWeight: "800", lineHeight: 32 },
+  heroSaludo: { color: colors.textOnNavy, fontSize: 20, fontWeight: "800" },
   heroDepto: { color: colors.textMutedOnNavy, fontSize: 17, fontWeight: "700", marginTop: 6 },
 
   // Tarjeta "Mi hogar" tappable, con stats de residentes/mascotas
