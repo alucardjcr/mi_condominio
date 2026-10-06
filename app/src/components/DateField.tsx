@@ -8,6 +8,8 @@ interface Props {
   value: string; // "YYYY-MM-DD" (formato que se guarda), o "" si no hay fecha
   onChange: (isoDate: string) => void;
   maximumDate?: Date;
+  separador?: "/" | "-"; // por defecto "/" (DD/MM/AAAA); "-" para DD-MM-AAAA
+  opcional?: boolean; // si es true, borrar el texto deja la fecha vacía ("")
 }
 
 // Ronda 71, a pedido explícito del usuario: campo de fecha con dos formas
@@ -18,18 +20,18 @@ interface Props {
 // conversión de ida y vuelta queda encapsulada acá para no tocar cada
 // pantalla que use fechas.
 
-function isoADdMmYyyy(iso: string): string {
+function isoADdMmYyyy(iso: string, sep = "/"): string {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
   if (!y || !m || !d) return "";
-  return `${d}/${m}/${y}`;
+  return `${d}${sep}${m}${sep}${y}`;
 }
 
 // Solo devuelve un ISO cuando el texto ya es una fecha DD/MM/AAAA completa
 // y real (ej. rechaza 31/02/2026) — mientras la persona sigue escribiendo,
 // devuelve null y no se actualiza nada todavía.
 function ddMmYyyyAIso(texto: string): string | null {
-  const match = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  const match = texto.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
   if (!match) return null;
   const [, d, m, y] = match;
   const dia = Number(d);
@@ -43,19 +45,23 @@ function ddMmYyyyAIso(texto: string): string | null {
 
 // Inserta las barras "/" solas mientras se escriben dígitos
 // (18091990 -> 18/09/1990), sin dejar escribir nada que no sea número.
-function formatearMientrasEscribe(texto: string): string {
+function formatearMientrasEscribe(texto: string, sep = "/"): string {
   const soloDigitos = texto.replace(/\D/g, "").slice(0, 8);
   const partes = [soloDigitos.slice(0, 2), soloDigitos.slice(2, 4), soloDigitos.slice(4, 8)].filter(Boolean);
-  return partes.join("/");
+  return partes.join(sep);
 }
 
-export default function DateField({ label, value, onChange, maximumDate }: Props) {
-  const [texto, setTexto] = useState(isoADdMmYyyy(value));
+export default function DateField({ label, value, onChange, maximumDate, separador = "/", opcional = false }: Props) {
+  const [texto, setTexto] = useState(isoADdMmYyyy(value, separador));
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
 
   const handleChangeTexto = (t: string) => {
-    const formateado = formatearMientrasEscribe(t);
+    const formateado = formatearMientrasEscribe(t, separador);
     setTexto(formateado);
+    if (opcional && formateado === "") {
+      onChange("");
+      return;
+    }
     const iso = ddMmYyyyAIso(formateado);
     if (iso) onChange(iso);
   };
@@ -64,7 +70,7 @@ export default function DateField({ label, value, onChange, maximumDate }: Props
     setMostrarCalendario(Platform.OS === "ios"); // en iOS el picker queda abierto hasta cerrarlo a mano
     if (fecha) {
       const iso = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
-      setTexto(isoADdMmYyyy(iso));
+      setTexto(isoADdMmYyyy(iso, separador));
       onChange(iso);
     }
   };
@@ -84,7 +90,7 @@ export default function DateField({ label, value, onChange, maximumDate }: Props
           style={[styles.input, { flex: 1 }]}
           value={texto}
           onChangeText={handleChangeTexto}
-          placeholder="DD/MM/AAAA"
+          placeholder={`DD${separador}MM${separador}AAAA`}
           placeholderTextColor={colors.textMuted}
           keyboardType="number-pad"
           maxLength={10}

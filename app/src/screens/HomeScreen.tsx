@@ -14,6 +14,9 @@ import { Mascota, ResidenteAdmin } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { colors, radius, spacing, typography } from "../theme/theme";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
+import { calcularEdad } from "../utils/validarRut";
+import { nacionalidadConBandera } from "../utils/banderas";
+import { textoEdadMascota } from "../utils/edadMascota";
 
 // Ronda 78, a pedido explícito del usuario, con referencia visual: rediseño
 // del Home del residente/propietario (dashboard con tarjeta "Mi hogar",
@@ -97,6 +100,26 @@ function EnlaceSecundario({ label, onPress }: { label: string; onPress: () => vo
       <Text style={styles.enlaceTexto}>{label}</Text>
     </Pressable>
   );
+}
+
+// Ronda 79, a pedido explícito del usuario: bajo el nombre de cada persona
+// del hogar, "RUT · edad · nacionalidad" (lo que haya cargado — todo es
+// opcional por persona).
+function detallePersona(r: ResidenteAdmin): string | null {
+  const edad = calcularEdad(r.fecha_nacimiento);
+  const partes = [
+    r.rut ? `👤 ${r.rut}` : null,
+    edad !== null ? `${edad} años` : null,
+    nacionalidadConBandera(r.gls_nacionalidad),
+  ].filter(Boolean);
+  return partes.length > 0 ? partes.join("  ·  ") : null;
+}
+
+// Ronda 79: bajo el nombre de cada mascota, "edad · chip".
+function detalleMascota(m: Mascota): string | null {
+  const edad = textoEdadMascota(m.fecha_nacimiento);
+  const partes = [edad ? `🎂 ${edad}` : null, m.numero_chip ? `Chip: ${m.numero_chip}` : null].filter(Boolean);
+  return partes.length > 0 ? partes.join("  ·  ") : null;
 }
 
 export default function HomeScreen({ navigation }: any) {
@@ -352,6 +375,7 @@ export default function HomeScreen({ navigation }: any) {
                       <Text style={styles.badgeChicoTexto}>{r.gls_tiporesidente ?? "Sin tipo asignado"}</Text>
                     </View>
                   </View>
+                  {detallePersona(r) && <Text style={styles.filaPersonaDetalle}>{detallePersona(r)}</Text>}
                 </View>
                 <Text style={styles.chevron}>›</Text>
               </Pressable>
@@ -378,9 +402,13 @@ export default function HomeScreen({ navigation }: any) {
                   onPress={() => navigation.navigate("MascotaDetalle", { mascota: m })}
                   style={[styles.filaPersona, i > 0 && styles.filaPersonaConLinea]}
                 >
-                  <View style={[styles.avatar, { backgroundColor: colorAvatar(m.id_mascota) }]}>
-                    <Text style={{ fontSize: 18 }}>🐾</Text>
-                  </View>
+                  {fuenteImagenPrivada(m.foto_url, token) ? (
+                    <Image source={fuenteImagenPrivada(m.foto_url, token)!} style={styles.avatarFoto} />
+                  ) : (
+                    <View style={[styles.avatar, { backgroundColor: colorAvatar(m.id_mascota) }]}>
+                      <Text style={{ fontSize: 18 }}>🐾</Text>
+                    </View>
+                  )}
                   <View style={{ flex: 1 }}>
                     <Text style={styles.filaPersonaNombre}>{m.nombre}</Text>
                     {m.especie && (
@@ -390,6 +418,7 @@ export default function HomeScreen({ navigation }: any) {
                         </View>
                       </View>
                     )}
+                    {detalleMascota(m) && <Text style={styles.filaPersonaDetalle}>{detalleMascota(m)}</Text>}
                   </View>
                   <Text style={styles.chevron}>›</Text>
                 </Pressable>
@@ -614,6 +643,7 @@ const styles = StyleSheet.create({
   filaPersona: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md },
   filaPersonaConLinea: { borderTopWidth: 1, borderTopColor: colors.border },
   filaPersonaNombre: { fontSize: 14, fontWeight: "700", color: colors.textDark },
+  filaPersonaDetalle: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
   avatar: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   avatarTexto: { fontWeight: "800", fontSize: 15, color: colors.navy900 },
   avatarFoto: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.offWhite },

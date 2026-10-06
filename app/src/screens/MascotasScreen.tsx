@@ -16,9 +16,11 @@ import { crearMascota, eliminarMascota, getEspeciesMascota, getMascotas } from "
 import { EspecieMascota, Mascota } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import DateField from "../components/DateField";
 import FotoCapture from "../components/FotoCapture";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
 import { OPCION_OTRA, opcionesEspeciesDesde, opcionesRazasDesde } from "../utils/catalogoMascotas";
+import { fechaNacimientoMascotaValida, textoEdadMascota } from "../utils/edadMascota";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 
 // Ronda 20: mascotas por depto. Autoservicio de cualquier residente activo
@@ -39,6 +41,7 @@ export default function MascotasScreen({ navigation }: any) {
   const [razaSel, setRazaSel] = useState<OpcionSelect | null>(null);
   const [razaOtra, setRazaOtra] = useState("");
   const [numeroChip, setNumeroChip] = useState("");
+  const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [foto, setFoto] = useState<string | null>(null);
   const [especies, setEspecies] = useState<EspecieMascota[]>([]);
 
@@ -79,12 +82,17 @@ export default function MascotasScreen({ navigation }: any) {
     setRazaSel(null);
     setRazaOtra("");
     setNumeroChip("");
+    setFechaNacimiento("");
     setFoto(null);
   };
 
   const handleAgregar = async () => {
     if (!token || !nombre.trim()) {
       Alert.alert("Falta el nombre", "El nombre de la mascota es obligatorio.");
+      return;
+    }
+    if (!fechaNacimientoMascotaValida(fechaNacimiento)) {
+      Alert.alert("Fecha inválida", "Escribe la fecha de nacimiento como DD-MM-AAAA (ej: 15-03-2022), sin fechas futuras.");
       return;
     }
     const especieFinal = especieSel?.label === "Otra" ? especieOtra.trim() : especieSel?.label ?? "";
@@ -96,6 +104,7 @@ export default function MascotasScreen({ navigation }: any) {
         especie: especieFinal || undefined,
         raza: razaFinal || undefined,
         numero_chip: numeroChip || undefined,
+        fecha_nacimiento: fechaNacimiento.trim() || undefined,
         foto: foto || undefined,
       });
       limpiarFormulario();
@@ -195,6 +204,8 @@ export default function MascotasScreen({ navigation }: any) {
             <TextInput style={styles.input} value={razaOtra} onChangeText={setRazaOtra} placeholder="Escribe la raza" />
           )}
 
+          <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimiento} onChange={setFechaNacimiento} maximumDate={new Date()} separador="-" opcional />
+
           <Text style={styles.label}>Número de chip</Text>
           <TextInput style={styles.input} value={numeroChip} onChangeText={setNumeroChip} placeholder="Si tiene chip identificatorio" />
 
@@ -227,6 +238,7 @@ export default function MascotasScreen({ navigation }: any) {
                 </Text>
               )}
               {m.especie && <Text style={styles.detalle}>{m.especie}{m.raza ? ` · ${m.raza}` : ""}</Text>}
+              {textoEdadMascota(m.fecha_nacimiento) && <Text style={styles.detalle}>🎂 {textoEdadMascota(m.fecha_nacimiento)}</Text>}
               {m.numero_chip && <Text style={styles.detalle}>Chip: {m.numero_chip}</Text>}
             </View>
             <Text style={{ fontSize: 18, color: "#014BD2" }}>›</Text>

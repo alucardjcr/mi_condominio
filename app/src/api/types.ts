@@ -935,6 +935,8 @@ export interface Mascota {
   especie: string | null;
   raza: string | null;
   numero_chip: string | null;
+  // Ronda 79, a pedido explícito del usuario: para mostrar su edad.
+  fecha_nacimiento: string | null; // 'YYYY-MM-DD'
   foto_url: string | null;
   unidad_id_unidad: number;
   flg_vigencia: number;

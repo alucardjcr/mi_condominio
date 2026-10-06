@@ -16,10 +16,24 @@ function formatDateTime(d: Date) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
+// Ronda 79: fecha de nacimiento opcional ('YYYY-MM-DD'). Vacía/ausente =
+// null; si viene algo, tiene que ser una fecha real y no futura.
+function validarFechaNacimiento(valor: string | null | undefined): string | null {
+  const v = valor?.trim();
+  if (!v) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || isNaN(new Date(v).getTime())) {
+    throw new Error("La fecha de nacimiento de la mascota no es válida (formato AAAA-MM-DD).");
+  }
+  if (v > new Date().toISOString().slice(0, 10)) {
+    throw new Error("La fecha de nacimiento de la mascota no puede ser futura.");
+  }
+  return v;
+}
+
 export async function listarMascotasDeUnidad(unidadId: number) {
   return db
     .prepare(
-      `SELECT id_mascota, nombre, especie, raza, numero_chip, foto_url, unidad_id_unidad, flg_vigencia
+      `SELECT id_mascota, nombre, especie, raza, numero_chip, fecha_nacimiento, foto_url, unidad_id_unidad, flg_vigencia
        FROM mascota
        WHERE unidad_id_unidad = ? AND flg_vigencia = 1
        ORDER BY nombre`
@@ -30,7 +44,7 @@ export async function listarMascotasDeUnidad(unidadId: number) {
 export async function listarMascotasDelCondominio(condominioId: number) {
   return db
     .prepare(
-      `SELECT m.id_mascota, m.nombre, m.especie, m.raza, m.numero_chip, m.foto_url, m.unidad_id_unidad,
+      `SELECT m.id_mascota, m.nombre, m.especie, m.raza, m.numero_chip, m.fecha_nacimiento, m.foto_url, m.unidad_id_unidad,
               un.numero_unidad, tb.nombre_torre
        FROM mascota m
        JOIN unidad un ON un.id_unidad = m.unidad_id_unidad
@@ -46,6 +60,7 @@ export async function crearMascota(input: {
   especie?: string;
   raza?: string;
   numeroChip?: string;
+  fechaNacimiento?: string;
   fotoUrl?: string;
   unidadId: number;
   condominioId: number;
@@ -55,14 +70,15 @@ export async function crearMascota(input: {
   }
   const insert = await db
     .prepare(
-      `INSERT INTO mascota (nombre, especie, raza, numero_chip, foto_url, unidad_id_unidad, condominio_id_condominio, creado_por_usuario_id, fecha_creacion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO mascota (nombre, especie, raza, numero_chip, fecha_nacimiento, foto_url, unidad_id_unidad, condominio_id_condominio, creado_por_usuario_id, fecha_creacion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       input.nombre.trim(),
       input.especie?.trim() || null,
       input.raza?.trim() || null,
       input.numeroChip?.trim() || null,
+      validarFechaNacimiento(input.fechaNacimiento),
       input.fotoUrl || null,
       input.unidadId,
       input.condominioId,
@@ -97,7 +113,7 @@ async function getCondominioDeMascota(id: number): Promise<number | undefined> {
 
 export async function actualizarMascota(
   id: number,
-  input: { nombre?: string; especie?: string | null; raza?: string | null; numeroChip?: string | null; fotoUrl?: string; flgVigencia?: number }
+  input: { nombre?: string; especie?: string | null; raza?: string | null; numeroChip?: string | null; fechaNacimiento?: string | null; fotoUrl?: string; flgVigencia?: number }
 ) {
   if (input.nombre !== undefined) {
     await db.prepare(`UPDATE mascota SET nombre = ? WHERE id_mascota = ?`).run(input.nombre.trim(), id);
@@ -110,6 +126,9 @@ export async function actualizarMascota(
   }
   if (input.numeroChip !== undefined) {
     await db.prepare(`UPDATE mascota SET numero_chip = ? WHERE id_mascota = ?`).run(input.numeroChip?.trim() || null, id);
+  }
+  if (input.fechaNacimiento !== undefined) {
+    await db.prepare(`UPDATE mascota SET fecha_nacimiento = ? WHERE id_mascota = ?`).run(validarFechaNacimiento(input.fechaNacimiento), id);
   }
   if (input.fotoUrl !== undefined) {
     await db.prepare(`UPDATE mascota SET foto_url = ? WHERE id_mascota = ?`).run(input.fotoUrl, id);

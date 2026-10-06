@@ -14,8 +14,10 @@ import {
 import { EspecieMascota, Mascota, VacunaMascota } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import { elegirDeGaleria, tomarFoto } from "../utils/camara";
+import DateField from "../components/DateField";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
 import { OPCION_OTRA, opcionesEspeciesDesde, opcionesRazasDesde, opcionParaValor } from "../utils/catalogoMascotas";
+import { fechaNacimientoMascotaValida, formatearFechaMascota, textoEdadMascota } from "../utils/edadMascota";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
@@ -41,6 +43,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
   const [razaSel, setRazaSel] = useState<OpcionSelect | null>(null);
   const [razaOtra, setRazaOtra] = useState("");
   const [numeroChip, setNumeroChip] = useState(mascota.numero_chip ?? "");
+  const [fechaNacimiento, setFechaNacimiento] = useState(mascota.fecha_nacimiento ?? "");
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
   const [especies, setEspecies] = useState<EspecieMascota[]>([]);
 
@@ -59,6 +62,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
   const abrirEdicion = () => {
     setNombre(mascota.nombre);
     setNumeroChip(mascota.numero_chip ?? "");
+    setFechaNacimiento(mascota.fecha_nacimiento ?? "");
     const ei = opcionParaValor(mascota.especie, opcionesEspeciesDesde(especies));
     setEspecieSel(ei.sel);
     setEspecieOtra(ei.otro);
@@ -127,6 +131,10 @@ export default function MascotaDetalleScreen({ navigation }: any) {
       Alert.alert("Falta el nombre", "El nombre de la mascota es obligatorio.");
       return;
     }
+    if (!fechaNacimientoMascotaValida(fechaNacimiento)) {
+      Alert.alert("Fecha inválida", "Escribe la fecha de nacimiento como DD-MM-AAAA (ej: 15-03-2022), sin fechas futuras.");
+      return;
+    }
     const especieFinal = especieSel?.label === "Otra" ? especieOtra.trim() : especieSel?.label ?? "";
     const razaFinal = razaSel?.label === "Otra" ? razaOtra.trim() : razaSel?.label ?? "";
     setGuardandoEdicion(true);
@@ -136,6 +144,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
         especie: especieFinal || undefined,
         raza: razaFinal || undefined,
         numero_chip: numeroChip.trim() || undefined,
+        fecha_nacimiento: fechaNacimiento.trim() || null,
       });
       setMascota(actualizada);
       setEditando(false);
@@ -309,6 +318,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
           {razaSel?.label === "Otra" && (
             <TextInput style={styles.input} value={razaOtra} onChangeText={setRazaOtra} placeholder="Escribe la raza" placeholderTextColor={colors.textMuted} />
           )}
+          <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimiento} onChange={setFechaNacimiento} maximumDate={new Date()} separador="-" opcional />
           <Text style={styles.label}>N° de chip</Text>
           <TextInput
             style={styles.input}
@@ -351,6 +361,11 @@ export default function MascotaDetalleScreen({ navigation }: any) {
             <Text style={styles.sinDato}>Sin chip identificatorio registrado.</Text>
           )}
           {mascota.raza && <Text style={styles.infoTextoSecundario}>Raza: {mascota.raza}</Text>}
+          {textoEdadMascota(mascota.fecha_nacimiento) && (
+            <Text style={styles.infoTextoSecundario}>
+              Edad: {textoEdadMascota(mascota.fecha_nacimiento)} (nació el {formatearFechaMascota(mascota.fecha_nacimiento)})
+            </Text>
+          )}
         </View>
       )}
 

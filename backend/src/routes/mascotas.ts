@@ -40,7 +40,7 @@ mascotasRouter.get("/", async (req, res) => {
 
 mascotasRouter.post("/", async (req, res) => {
   try {
-    const { nombre, especie, raza, numero_chip, foto } = req.body;
+    const { nombre, especie, raza, numero_chip, fecha_nacimiento, foto } = req.body;
     let unidadId: number | undefined;
     if (esAdminOComite(req)) {
       unidadId = req.body.unidad_id_unidad ? Number(req.body.unidad_id_unidad) : undefined;
@@ -53,7 +53,7 @@ mascotasRouter.post("/", async (req, res) => {
     const condominioId = req.guardia!.condominio_id_condominio!;
     const fotoUrl = foto ? await guardarImagenBase64(foto, "mascota", "mascotas") : undefined;
     const mascota = await crearMascota(
-      { nombre, especie, raza, numeroChip: numero_chip, fotoUrl, unidadId: unidadId!, condominioId },
+      { nombre, especie, raza, numeroChip: numero_chip, fechaNacimiento: fecha_nacimiento, fotoUrl, unidadId: unidadId!, condominioId },
       req.guardia!.id_usuario
     );
     res.status(201).json(mascota);
@@ -84,7 +84,7 @@ mascotasRouter.patch("/:id", async (req, res) => {
     if (!(await puedeEditar(req, id))) {
       return res.status(403).json({ error: "Solo un residente de esa unidad o Administrador/Comité pueden editar esta mascota." });
     }
-    const { nombre, especie, raza, numero_chip, foto, flg_vigencia } = req.body;
+    const { nombre, especie, raza, numero_chip, fecha_nacimiento, foto, flg_vigencia } = req.body;
     const fotoUrl = foto ? await guardarImagenBase64(foto, "mascota", "mascotas") : undefined;
     res.json(
       await actualizarMascota(id, {
@@ -92,6 +92,7 @@ mascotasRouter.patch("/:id", async (req, res) => {
         especie,
         raza,
         numeroChip: numero_chip,
+        fechaNacimiento: fecha_nacimiento,
         fotoUrl,
         flgVigencia: flg_vigencia !== undefined ? Number(flg_vigencia) : undefined,
       })

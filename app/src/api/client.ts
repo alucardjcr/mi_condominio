@@ -910,13 +910,13 @@ export const getMascotas = (token: string, condominioId?: number) =>
 
 export const crearMascota = (
   token: string,
-  input: { nombre: string; especie?: string; raza?: string; numero_chip?: string; foto?: string; unidad_id_unidad?: number; condominio_id_condominio?: number }
+  input: { nombre: string; especie?: string; raza?: string; numero_chip?: string; fecha_nacimiento?: string; foto?: string; unidad_id_unidad?: number; condominio_id_condominio?: number }
 ) => send<Mascota>(`/mascotas`, "POST", token, input);
 
 export const actualizarMascota = (
   token: string,
   id: number,
-  input: { nombre?: string; especie?: string; raza?: string; numero_chip?: string; foto?: string; flg_vigencia?: number }
+  input: { nombre?: string; especie?: string; raza?: string; numero_chip?: string; fecha_nacimiento?: string | null; foto?: string; flg_vigencia?: number }
 ) => send<Mascota>(`/mascotas/${id}`, "PATCH", token, input);
 
 export const eliminarMascota = (token: string, id: number) => send<void>(`/mascotas/${id}`, "DELETE", token);

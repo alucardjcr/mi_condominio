@@ -14,6 +14,8 @@ import SelectModal, { OpcionSelect } from "../components/SelectModal";
 import FotoCapture from "../components/FotoCapture";
 import { esRutValido, formatearRut, calcularEdad } from "../utils/validarRut";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
+import { nacionalidadConBandera } from "../utils/banderas";
+import { textoEdadMascota } from "../utils/edadMascota";
 import { colors, radius, spacing, typography } from "../theme/theme";
 
 // Ronda 49, a pedido explícito del usuario, con referencia visual: rediseño
@@ -330,9 +332,13 @@ export default function MiHogarScreen({ navigation }: any) {
                   </View>
                 )}
               </View>
-              {(item.rut || calcularEdad(item.fecha_nacimiento)) && (
+              {(item.rut || calcularEdad(item.fecha_nacimiento) !== null || item.gls_nacionalidad) && (
                 <Text style={styles.detalle}>
-                  {[item.rut ? `👤 ${item.rut}` : null, calcularEdad(item.fecha_nacimiento) !== null ? `${calcularEdad(item.fecha_nacimiento)} años` : null]
+                  {[
+                    item.rut ? `👤 ${item.rut}` : null,
+                    calcularEdad(item.fecha_nacimiento) !== null ? `${calcularEdad(item.fecha_nacimiento)} años` : null,
+                    nacionalidadConBandera(item.gls_nacionalidad),
+                  ]
                     .filter(Boolean)
                     .join("  ·  ")}
                 </Text>
@@ -427,9 +433,13 @@ export default function MiHogarScreen({ navigation }: any) {
       {mascotas.map((m) => (
         <View key={m.id_mascota} style={styles.card}>
           <View style={styles.cardHeader}>
-            <View style={[styles.avatar, { backgroundColor: colorAvatar(m.id_mascota) }]}>
-              <Text style={styles.avatarTexto}>🐾</Text>
-            </View>
+            {fuenteImagenPrivada(m.foto_url, token) ? (
+              <Image source={fuenteImagenPrivada(m.foto_url, token)!} style={styles.avatarFoto} />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: colorAvatar(m.id_mascota) }]}>
+                <Text style={styles.avatarTexto}>🐾</Text>
+              </View>
+            )}
             <View style={{ flex: 1 }}>
               <Text style={styles.nombreItem}>{m.nombre}</Text>
               <View style={styles.filaBadges}>
@@ -439,11 +449,11 @@ export default function MiHogarScreen({ navigation }: any) {
                   </View>
                 )}
               </View>
-              {(m.raza || m.numero_chip) && (
+              {(m.raza || m.numero_chip || textoEdadMascota(m.fecha_nacimiento)) && (
                 <Text style={styles.detalle}>
-                  {m.raza ?? ""}
-                  {m.raza && m.numero_chip ? " · " : ""}
-                  {m.numero_chip ? `Chip: ${m.numero_chip}` : ""}
+                  {[m.raza, textoEdadMascota(m.fecha_nacimiento) ? `🎂 ${textoEdadMascota(m.fecha_nacimiento)}` : null, m.numero_chip ? `Chip: ${m.numero_chip}` : null]
+                    .filter(Boolean)
+                    .join("  ·  ")}
                 </Text>
               )}
             </View>
