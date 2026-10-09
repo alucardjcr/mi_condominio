@@ -23,6 +23,7 @@ import {
   VacunaMascota,
   VisitaHogar,
   AdministradorCondominio,
+  PerfilAdministrador,
   Notificacion,
   Paquete,
   PaquetePendiente,
@@ -1065,6 +1066,20 @@ export const actualizarEstacionamiento = (
 ) => send<EstacionamientoAdmin>(`/admin/estacionamientos/${id}`, "PATCH", token, input);
 
 // --- Ronda 32: derechos ARCO (Ley 21.719 de Protección de Datos) -----------
+
+export const getMiPerfilAdmin = (token: string) => get<PerfilAdministrador>(`/mi-perfil`, token);
+
+export const actualizarMiPerfilAdmin = (
+  token: string,
+  input: {
+    correo_usuario?: string | null;
+    fecha_nacimiento?: string | null;
+    telefono?: string | null;
+    profesion?: string | null;
+    numero_registro_rnac?: string | null;
+    foto?: string; // data URL
+  }
+) => send<PerfilAdministrador>(`/mi-perfil`, "PATCH", token, input);
 
 export const getMisDatos = (token: string) => get<MisDatos>(`/privacidad/mis-datos`, token);
 

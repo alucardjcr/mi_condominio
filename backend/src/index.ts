@@ -28,6 +28,7 @@ import { hoyRouter } from "./routes/hoy";
 import { condominiosRouter } from "./routes/condominios";
 import { superAdminRouter } from "./routes/super-admin";
 import { privacidadRouter } from "./routes/privacidad";
+import { miPerfilRouter } from "./routes/mi-perfil";
 import { requireAuth, requireAdmin, requireCondominioAccess, requireSuperAdmin, requireSuscripcionAlDia } from "./middleware/auth";
 import { obtenerArchivo } from "./utils/storage";
 import { registrarAuditoria } from "./services/auditoria.service";
@@ -143,6 +144,7 @@ app.use("/mi-equipo", requireAuth, requireCondominioAccess, requireSuscripcionAl
 app.use("/mascotas", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, mascotasRouter); // ronda 20: mascotas por depto — autoservicio del residente de esa unidad, o Administrador/Comité (ver requireAuth dentro del router)
 app.use("/hoy", requireAuth, requireCondominioAccess, requireSuscripcionAlDia, hoyRouter); // ronda 40: "quién viene hoy" — personal externo + mantenciones del día, cualquier rol logeado del condominio
 app.use("/privacidad", requireAuth, privacidadRouter); // ronda 32, Ley 21.719: derechos ARCO — autoservicio de cualquier rol sobre sí mismo, ver routes/privacidad.ts. A propósito SIN requireSuscripcionAlDia: es un derecho de la PERSONA, no puede quedar condicionado a si el condominio pagó su mensualidad o no.
+app.use("/mi-perfil", requireAuth, miPerfilRouter); // perfil propio del Administrador (foto, correo, fecha de nacimiento, teléfono, profesión, N° RNAC) — solo rol Administrador, validado dentro del router; sin requireSuscripcionAlDia a propósito, igual que /privacidad
 
 // Manejador de errores genérico: cualquier excepción no capturada por un
 // try/catch específico (sea síncrona o, gracias a express-async-errors, una

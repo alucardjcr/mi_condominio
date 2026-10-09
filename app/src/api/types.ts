@@ -1329,3 +1329,16 @@ export interface AdministradorCondominio {
   numero_registro_rnac: string | null;
   telefono: string | null;
 }
+
+// Perfil propio del Administrador (pantalla "Mis datos").
+export interface PerfilAdministrador {
+  id_usuario: number;
+  nombre_usuario: string;
+  correo_usuario: string | null;
+  foto_url: string | null;
+  rut: string | null;
+  fecha_nacimiento: string | null;
+  telefono: string | null;
+  profesion: string | null;
+  numero_registro_rnac: string | null;
+}

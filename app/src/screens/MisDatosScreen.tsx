@@ -1,8 +1,19 @@
 import React, { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { crearSolicitudArco, getMisDatos, getMisSolicitudesArco } from "../api/client";
-import { MisDatos, SolicitudArco, TipoSolicitudArco } from "../api/types";
+import {
+  actualizarMiPerfilAdmin,
+  crearSolicitudArco,
+  getMiPerfilAdmin,
+  getMisDatos,
+  getMisSolicitudesArco,
+  getProfesiones,
+} from "../api/client";
+import { MisDatos, PerfilAdministrador, Profesion, SolicitudArco, TipoSolicitudArco } from "../api/types";
+import DateField from "../components/DateField";
+import FotoCapture from "../components/FotoCapture";
+import SelectModal, { OpcionSelect } from "../components/SelectModal";
+import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 import { API_BASE_URL } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import { descargarYCompartirArchivo } from "../utils/descargas";
@@ -28,7 +39,52 @@ const ESTADO_COLOR: Record<string, string> = {
 // (Rectificación/Cancelación/Oposición — queda pendiente hasta que
 // Administrador/Comité la revise, ver AdminPrivacidadScreen).
 export default function MisDatosScreen({ navigation }: any) {
-  const { token } = useAuth();
+  const { token, rol } = useAuth();
+  const esAdministrador = rol === "Administrador";
+
+  // Perfil del Administrador (solo se carga para ese rol).
+  const [perfil, setPerfil] = useState<PerfilAdministrador | null>(null);
+  const [profesiones, setProfesiones] = useState<Profesion[]>([]);
+  const [pCorreo, setPCorreo] = useState("");
+  const [pFecha, setPFecha] = useState("");
+  const [pTelefono, setPTelefono] = useState("");
+  const [pRnac, setPRnac] = useState("");
+  const [pProfesion, setPProfesion] = useState<OpcionSelect | null>(null);
+  const [pFoto, setPFoto] = useState<string | null>(null);
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
+
+  const aplicarPerfil = useCallback((p: PerfilAdministrador, lista: Profesion[]) => {
+    setPerfil(p);
+    setPCorreo(p.correo_usuario ?? "");
+    setPFecha(p.fecha_nacimiento ?? "");
+    setPTelefono(p.telefono ?? "");
+    setPRnac(p.numero_registro_rnac ?? "");
+    setPFoto(null);
+    const prof = lista.find((x) => x.gls_profesion === p.profesion);
+    setPProfesion(prof ? { id: prof.id_profesion, label: `${prof.codigo} · ${prof.gls_profesion}` } : null);
+  }, []);
+
+  const handleGuardarPerfil = async () => {
+    if (!token) return;
+    setGuardandoPerfil(true);
+    try {
+      const actualizado = await actualizarMiPerfilAdmin(token, {
+        correo_usuario: pCorreo.trim() || null,
+        fecha_nacimiento: pFecha || null,
+        telefono: pTelefono.trim() || null,
+        numero_registro_rnac: pRnac.trim() || null,
+        profesion: profesiones.find((x) => x.id_profesion === pProfesion?.id)?.gls_profesion ?? null,
+        foto: pFoto ?? undefined,
+      });
+      aplicarPerfil(actualizado, profesiones);
+      Alert.alert("Listo", "Tu perfil quedó actualizado.");
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    } finally {
+      setGuardandoPerfil(false);
+    }
+  };
+
   const [datos, setDatos] = useState<MisDatos | null>(null);
   const [solicitudes, setSolicitudes] = useState<SolicitudArco[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -43,14 +99,21 @@ export default function MisDatosScreen({ navigation }: any) {
   const cargar = useCallback(() => {
     if (!token) return;
     setCargando(true);
-    Promise.all([getMisDatos(token), getMisSolicitudesArco(token)])
-      .then(([d, s]) => {
+    Promise.all([
+      getMisDatos(token),
+      getMisSolicitudesArco(token),
+      esAdministrador ? getProfesiones(token) : Promise.resolve([] as Profesion[]),
+      esAdministrador ? getMiPerfilAdmin(token) : Promise.resolve(null),
+    ])
+      .then(([d, s, lista, p]) => {
         setDatos(d);
         setSolicitudes(s);
+        setProfesiones(lista);
+        if (p) aplicarPerfil(p, lista);
       })
       .catch((e) => setError(e.message))
       .finally(() => setCargando(false));
-  }, [token]);
+  }, [token, esAdministrador, aplicarPerfil]);
 
   useFocusEffect(cargar);
 
@@ -112,6 +175,96 @@ export default function MisDatosScreen({ navigation }: any) {
       </TouchableOpacity>
 
       {error && <Text style={styles.error}>{error}</Text>}
+
+      {esAdministrador && perfil && (
+        <View style={styles.card}>
+          <Text style={styles.tituloCard}>Mi perfil de administrador</Text>
+
+          <View style={styles.campoPerfil}>
+            {fuenteImagenPrivada(perfil.foto_url, token) && !pFoto ? (
+              <Image source={fuenteImagenPrivada(perfil.foto_url, token)!} style={styles.fotoPerfil} />
+            ) : !pFoto ? (
+              <View style={[styles.fotoPerfil, { alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite }]}>
+                <Text style={{ fontSize: 56 }}>👤</Text>
+              </View>
+            ) : null}
+            <FotoCapture label="Tu foto" value={pFoto} onChange={setPFoto} recorteCuadrado />
+          </View>
+
+          <View style={styles.campoPerfil}>
+            <Text style={styles.label}>Nombre</Text>
+            <Text style={styles.dato}>{perfil.nombre_usuario}</Text>
+          </View>
+
+          <View style={styles.campoPerfil}>
+            <Text style={styles.label}>RUT</Text>
+            <Text style={styles.dato}>{perfil.rut ?? "Sin registrar"}</Text>
+          </View>
+
+          <View style={styles.campoPerfil}>
+            <Text style={styles.label}>Correo</Text>
+            <TextInput
+              style={styles.input}
+              value={pCorreo}
+              onChangeText={setPCorreo}
+              placeholder="correo@ejemplo.com"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
+
+          <View style={styles.campoPerfil}>
+            <DateField label="Fecha de nacimiento" value={pFecha} onChange={setPFecha} maximumDate={new Date()} opcional />
+          </View>
+
+          <View style={styles.campoPerfil}>
+            <Text style={styles.label}>Teléfono</Text>
+            <TextInput
+              style={styles.input}
+              value={pTelefono}
+              onChangeText={setPTelefono}
+              placeholder="+56 9 1234 5678"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          <View style={styles.campoPerfil}>
+            <SelectModal
+              label="Profesión"
+              placeholder="Selecciona tu profesión (opcional)"
+              opciones={profesiones.map((p) => ({ id: p.id_profesion, label: `${p.codigo} · ${p.gls_profesion}` }))}
+              valorSeleccionado={pProfesion}
+              onSeleccionar={setPProfesion}
+            />
+          </View>
+
+          <View style={styles.campoPerfil}>
+            <Text style={styles.label}>N° de registro nacional de administradores (RNAC)</Text>
+            <TextInput
+              style={styles.input}
+              value={pRnac}
+              onChangeText={setPRnac}
+              placeholder="N° de registro (opcional)"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.botonNaranja, guardandoPerfil && styles.botonDeshabilitado]}
+            onPress={handleGuardarPerfil}
+            disabled={guardandoPerfil}
+            activeOpacity={0.85}
+          >
+            {guardandoPerfil ? (
+              <ActivityIndicator color={colors.botonNaranjaTexto} />
+            ) : (
+              <Text style={styles.botonNaranjaTexto}>Guardar mi perfil</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {datos && (
         <View style={styles.card}>
@@ -276,6 +429,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.offWhite,
   },
   inputMultilinea: { minHeight: 90, textAlignVertical: "top" },
+  campoPerfil: { marginBottom: spacing.md },
+  fotoPerfil: { width: 160, height: 160, borderRadius: 80, alignSelf: "center", marginBottom: spacing.sm, overflow: "hidden" },
+  botonNaranja: {
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
+    borderRadius: radius.sm,
+    padding: 14,
+    alignItems: "center",
+    marginTop: spacing.sm,
+  },
+  botonNaranjaTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
   boton: { backgroundColor: colors.gold, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
   botonTexto: { color: colors.navy900, fontWeight: "800" },
   botonDeshabilitado: { opacity: 0.6 },
