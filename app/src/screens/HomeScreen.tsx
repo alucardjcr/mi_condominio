@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -59,6 +59,36 @@ function nombreCortoGuardia(p: PerfilGuardiaPropio | null, completo?: string | n
   if (w.length === 2) return `${w[0]} ${w[1]}`;
   if (w.length === 3) return `${w[0]} ${w[1]}`;
   return `${w[0]} ${w[2]}`;
+}
+
+// Campanita chica con contador de notificaciones sin leer (como en Facebook).
+// Si hay sin leer, parpadea para que se note. Al tocarla abre Notificaciones.
+function CampanaNotificaciones({ cantidad, onPress }: { cantidad: number; onPress: () => void }) {
+  const opacidad = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (cantidad <= 0) {
+      opacidad.setValue(1);
+      return;
+    }
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacidad, { toValue: 0.25, duration: 550, useNativeDriver: true }),
+        Animated.timing(opacidad, { toValue: 1, duration: 550, useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [cantidad, opacidad]);
+  return (
+    <Pressable onPress={onPress} hitSlop={8} style={styles.campana}>
+      <Animated.Text style={[styles.campanaIcono, { opacity: opacidad }]}>🔔</Animated.Text>
+      {cantidad > 0 && (
+        <Animated.View style={[styles.campanaBadge, { opacity: opacidad }]}>
+          <Text style={styles.campanaBadgeTexto}>{cantidad > 9 ? "9+" : cantidad}</Text>
+        </Animated.View>
+      )}
+    </Pressable>
+  );
 }
 
 function CajaMenu({ icono, label, onPress }: { icono: string; label: string; onPress: () => void }) {
@@ -459,11 +489,14 @@ export default function HomeScreen({ navigation }: any) {
 
           <View style={styles.filaSeccionConBoton}>
             <Text style={[styles.seccionTitulo, { marginBottom: 0 }]}>Personas del hogar</Text>
-            {esPropietario && (
-              <Pressable style={styles.botonAgregarChico} onPress={() => navigation.navigate("MiHogar")}>
-                <Text style={styles.botonAgregarChicoTexto}>+ Agregar integrante</Text>
-              </Pressable>
-            )}
+            <View style={{ alignItems: "flex-end", gap: 6 }}>
+              <CampanaNotificaciones cantidad={noLeidas} onPress={() => navigation.navigate("Notificaciones")} />
+              {esPropietario && (
+                <Pressable style={styles.botonAgregarChico} onPress={() => navigation.navigate("MiHogar")}>
+                  <Text style={styles.botonAgregarChicoTexto}>+ Agregar integrante</Text>
+                </Pressable>
+              )}
+            </View>
           </View>
           <View style={styles.cardBlanca}>
             {residentesHogarActivos.map((r, i) => (
@@ -825,6 +858,10 @@ const styles = StyleSheet.create({
   accesoRapidoLabel: { color: colors.textDark, fontWeight: "800", fontSize: 14, textAlign: "center" },
 
   // Personas / mascotas del hogar (preview, se edita entrando a "Mi hogar")
+  campana: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.navy800, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.navy600 },
+  campanaIcono: { fontSize: 16 },
+  campanaBadge: { position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: "#E11D48", alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
+  campanaBadgeTexto: { color: "#fff", fontSize: 10, fontWeight: "800" },
   botonAgregarChico: { backgroundColor: colors.botonNaranja, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: colors.botonNaranjaBorde, elevation: 3, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
   botonAgregarChicoTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 12 },
   cardBlanca: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, marginBottom: spacing.md, overflow: "hidden" },
