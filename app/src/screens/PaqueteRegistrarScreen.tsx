@@ -115,7 +115,7 @@ export default function PaqueteRegistrarScreen({ navigation }: any) {
         `Queda guardado en portería para ${nombreReceptorFinal} — ${torreSel.label} ${unidadSel.label}.`
       );
       limpiarFormulario();
-      navigation.navigate("PaquetePendientes");
+      navigation.goBack();
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {

@@ -91,7 +91,13 @@ export default function SignaturePad({ label = "Firma de quien retira *", value,
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}</Text>
       <ViewShot ref={viewShotRef} options={{ format: "png", result: "data-uri" }} style={styles.lienzoWrap}>
-        <View style={styles.lienzo} {...panResponder.panHandlers}>
+        <View
+          style={styles.lienzo}
+          onTouchStart={() => onFirmandoRef.current?.(true)}
+          onTouchEnd={() => onFirmandoRef.current?.(false)}
+          onTouchCancel={() => onFirmandoRef.current?.(false)}
+          {...panResponder.panHandlers}
+        >
           <Svg width="100%" height="100%">
             {paths.map((d, i) => (
               <Path key={i} d={d} stroke="#111" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />

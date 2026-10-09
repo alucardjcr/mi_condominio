@@ -394,6 +394,9 @@ export default function HomeScreen({ navigation }: any) {
           <View style={styles.heroCard}>
             <View style={styles.heroTopRow}>
               <Text style={styles.heroCaption} numberOfLines={1}>{nombreCondominioActual ?? "Mi condominio"}</Text>
+              <View style={styles.heroCampanaPos}>
+                <CampanaNotificaciones cantidad={noLeidas} onPress={() => navigation.navigate("Notificaciones")} />
+              </View>
               <Pressable style={styles.heroGearPos} onPress={handleAbrirAjustes} hitSlop={10}>
                 <Text style={styles.heroGear}>⚙️</Text>
               </Pressable>
@@ -489,14 +492,11 @@ export default function HomeScreen({ navigation }: any) {
 
           <View style={styles.filaSeccionConBoton}>
             <Text style={[styles.seccionTitulo, { marginBottom: 0 }]}>Personas del hogar</Text>
-            <View style={{ alignItems: "flex-end", gap: 6 }}>
-              <CampanaNotificaciones cantidad={noLeidas} onPress={() => navigation.navigate("Notificaciones")} />
-              {esPropietario && (
-                <Pressable style={styles.botonAgregarChico} onPress={() => navigation.navigate("MiHogar")}>
-                  <Text style={styles.botonAgregarChicoTexto}>+ Agregar integrante</Text>
-                </Pressable>
-              )}
-            </View>
+            {esPropietario && (
+              <Pressable style={styles.botonAgregarChico} onPress={() => navigation.navigate("MiHogar")}>
+                <Text style={styles.botonAgregarChicoTexto}>+ Agregar integrante</Text>
+              </Pressable>
+            )}
           </View>
           <View style={styles.cardBlanca}>
             {residentesHogarActivos.map((r, i) => (
@@ -605,7 +605,7 @@ export default function HomeScreen({ navigation }: any) {
               {adminError ? (
                 <Text style={styles.adminDato}>No se pudo cargar la información. Cierra y vuelve a tocar para reintentar.</Text>
               ) : !adminCargado ? (
-                <ActivityIndicator color="#000" />
+                <ActivityIndicator color={colors.gold} />
               ) : !adminCondo ? (
                 <Text style={styles.adminDato}>Este condominio aún no tiene un administrador asignado.</Text>
               ) : (
@@ -747,24 +747,24 @@ const styles = StyleSheet.create({
   modulosFila: { flexDirection: "row", gap: spacing.md, marginTop: spacing.md },
   modulo: {
     flex: 1,
-    backgroundColor: colors.cardBlue,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.md,
     alignItems: "center",
   },
   moduloIcono: { fontSize: 26, marginBottom: 6 },
-  moduloTitulo: { color: "#000", fontSize: 14, fontWeight: "700", textAlign: "center" },
+  moduloTitulo: { color: colors.textOnNavy, fontSize: 14, fontWeight: "700", textAlign: "center" },
   adminCard: {
-    backgroundColor: colors.cardBlue,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginTop: spacing.md,
     alignItems: "center",
   },
-  adminFoto: { width: 110, height: 110, borderRadius: 55, marginBottom: spacing.md, backgroundColor: colors.cardBlueBorder },
-  adminNombre: { color: "#000", fontSize: 18, fontWeight: "700", marginBottom: 6, textAlign: "center" },
-  adminDato: { color: "#000", fontSize: 14, marginTop: 3, textAlign: "center" },
+  adminFoto: { width: 110, height: 110, borderRadius: 55, marginBottom: spacing.md, backgroundColor: colors.navy600 },
+  adminNombre: { color: colors.textOnNavy, fontSize: 18, fontWeight: "700", marginBottom: 6, textAlign: "center" },
+  adminDato: { color: colors.textOnNavy, fontSize: 14, marginTop: 3, textAlign: "center" },
   enlace: { marginTop: spacing.md, alignItems: "center" },
   enlaceTexto: { color: colors.goldSoft, fontSize: 14, fontWeight: "600" },
   encabezadoGuardia: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.lg },
@@ -795,8 +795,9 @@ const styles = StyleSheet.create({
   // Ronda 78 — hero "Mi Condominio" + saludo, con referencia visual
   heroCard: { marginBottom: spacing.lg },
   heroTopRow: { alignItems: "center", justifyContent: "center", marginBottom: spacing.sm, minHeight: 24 },
-  heroCaption: { color: colors.textMutedOnNavy, fontSize: 12, fontWeight: "700", textAlign: "center", marginHorizontal: 32 },
+  heroCaption: { color: colors.textMutedOnNavy, fontSize: 12, fontWeight: "700", textAlign: "center", marginHorizontal: 76 },
   heroGearPos: { position: "absolute", right: 0, top: 0 },
+  heroCampanaPos: { position: "absolute", right: 36, top: -5 },
   heroGear: { fontSize: 20 },
   heroRow: { flexDirection: "row", alignItems: "center" },
   heroAvatar: { width: 92, height: 92, borderRadius: 46, alignItems: "center", justifyContent: "center" },
@@ -807,31 +808,31 @@ const styles = StyleSheet.create({
   heroDepto: { color: colors.textMutedOnNavy, fontSize: 17, fontWeight: "700", marginTop: 6 },
 
   // Tarjeta "Mi hogar" tappable, con stats de residentes/mascotas
-  hogarCard: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
+  hogarCard: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
   hogarCardTop: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   hogarIconBadge: {
     width: 44,
     height: 44,
     borderRadius: radius.md,
-    backgroundColor: colors.white,
+    backgroundColor: colors.navy700,
     alignItems: "center",
     justifyContent: "center",
   },
-  hogarTitulo: { fontSize: 17, fontWeight: "800", color: colors.textDark },
-  hogarSubtitulo: { color: colors.textMuted, fontSize: 13, marginTop: 1 },
-  chevronGrande: { color: colors.textMuted, fontSize: 26, fontWeight: "300" },
+  hogarTitulo: { fontSize: 17, fontWeight: "800", color: colors.textOnNavy },
+  hogarSubtitulo: { color: colors.textMutedOnNavy, fontSize: 13, marginTop: 1 },
+  chevronGrande: { color: colors.textMutedOnNavy, fontSize: 26, fontWeight: "300" },
   hogarStats: {
     flexDirection: "row",
     gap: spacing.lg,
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.cardBlueBorder,
+    borderTopColor: colors.navy600,
   },
   hogarStat: { flexDirection: "row", alignItems: "center", gap: 6 },
   hogarStatBadge: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  hogarStatNumero: { fontSize: 16, fontWeight: "800", color: colors.textDark },
-  hogarStatLabel: { fontSize: 12, color: colors.textMuted },
+  hogarStatNumero: { fontSize: 16, fontWeight: "800", color: colors.textOnNavy },
+  hogarStatLabel: { fontSize: 12, color: colors.textMutedOnNavy },
 
   // Accesos rápidos (grilla 2x2)
   seccionTitulo: { ...typography.heading, color: colors.textOnNavy, fontSize: 16, marginBottom: spacing.sm },
@@ -839,7 +840,7 @@ const styles = StyleSheet.create({
   accesosGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
   accesoRapido: {
     width: "47%",
-    backgroundColor: colors.cardBlue,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
@@ -850,12 +851,12 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: colors.white,
+    backgroundColor: colors.navy700,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.sm,
   },
-  accesoRapidoLabel: { color: colors.textDark, fontWeight: "800", fontSize: 14, textAlign: "center" },
+  accesoRapidoLabel: { color: colors.textOnNavy, fontWeight: "800", fontSize: 14, textAlign: "center" },
 
   // Personas / mascotas del hogar (preview, se edita entrando a "Mi hogar")
   campana: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.navy800, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.navy600 },
@@ -864,28 +865,28 @@ const styles = StyleSheet.create({
   campanaBadgeTexto: { color: "#fff", fontSize: 10, fontWeight: "800" },
   botonAgregarChico: { backgroundColor: colors.botonNaranja, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: colors.botonNaranjaBorde, elevation: 3, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
   botonAgregarChicoTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 12 },
-  cardBlanca: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, marginBottom: spacing.md, overflow: "hidden" },
+  cardBlanca: { backgroundColor: colors.navy800, borderRadius: radius.lg, marginBottom: spacing.md, overflow: "hidden" },
   filaPersona: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md },
-  filaPersonaConLinea: { borderTopWidth: 1, borderTopColor: colors.cardBlueBorder },
-  filaPersonaNombre: { fontSize: 14, fontWeight: "700", color: colors.textDark },
-  filaPersonaDetalle: { fontSize: 12, fontWeight: "700", color: "#344054", marginTop: 4 },
+  filaPersonaConLinea: { borderTopWidth: 1, borderTopColor: colors.navy600 },
+  filaPersonaNombre: { fontSize: 14, fontWeight: "700", color: colors.textOnNavy },
+  filaPersonaDetalle: { fontSize: 12, fontWeight: "700", color: colors.textMutedOnNavy, marginTop: 4 },
   avatar: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   avatarTexto: { fontWeight: "800", fontSize: 15, color: colors.navy900 },
   avatarFoto: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.offWhite },
   filaBadges: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   badgeChico: { borderRadius: radius.pill, paddingHorizontal: 9, paddingVertical: 2 },
   badgeChicoTexto: { fontSize: 10, fontWeight: "700", color: colors.textDark },
-  chevron: { color: colors.textMuted, fontSize: 18, fontWeight: "300" },
+  chevron: { color: colors.textMutedOnNavy, fontSize: 18, fontWeight: "300" },
 
   cardVacia: {
-    backgroundColor: colors.cardBlue,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     padding: spacing.lg,
     alignItems: "center",
     marginBottom: spacing.md,
   },
-  vacioTitulo: { fontSize: 15, fontWeight: "800", color: colors.textDark, marginTop: spacing.sm, textAlign: "center" },
-  vacioSubtitulo: { fontSize: 12, color: colors.textMuted, marginTop: 4, textAlign: "center" },
+  vacioTitulo: { fontSize: 15, fontWeight: "800", color: colors.textOnNavy, marginTop: spacing.sm, textAlign: "center" },
+  vacioSubtitulo: { fontSize: 12, color: colors.textMutedOnNavy, marginTop: 4, textAlign: "center" },
   botonAgregarGrande: {
     backgroundColor: colors.botonNaranja,
     borderWidth: 1,

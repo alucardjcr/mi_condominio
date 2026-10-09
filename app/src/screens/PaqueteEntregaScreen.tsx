@@ -75,7 +75,7 @@ export default function PaqueteEntregaScreen({ navigation, route }: any) {
         condominio_id_condominio: CONDOMINIO_ID,
       });
       Alert.alert("Entrega registrada", `Paquete entregado a ${entregadoAFinal}.`);
-      navigation.navigate("PaquetePendientes");
+      navigation.goBack();
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
@@ -85,7 +85,7 @@ export default function PaqueteEntregaScreen({ navigation, route }: any) {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.navy900 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.container} scrollEnabled={!firmando}>
+      <ScrollView contentContainerStyle={styles.container} scrollEnabled={!firmando} bounces={false} alwaysBounceVertical={false} keyboardShouldPersistTaps="handled">
         <View style={styles.resumen}>
           <Text style={styles.resumenTipo}>{paquete.gls_tipopaquete}</Text>
           <Text style={styles.resumenReceptor}>{paquete.nombre_receptor}</Text>
