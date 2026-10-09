@@ -102,8 +102,10 @@ export default function MisDatosScreen({ navigation }: any) {
     Promise.all([
       getMisDatos(token),
       getMisSolicitudesArco(token),
-      esAdministrador ? getProfesiones(token) : Promise.resolve([] as Profesion[]),
-      esAdministrador ? getMiPerfilAdmin(token) : Promise.resolve(null),
+      // Si el perfil o las profesiones fallan (ej. el servidor aún no se actualizó),
+      // el resto de "Mis datos" igual se muestra.
+      esAdministrador ? getProfesiones(token).catch(() => [] as Profesion[]) : Promise.resolve([] as Profesion[]),
+      esAdministrador ? getMiPerfilAdmin(token).catch(() => null) : Promise.resolve(null),
     ])
       .then(([d, s, lista, p]) => {
         setDatos(d);
@@ -326,7 +328,7 @@ export default function MisDatosScreen({ navigation }: any) {
             activeOpacity={0.85}
           >
             {descargando ? (
-              <ActivityIndicator color={colors.navy900} />
+              <ActivityIndicator color={colors.botonNaranjaTexto} />
             ) : (
               <Text style={styles.botonTexto}>Descargar mis datos (JSON)</Text>
             )}
@@ -441,18 +443,27 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   botonNaranjaTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
-  boton: { backgroundColor: colors.gold, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
-  botonTexto: { color: colors.navy900, fontWeight: "800" },
+  boton: {
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
+    borderRadius: radius.sm,
+    padding: 14,
+    alignItems: "center",
+    marginTop: spacing.lg,
+  },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
   botonDeshabilitado: { opacity: 0.6 },
   botonSecundario: {
-    borderWidth: 1.5,
-    borderColor: colors.navy900,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: radius.sm,
     padding: 14,
     alignItems: "center",
     marginTop: spacing.sm,
   },
-  botonSecundarioTexto: { color: colors.navy900, fontWeight: "700" },
+  botonSecundarioTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
   botonCancelar: { alignItems: "center", marginTop: spacing.sm },
   botonCancelarTexto: { color: colors.textMuted, fontWeight: "600" },
   opcionLarga: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, padding: spacing.md },
