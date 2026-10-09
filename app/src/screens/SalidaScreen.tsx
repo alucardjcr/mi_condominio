@@ -15,6 +15,7 @@ import { getVisitasActivas, registrarSalida } from "../api/client";
 import { Visita } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 function formatearHora(iso: string) {
   return new Date(iso).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
@@ -90,7 +91,7 @@ export default function SalidaScreen({ route }: any) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -103,6 +104,7 @@ export default function SalidaScreen({ route }: any) {
       <TextInput
         style={styles.buscador}
         placeholder="Buscar por patente, nombre o depto..."
+        placeholderTextColor={colors.textMutedOnNavy}
         value={busqueda}
         onChangeText={setBusqueda}
       />
@@ -113,6 +115,7 @@ export default function SalidaScreen({ route }: any) {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
+            tintColor={colors.textOnNavy}
             onRefresh={() => {
               setRefreshing(true);
               cargar();
@@ -177,32 +180,33 @@ export default function SalidaScreen({ route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
   encabezadoModo: {
     textAlign: "center",
     fontWeight: "700",
     fontSize: 14,
-    color: "#014BD2",
-    backgroundColor: "#eef6ff",
+    color: colors.goldSoft,
+    backgroundColor: colors.navy800,
     borderRadius: 10,
     padding: 12,
     margin: 16,
     marginBottom: 0,
   },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   buscador: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
+    color: colors.textOnNavy,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
     margin: 16,
     marginBottom: 0,
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy700,
   },
-  vacio: { textAlign: "center", color: "#888", marginTop: 40 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 40 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy800,
     borderRadius: 12,
     padding: 14,
     flexDirection: "row",
@@ -212,9 +216,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  nombre: { fontSize: 16, fontWeight: "700" },
-  detalle: { color: "#555", marginTop: 2 },
-  hora: { color: "#999", marginTop: 2, fontSize: 12 },
+  nombre: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2 },
+  hora: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 12 },
   boton: {
     backgroundColor: "#c0392b",
     borderRadius: 8,

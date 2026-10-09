@@ -64,7 +64,7 @@ export default function SuperAdminEventosSeguridadScreen() {
   if (cargando && eventos.length === 0) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -123,8 +123,8 @@ export default function SuperAdminEventosSeguridadScreen() {
 }
 
 const styles = StyleSheet.create({
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
-  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.offWhite, gap: spacing.sm },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.navy900, gap: spacing.sm },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600" },
 
   resumenCard: { backgroundColor: colors.navy900, borderRadius: radius.lg, padding: spacing.lg, alignItems: "center" },
@@ -132,20 +132,20 @@ const styles = StyleSheet.create({
   resumenTexto: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
 
   filaResumenTipos: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
-  chipResumen: { backgroundColor: colors.white, borderRadius: radius.md, padding: spacing.sm, flexGrow: 1, borderWidth: 1, borderColor: colors.border },
-  chipResumenTitulo: { fontSize: 12, fontWeight: "700", color: colors.textDark },
-  chipResumenNumeros: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  chipResumen: { backgroundColor: colors.navy800, borderRadius: radius.md, padding: spacing.sm, flexGrow: 1, borderWidth: 1, borderColor: colors.navy600 },
+  chipResumenTitulo: { fontSize: 12, fontWeight: "700", color: colors.textOnNavy },
+  chipResumenNumeros: { fontSize: 11, color: colors.textMutedOnNavy, marginTop: 2 },
 
   filtros: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.xs },
-  filtroChip: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
-  filtroChipActivo: { borderColor: colors.navy900, backgroundColor: colors.navy900 },
-  filtroChipTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 11 },
+  filtroChip: { borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
+  filtroChipActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  filtroChipTexto: { color: colors.textMutedOnNavy, fontWeight: "700", fontSize: 11 },
   filtroChipTextoActivo: { color: colors.textOnNavy },
 
-  vacio: { textAlign: "center", color: colors.textMuted, marginTop: spacing.xl },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: spacing.xl },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.navy600 },
   badge: { alignSelf: "flex-start", borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4, marginBottom: spacing.xs },
   badgeTexto: { fontSize: 11, fontWeight: "800", color: colors.textDark },
-  fecha: { fontSize: 12, color: colors.textMuted },
-  detalle: { fontSize: 12, color: colors.textDark, marginTop: 2 },
+  fecha: { fontSize: 12, color: colors.textMutedOnNavy },
+  detalle: { fontSize: 12, color: colors.textOnNavy, marginTop: 2 },
 });

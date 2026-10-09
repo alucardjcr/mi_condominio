@@ -140,7 +140,7 @@ export default function AdminNumerarTorresScreen() {
 
         <View style={styles.card}>
           {cargandoTorres ? (
-            <ActivityIndicator />
+            <ActivityIndicator color={colors.gold} />
           ) : (
             <SelectModal
               label="Torre / Block"
@@ -154,7 +154,7 @@ export default function AdminNumerarTorresScreen() {
 
         {torreSel && cargandoUnidades && (
           <View style={styles.card}>
-            <ActivityIndicator />
+            <ActivityIndicator color={colors.gold} />
           </View>
         )}
 
@@ -170,7 +170,7 @@ export default function AdminNumerarTorresScreen() {
                       value={valores[u.id_unidad] ?? ""}
                       onChangeText={(texto) => setValores((prev) => ({ ...prev, [u.id_unidad]: texto }))}
                       placeholder="ej: 101"
-                      placeholderTextColor={colors.textMuted}
+                      placeholderTextColor={colors.textMutedOnNavy}
                     />
                   </View>
                 ))}
@@ -185,7 +185,7 @@ export default function AdminNumerarTorresScreen() {
               disabled={guardando}
               activeOpacity={0.85}
             >
-              {guardando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Guardar numeración</Text>}
+              {guardando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Guardar numeración</Text>}
             </TouchableOpacity>
           </View>
         )}
@@ -205,28 +205,30 @@ const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingTop: spacing.xl },
   titulo: { ...typography.title, textAlign: "center", color: colors.textOnNavy, marginBottom: spacing.xs },
   intro: { ...typography.small, textAlign: "center", color: colors.textMutedOnNavy, marginBottom: spacing.lg },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
-  ayuda: { ...typography.small, color: colors.textMuted, textAlign: "center" },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
+  ayuda: { ...typography.small, color: colors.textMutedOnNavy, textAlign: "center" },
   grupoPiso: { marginBottom: spacing.md },
-  pisoTitulo: { ...typography.label, color: colors.textDark, fontWeight: "800", marginBottom: spacing.xs },
+  pisoTitulo: { ...typography.label, color: colors.textOnNavy, fontWeight: "800", marginBottom: spacing.xs },
   filaUnidad: { marginBottom: spacing.xs },
   inputNumero: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 12,
     fontSize: 16,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
   boton: {
-    backgroundColor: colors.gold,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: radius.sm,
     padding: 16,
     alignItems: "center",
     marginTop: spacing.md,
   },
   botonDeshabilitado: { opacity: 0.6 },
-  botonTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "800" },
   error: { color: colors.danger, marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
 });

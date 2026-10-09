@@ -14,6 +14,7 @@ import { adminActualizarEspacio, adminCrearEspacio, adminGetEspacios, getTiposEs
 import { EspacioComun, TipoEspacioComun } from "../../api/types";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
+import { colors } from "../../theme/theme";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
 
 function formatearMonto(monto: number) {
@@ -176,7 +177,7 @@ export default function AdminEspaciosScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -194,7 +195,7 @@ export default function AdminEspaciosScreen() {
               <Text style={styles.formTitulo}>{editId ? "Editar espacio" : "Nuevo espacio"}</Text>
 
               <Text style={styles.label}>Nombre *</Text>
-              <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Ej: Quincho" />
+              <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Ej: Quincho" />
 
               <SelectModal
                 label="Tipo *"
@@ -205,7 +206,7 @@ export default function AdminEspaciosScreen() {
               />
 
               <Text style={styles.label}>Capacidad (personas, opcional)</Text>
-              <TextInput style={styles.input} value={capacidad} onChangeText={setCapacidad} keyboardType="numeric" />
+              <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={capacidad} onChangeText={setCapacidad} keyboardType="numeric" />
 
               <View style={styles.tipoCupoSelector}>
                 <TouchableOpacity
@@ -243,11 +244,11 @@ export default function AdminEspaciosScreen() {
                 <View style={{ flexDirection: "row", gap: 12 }}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.label}>Precio por bloque</Text>
-                    <TextInput style={styles.input} value={precioBloque} onChangeText={setPrecioBloque} keyboardType="numeric" />
+                    <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={precioBloque} onChangeText={setPrecioBloque} keyboardType="numeric" />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.label}>Bloque (horas)</Text>
-                    <TextInput style={styles.input} value={bloqueHoras} onChangeText={setBloqueHoras} keyboardType="numeric" />
+                    <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={bloqueHoras} onChangeText={setBloqueHoras} keyboardType="numeric" />
                   </View>
                 </View>
               )}
@@ -255,11 +256,11 @@ export default function AdminEspaciosScreen() {
               <View style={{ flexDirection: "row", gap: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Garantía ($)</Text>
-                  <TextInput style={styles.input} value={montoGarantia} onChangeText={setMontoGarantia} keyboardType="numeric" />
+                  <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={montoGarantia} onChangeText={setMontoGarantia} keyboardType="numeric" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Atraso ($/min)</Text>
-                  <TextInput
+                  <TextInput placeholderTextColor={colors.textMutedOnNavy}
                     style={styles.input}
                     value={tarifaAtrasoMinuto}
                     onChangeText={setTarifaAtrasoMinuto}
@@ -271,16 +272,16 @@ export default function AdminEspaciosScreen() {
               <View style={{ flexDirection: "row", gap: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Hora apertura</Text>
-                  <TextInput style={styles.input} value={horaApertura} onChangeText={setHoraApertura} placeholder="HH:MM" />
+                  <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={horaApertura} onChangeText={setHoraApertura} placeholder="HH:MM" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Hora cierre</Text>
-                  <TextInput style={styles.input} value={horaCierre} onChangeText={setHoraCierre} placeholder="HH:MM" />
+                  <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={horaCierre} onChangeText={setHoraCierre} placeholder="HH:MM" />
                 </View>
               </View>
 
               <Text style={styles.label}>Días disponibles (1=lunes..7=domingo, vacío = todos)</Text>
-              <TextInput
+              <TextInput placeholderTextColor={colors.textMutedOnNavy}
                 style={styles.input}
                 value={diasDisponibles}
                 onChangeText={setDiasDisponibles}
@@ -291,7 +292,7 @@ export default function AdminEspaciosScreen() {
               <View style={{ flexDirection: "row", gap: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Separación (min)</Text>
-                  <TextInput
+                  <TextInput placeholderTextColor={colors.textMutedOnNavy}
                     style={styles.input}
                     value={minutosSeparacion}
                     onChangeText={setMinutosSeparacion}
@@ -300,7 +301,7 @@ export default function AdminEspaciosScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Máx. anticipación (días)</Text>
-                  <TextInput
+                  <TextInput placeholderTextColor={colors.textMutedOnNavy}
                     style={styles.input}
                     value={diasMaxAnticipacion}
                     onChangeText={setDiasMaxAnticipacion}
@@ -310,7 +311,7 @@ export default function AdminEspaciosScreen() {
               </View>
 
               <Text style={styles.label}>Mín. días para cancelar (residente)</Text>
-              <TextInput
+              <TextInput placeholderTextColor={colors.textMutedOnNavy}
                 style={styles.input}
                 value={diasMinCancelacion}
                 onChangeText={setDiasMinCancelacion}
@@ -319,14 +320,14 @@ export default function AdminEspaciosScreen() {
 
               <Text style={styles.label}>Temporada (opcional, formato MM-DD)</Text>
               <View style={{ flexDirection: "row", gap: 12 }}>
-                <TextInput
+                <TextInput placeholderTextColor={colors.textMutedOnNavy}
                   style={[styles.input, { flex: 1 }]}
                   value={temporadaInicio}
                   onChangeText={setTemporadaInicio}
                   placeholder="Inicio: 12-01"
                   autoCapitalize="none"
                 />
-                <TextInput
+                <TextInput placeholderTextColor={colors.textMutedOnNavy}
                   style={[styles.input, { flex: 1 }]}
                   value={temporadaTermino}
                   onChangeText={setTemporadaTermino}
@@ -344,13 +345,13 @@ export default function AdminEspaciosScreen() {
                   <Text style={styles.botonCrearTexto}>{guardando ? "Guardando..." : "Guardar"}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.botonCrear, { flex: 1, backgroundColor: "#999" }]}
+                  style={[styles.botonCrear, { flex: 1, backgroundColor: colors.navy700, borderColor: colors.navy600 }]}
                   onPress={() => {
                     limpiarFormulario();
                     setFormVisible(false);
                   }}
                 >
-                  <Text style={styles.botonCrearTexto}>Cancelar</Text>
+                  <Text style={[styles.botonCrearTexto, { color: colors.textOnNavy }]}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -396,34 +397,36 @@ export default function AdminEspaciosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 12 },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginTop: 10 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  form: { backgroundColor: colors.navy800, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.navy600 },
+  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textOnNavy },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginTop: 10 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
     marginTop: 4,
   },
   tipoCupoSelector: { flexDirection: "row", gap: 10, marginTop: 12 },
-  tipoCupoBoton: { flex: 1, borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingVertical: 10, alignItems: "center" },
-  tipoCupoBotonActivo: { backgroundColor: "#014BD2", borderColor: "#014BD2" },
-  tipoCupoTexto: { fontWeight: "600", color: "#333", fontSize: 13 },
-  tipoCupoTextoActivo: { color: "#fff" },
-  botonCrear: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14 },
+  tipoCupoBoton: { flex: 1, borderWidth: 1, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: 10, paddingVertical: 10, alignItems: "center" },
+  tipoCupoBotonActivo: { backgroundColor: colors.navy900, borderColor: colors.botonNaranja },
+  tipoCupoTexto: { fontWeight: "600", color: colors.textMutedOnNavy, fontSize: 13 },
+  tipoCupoTextoActivo: { color: colors.goldSoft },
+  botonCrear: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardHeader: { flexDirection: "row", alignItems: "center" },
-  nombreItem: { fontSize: 16, fontWeight: "700" },
-  detalle: { color: "#666", marginTop: 2, fontSize: 13 },
+  nombreItem: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
   botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   botonActivar: { backgroundColor: "#1a9d5c" },
   botonDesactivar: { backgroundColor: "#c0392b" },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  enlaceEditar: { color: "#014BD2", fontSize: 12, fontWeight: "600" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
+  enlaceEditar: { color: colors.goldSoft, fontSize: 12, fontWeight: "600" },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
 });

@@ -364,7 +364,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               value={nombreCondominio}
               onChangeText={setNombreCondominio}
               placeholder="ej: Altos de San Miguel"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
             />
             <SelectModal
               label="Región"
@@ -387,7 +387,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               value={direccion}
               onChangeText={setDireccion}
               placeholder="ej: 6 Sur 2750"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
             />
             <Text style={styles.label}>Código postal (opcional)</Text>
             <TextInput
@@ -395,7 +395,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               value={codigoPostal}
               onChangeText={setCodigoPostal}
               placeholder="ej: 3460000"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               keyboardType="number-pad"
             />
             <TouchableOpacity
@@ -486,7 +486,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
                   value={cantidadTorresTexto}
                   onChangeText={setCantidadTorresTexto}
                   placeholder="ej: 3"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.textMutedOnNavy}
                   keyboardType="number-pad"
                 />
                 {error && <Text style={styles.error}>{error}</Text>}
@@ -539,7 +539,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
                     value={pisosTorre}
                     onChangeText={setPisosTorre}
                     placeholder="ej: 5"
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor={colors.textMutedOnNavy}
                     keyboardType="number-pad"
                   />
                   <Text style={styles.label}>Deptos por piso</Text>
@@ -548,7 +548,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
                     value={deptosPorPisoTorre}
                     onChangeText={setDeptosPorPisoTorre}
                     placeholder="ej: 4"
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor={colors.textMutedOnNavy}
                     keyboardType="number-pad"
                   />
                   <Text style={styles.ayuda}>
@@ -593,7 +593,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
                   activeOpacity={0.85}
                 >
                   {enviando ? (
-                    <ActivityIndicator color={colors.navy900} />
+                    <ActivityIndicator color={colors.botonNaranjaTexto} />
                   ) : (
                     <Text style={styles.botonTexto}>Crear condominio</Text>
                   )}
@@ -611,7 +611,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               value={pisosEdificio}
               onChangeText={setPisosEdificio}
               placeholder="ej: 8"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               keyboardType="number-pad"
             />
             <Text style={styles.label}>Deptos por piso</Text>
@@ -620,7 +620,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               value={deptosPorPisoEdificio}
               onChangeText={setDeptosPorPisoEdificio}
               placeholder="ej: 4"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               keyboardType="number-pad"
             />
             <Text style={styles.ayuda}>
@@ -637,7 +637,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               activeOpacity={0.85}
             >
               {enviando ? (
-                <ActivityIndicator color={colors.navy900} />
+                <ActivityIndicator color={colors.botonNaranjaTexto} />
               ) : (
                 <Text style={styles.botonTexto}>Crear condominio</Text>
               )}
@@ -657,7 +657,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               value={casasTexto}
               onChangeText={setCasasTexto}
               placeholder={"Casa 1, Casa 2, Casa 3..."}
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               multiline
             />
 
@@ -670,7 +670,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               activeOpacity={0.85}
             >
               {enviando ? (
-                <ActivityIndicator color={colors.navy900} />
+                <ActivityIndicator color={colors.botonNaranjaTexto} />
               ) : (
                 <Text style={styles.botonTexto}>Crear condominio</Text>
               )}
@@ -690,7 +690,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               value={parcelasTexto}
               onChangeText={setParcelasTexto}
               placeholder={"Parcela 1, Parcela 2, Parcela 3..."}
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               multiline
             />
 
@@ -703,7 +703,7 @@ export default function CrearCondominioScreen({ navigation }: any) {
               activeOpacity={0.85}
             >
               {enviando ? (
-                <ActivityIndicator color={colors.navy900} />
+                <ActivityIndicator color={colors.botonNaranjaTexto} />
               ) : (
                 <Text style={styles.botonTexto}>Crear condominio</Text>
               )}
@@ -727,40 +727,42 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.navy900 },
   scroll: { padding: spacing.lg, paddingTop: spacing.xl },
   titulo: { ...typography.title, textAlign: "center", color: colors.textOnNavy, marginBottom: spacing.lg },
-  subtitulo: { ...typography.heading, color: colors.textDark, marginTop: spacing.md },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
-  ayuda: { ...typography.small, color: colors.textMuted, marginTop: 2, marginBottom: 4 },
+  subtitulo: { ...typography.heading, color: colors.textOnNavy, marginTop: spacing.md },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg },
+  label: { ...typography.label, color: colors.textOnNavy, marginTop: spacing.sm },
+  ayuda: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2, marginBottom: 4 },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
     marginTop: 6,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
   inputChico: { flex: 1, marginTop: 0 },
   inputMultilinea: { minHeight: 90, textAlignVertical: "top" },
   filaPatron: { flexDirection: "row", gap: spacing.sm, alignItems: "center", marginTop: 6 },
   botonGenerar: {
     backgroundColor: colors.navy700,
+    borderWidth: 1,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     paddingVertical: 14,
     paddingHorizontal: spacing.md,
   },
   botonGenerarTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 13 },
-  opcionLarga: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, padding: spacing.md },
-  opcionActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
-  opcionLargaTitulo: { color: colors.textDark, fontWeight: "800", fontSize: 15 },
-  opcionLargaAyuda: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  opcionTextoActivo: { color: colors.navy900 },
+  opcionLarga: { borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.sm, padding: spacing.md },
+  opcionActiva: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  opcionLargaTitulo: { color: colors.textOnNavy, fontWeight: "800", fontSize: 15 },
+  opcionLargaAyuda: { color: colors.textMutedOnNavy, fontSize: 12, marginTop: 2 },
+  opcionTextoActivo: { color: colors.goldSoft },
   // Ronda 71 — feedback visual de cambio de torre
   progresoTorres: { flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: spacing.md },
-  progresoDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
+  progresoDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.navy600 },
   progresoDotActivo: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.gold },
-  progresoDotCompletado: { backgroundColor: colors.navy700 },
+  progresoDotCompletado: { backgroundColor: colors.navy500 },
   torreBadge: {
     alignSelf: "center",
     backgroundColor: colors.navy900,
@@ -774,32 +776,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.offWhite,
+    backgroundColor: colors.navy700,
     borderRadius: radius.sm,
     padding: spacing.sm,
     marginBottom: spacing.xs,
   },
-  torreResumenNombre: { fontWeight: "700", color: colors.textDark },
-  torreResumenDetalle: { fontSize: 12, color: colors.textMuted },
+  torreResumenNombre: { fontWeight: "700", color: colors.textOnNavy },
+  torreResumenDetalle: { fontSize: 12, color: colors.textMutedOnNavy },
   quitarTexto: { color: colors.danger, fontWeight: "700", fontSize: 13 },
   boton: {
-    backgroundColor: colors.gold,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: radius.sm,
     padding: 16,
     alignItems: "center",
     marginTop: spacing.lg,
   },
   botonDeshabilitado: { opacity: 0.6 },
-  botonTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "800" },
   botonSecundario: {
     borderWidth: 1.5,
-    borderColor: colors.navy900,
+    borderColor: colors.textMutedOnNavy,
     borderRadius: radius.sm,
     padding: 14,
     alignItems: "center",
     marginTop: spacing.md,
   },
-  botonSecundarioTexto: { color: colors.navy900, fontWeight: "700" },
+  botonSecundarioTexto: { color: colors.textOnNavy, fontWeight: "700" },
   error: { color: colors.danger, marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
   volverWrap: { alignItems: "center", marginTop: spacing.lg },
   volverTexto: { color: colors.textMutedOnNavy, fontSize: 14, fontWeight: "600" },

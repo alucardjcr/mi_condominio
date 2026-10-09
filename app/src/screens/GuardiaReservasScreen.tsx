@@ -15,6 +15,7 @@ import { getReservasDelDia, marcarLlegadaReserva, marcarSalidaReserva } from "..
 import { Reserva } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 function hoyComoTexto() {
   const hoy = new Date();
@@ -94,7 +95,7 @@ export default function GuardiaReservasScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f5f6f8" }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <View style={styles.filtros}>
         <Text style={styles.label}>Fecha</Text>
         <TextInput
@@ -102,6 +103,7 @@ export default function GuardiaReservasScreen() {
           value={fecha}
           onChangeText={setFecha}
           placeholder="AAAA-MM-DD"
+          placeholderTextColor={colors.textMutedOnNavy}
           autoCapitalize="none"
           onSubmitEditing={() => cargar()}
         />
@@ -112,14 +114,14 @@ export default function GuardiaReservasScreen() {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={colors.gold} />
         </View>
       ) : (
         <FlatList
           data={reservas}
           keyExtractor={(item) => String(item.id_reserva)}
           contentContainerStyle={{ padding: 16, gap: 10 }}
-          refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+          refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
           ListEmptyComponent={<Text style={styles.vacio}>No hay reservas confirmadas para ese día.</Text>}
           renderItem={({ item }) => (
             <View style={styles.card}>
@@ -162,16 +164,16 @@ export default function GuardiaReservasScreen() {
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  filtros: { padding: 16, borderBottomWidth: 1, borderBottomColor: "#eee", backgroundColor: "#fff" },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15 },
-  botonBuscar: { backgroundColor: "#333", borderRadius: 10, padding: 12, alignItems: "center", marginTop: 10 },
-  botonBuscarTexto: { color: "#fff", fontWeight: "700" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
-  nombre: { fontSize: 16, fontWeight: "700" },
-  detalleTexto: { color: "#555", marginTop: 2, fontSize: 13 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  filtros: { padding: 16, borderBottomWidth: 1, borderBottomColor: colors.navy600, backgroundColor: colors.navy800 },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginBottom: 4 },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: colors.navy700, color: colors.textOnNavy },
+  botonBuscar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 12, alignItems: "center", marginTop: 10 },
+  botonBuscarTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
+  nombre: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalleTexto: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
   boton: { borderRadius: 8, paddingVertical: 10, alignItems: "center", marginTop: 10 },
   botonLlegada: { backgroundColor: "#1a9d5c" },
   botonSalida: { backgroundColor: "#c0392b" },

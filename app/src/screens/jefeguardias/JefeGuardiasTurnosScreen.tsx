@@ -176,13 +176,13 @@ export default function JefeGuardiasTurnosScreen({ route }: any) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.offWhite }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <View style={styles.tabs}>
         {(
           [
@@ -256,7 +256,7 @@ function CalendarioMensual({
   return (
     <ScrollView
       contentContainerStyle={{ padding: spacing.md, gap: spacing.xs }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={onRefresh} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={onRefresh} tintColor={colors.textOnNavy} />}
     >
       <View style={styles.navMes}>
         <TouchableOpacity onPress={() => onCambiarMes(-1)} style={styles.botonNav}>
@@ -308,7 +308,7 @@ function CalendarioMensual({
                       onPress={() => onTocarCelda(dia, b)}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.textoAsignado} numberOfLines={2}>
+                      <Text style={[styles.textoAsignado, asignado && { color: colors.textDark }]} numberOfLines={2}>
                         {asignado ? asignado.nombre_guardia : "—"}
                       </Text>
                     </TouchableOpacity>
@@ -435,9 +435,9 @@ function GeneradorPatron({
 
       <View style={styles.card}>
         <Text style={styles.label}>Desde</Text>
-        <TextInput style={styles.input} value={fechaInicio} onChangeText={setFechaInicio} placeholder="AAAA-MM-DD" />
+        <TextInput style={styles.input} placeholderTextColor={colors.textMutedOnNavy} value={fechaInicio} onChangeText={setFechaInicio} placeholder="AAAA-MM-DD" />
         <Text style={styles.label}>Hasta</Text>
-        <TextInput style={styles.input} value={fechaTermino} onChangeText={setFechaTermino} placeholder="AAAA-MM-DD" />
+        <TextInput style={styles.input} placeholderTextColor={colors.textMutedOnNavy} value={fechaTermino} onChangeText={setFechaTermino} placeholder="AAAA-MM-DD" />
 
         <SelectModal
           label="Bloque de día"
@@ -455,7 +455,7 @@ function GeneradorPatron({
         />
 
         <Text style={styles.label}>Días seguidos por dupla</Text>
-        <TextInput style={styles.input} value={diasPorBloque} onChangeText={setDiasPorBloque} keyboardType="number-pad" placeholder="4" />
+        <TextInput style={styles.input} placeholderTextColor={colors.textMutedOnNavy} value={diasPorBloque} onChangeText={setDiasPorBloque} keyboardType="number-pad" placeholder="4" />
       </View>
 
       <Text style={styles.subtitulo}>Duplas (en el orden que van rotando)</Text>
@@ -493,7 +493,7 @@ function GeneradorPatron({
       </TouchableOpacity>
 
       <TouchableOpacity style={[styles.botonCrear, generando && styles.botonDeshabilitado]} onPress={handleGenerar} disabled={generando}>
-        {generando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botonCrearTexto}>Generar patrón</Text>}
+        {generando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonCrearTexto}>Generar patrón</Text>}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -586,11 +586,11 @@ function GestionBloques({ bloques, onCambio }: { bloques: TurnoBloque[]; onCambi
         bloqueEditando === b.id_turnobloque ? (
           <View key={b.id_turnobloque} style={styles.card}>
             <Text style={styles.label}>Nombre</Text>
-            <TextInput style={styles.input} value={nombreEditar} onChangeText={setNombreEditar} />
+            <TextInput style={styles.input} placeholderTextColor={colors.textMutedOnNavy} value={nombreEditar} onChangeText={setNombreEditar} />
             <Text style={styles.label}>Hora inicio</Text>
-            <TextInput style={styles.input} value={inicioEditar} onChangeText={setInicioEditar} placeholder="HH:MM" />
+            <TextInput style={styles.input} placeholderTextColor={colors.textMutedOnNavy} value={inicioEditar} onChangeText={setInicioEditar} placeholder="HH:MM" />
             <Text style={styles.label}>Hora término</Text>
-            <TextInput style={styles.input} value={terminoEditar} onChangeText={setTerminoEditar} placeholder="HH:MM" />
+            <TextInput style={styles.input} placeholderTextColor={colors.textMutedOnNavy} value={terminoEditar} onChangeText={setTerminoEditar} placeholder="HH:MM" />
             <View style={{ flexDirection: "row", gap: 8, marginTop: spacing.sm }}>
               <TouchableOpacity
                 style={[styles.botonCrear, { flex: 1 }, guardando && styles.botonDeshabilitado]}
@@ -625,11 +625,11 @@ function GestionBloques({ bloques, onCambio }: { bloques: TurnoBloque[]; onCambi
       <Text style={styles.subtitulo}>Nuevo bloque</Text>
       <View style={styles.card}>
         <Text style={styles.label}>Nombre (ej: "Día", "Noche")</Text>
-        <TextInput style={styles.input} value={nombreNuevo} onChangeText={setNombreNuevo} placeholder="Día" />
+        <TextInput style={styles.input} placeholderTextColor={colors.textMutedOnNavy} value={nombreNuevo} onChangeText={setNombreNuevo} placeholder="Día" />
         <Text style={styles.label}>Hora inicio</Text>
-        <TextInput style={styles.input} value={inicioNuevo} onChangeText={setInicioNuevo} placeholder="08:00" />
+        <TextInput style={styles.input} placeholderTextColor={colors.textMutedOnNavy} value={inicioNuevo} onChangeText={setInicioNuevo} placeholder="08:00" />
         <Text style={styles.label}>Hora término</Text>
-        <TextInput style={styles.input} value={terminoNuevo} onChangeText={setTerminoNuevo} placeholder="20:00" />
+        <TextInput style={styles.input} placeholderTextColor={colors.textMutedOnNavy} value={terminoNuevo} onChangeText={setTerminoNuevo} placeholder="20:00" />
         <TouchableOpacity style={[styles.botonCrear, creando && styles.botonDeshabilitado]} onPress={handleCrear} disabled={creando}>
           <Text style={styles.botonCrearTexto}>{creando ? "Creando..." : "Crear bloque"}</Text>
         </TouchableOpacity>
@@ -639,58 +639,58 @@ function GestionBloques({ bloques, onCambio }: { bloques: TurnoBloque[]; onCambi
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   tabs: { flexDirection: "row", gap: spacing.xs, padding: spacing.md, paddingBottom: 0 },
-  tab: { flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: 9, alignItems: "center" },
-  tabActivo: { borderColor: colors.navy900, backgroundColor: colors.navy900 },
-  tabTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 12 },
-  tabTextoActivo: { color: colors.textOnNavy },
+  tab: { flex: 1, borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.sm, paddingVertical: 9, alignItems: "center" },
+  tabActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  tabTexto: { color: colors.textMutedOnNavy, fontWeight: "700", fontSize: 12 },
+  tabTextoActivo: { color: colors.goldSoft },
 
   navMes: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.lg, marginBottom: spacing.sm },
   botonNav: { paddingHorizontal: 16, paddingVertical: 4 },
-  botonNavTexto: { fontSize: 26, color: colors.navy900, fontWeight: "700" },
-  tituloMes: { ...typography.heading, color: colors.textDark, minWidth: 160, textAlign: "center" },
+  botonNavTexto: { fontSize: 26, color: colors.textOnNavy, fontWeight: "700" },
+  tituloMes: { ...typography.heading, color: colors.textOnNavy, minWidth: 160, textAlign: "center" },
 
-  vacio: { textAlign: "center", color: colors.textMuted, marginTop: spacing.lg },
-  ayudaCalendario: { ...typography.small, color: colors.textMuted, textAlign: "center", marginBottom: spacing.xs },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: spacing.lg },
+  ayudaCalendario: { ...typography.small, color: colors.textMutedOnNavy, textAlign: "center", marginBottom: spacing.xs },
 
-  tabla: { backgroundColor: colors.white, borderRadius: radius.md, overflow: "hidden", borderWidth: 1, borderColor: colors.border },
-  filaTabla: { flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.border },
-  filaEncabezado: { backgroundColor: colors.navy900, borderTopWidth: 0 },
-  filaFinde: { backgroundColor: "#FFF8E1" },
+  tabla: { backgroundColor: colors.navy800, borderRadius: radius.md, overflow: "hidden", borderWidth: 1, borderColor: colors.navy600 },
+  filaTabla: { flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.navy600 },
+  filaEncabezado: { backgroundColor: colors.navy700, borderTopWidth: 0 },
+  filaFinde: { backgroundColor: colors.navy700 },
   celdaFecha: { width: 56, paddingVertical: 8, paddingHorizontal: 4, alignItems: "center", justifyContent: "center" },
-  celdaBloque: { flex: 1, paddingVertical: 8, paddingHorizontal: 4, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: colors.border },
+  celdaBloque: { flex: 1, paddingVertical: 8, paddingHorizontal: 4, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: colors.navy600 },
   celdaAsignable: {},
   textoEncabezado: { color: colors.textOnNavy, fontWeight: "800", fontSize: 12, textAlign: "center" },
-  textoFechaNum: { fontWeight: "800", fontSize: 14, color: colors.textDark },
-  textoFechaDia: { fontSize: 10, color: colors.textMuted },
-  textoAsignado: { fontSize: 11, fontWeight: "700", color: colors.textDark, textAlign: "center" },
+  textoFechaNum: { fontWeight: "800", fontSize: 14, color: colors.textOnNavy },
+  textoFechaDia: { fontSize: 10, color: colors.textMutedOnNavy },
+  textoAsignado: { fontSize: 11, fontWeight: "700", color: colors.textOnNavy, textAlign: "center" },
 
-  card: { backgroundColor: colors.white, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.navy600 },
+  label: { ...typography.label, color: colors.textOnNavy, marginTop: spacing.sm },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 12,
     fontSize: 15,
     marginTop: 4,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
-  subtitulo: { ...typography.heading, fontSize: 15, color: colors.textDark, marginTop: spacing.sm },
+  subtitulo: { ...typography.heading, fontSize: 15, color: colors.textOnNavy, marginTop: spacing.sm },
   filaDuplaHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  numeroDupla: { fontWeight: "800", color: colors.navy900 },
+  numeroDupla: { fontWeight: "800", color: colors.textOnNavy },
   quitarDupla: { color: colors.danger, fontWeight: "700", fontSize: 13 },
-  linkEditar: { color: colors.info, fontWeight: "700", fontSize: 13 },
+  linkEditar: { color: colors.goldSoft, fontWeight: "700", fontSize: 13 },
 
-  botonCrear: { backgroundColor: colors.success, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.sm },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
+  botonCrear: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.sm },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
   botonDeshabilitado: { opacity: 0.6 },
-  botonSecundario: { borderWidth: 1.5, borderColor: colors.navy900, borderRadius: radius.sm, padding: 12, alignItems: "center" },
-  botonSecundarioTexto: { color: colors.navy900, fontWeight: "700" },
+  botonSecundario: { borderWidth: 1.5, borderColor: colors.textMutedOnNavy, borderRadius: radius.sm, padding: 12, alignItems: "center" },
+  botonSecundarioTexto: { color: colors.textOnNavy, fontWeight: "700" },
 
   filaBloque: { flexDirection: "row", alignItems: "center" },
-  nombreBloque: { fontSize: 15, fontWeight: "700", color: colors.textDark },
-  horarioBloque: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  nombreBloque: { fontSize: 15, fontWeight: "700", color: colors.textOnNavy },
+  horarioBloque: { fontSize: 12, color: colors.textMutedOnNavy, marginTop: 2 },
 });

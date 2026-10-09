@@ -55,7 +55,7 @@ export default function QuienVieneHoyScreen() {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -66,7 +66,7 @@ export default function QuienVieneHoyScreen() {
   return (
     <ScrollView
       contentContainerStyle={styles.container}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
     >
       <Text style={styles.intro}>Quién tiene turno o visita programada hoy en el condominio.</Text>
       {error && <Text style={styles.error}>{error}</Text>}
@@ -106,25 +106,25 @@ export default function QuienVieneHoyScreen() {
 }
 
 const styles = StyleSheet.create({
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
-  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.offWhite, gap: spacing.xs },
-  intro: { ...typography.small, color: colors.textMuted, marginBottom: spacing.sm },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.navy900, gap: spacing.xs },
+  intro: { ...typography.small, color: colors.textMutedOnNavy, marginBottom: spacing.sm },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600", marginBottom: spacing.sm },
-  seccionTitulo: { ...typography.heading, color: colors.textDark, marginTop: spacing.md, marginBottom: spacing.xs },
-  vacio: { ...typography.small, color: colors.textMuted, marginBottom: spacing.sm },
+  seccionTitulo: { ...typography.heading, color: colors.textOnNavy, marginTop: spacing.md, marginBottom: spacing.xs },
+  vacio: { ...typography.small, color: colors.textMutedOnNavy, marginBottom: spacing.sm },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     padding: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     marginBottom: spacing.sm,
   },
-  nombre: { ...typography.body, color: colors.textDark, fontWeight: "700" },
-  detalle: { ...typography.small, color: colors.textMuted, marginTop: 2 },
+  nombre: { ...typography.body, color: colors.textOnNavy, fontWeight: "700" },
+  detalle: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 6, marginLeft: spacing.sm },
   badgeTexto: { fontSize: 11, fontWeight: "800", color: colors.textDark },
 });

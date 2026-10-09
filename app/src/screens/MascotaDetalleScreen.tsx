@@ -253,7 +253,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
             </View>
           )}
           <TouchableOpacity style={styles.botonCamara} onPress={handleCambiarFoto} disabled={subiendoFoto}>
-            {subiendoFoto ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ fontSize: 16 }}>📷</Text>}
+            {subiendoFoto ? <ActivityIndicator size="small" color={colors.botonNaranjaTexto} /> : <Text style={{ fontSize: 16 }}>📷</Text>}
           </TouchableOpacity>
         </View>
       </View>
@@ -276,7 +276,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
       {editando ? (
         <View style={styles.card}>
           <Text style={styles.label}>Nombre</Text>
-          <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Ej: Firulais" placeholderTextColor={colors.textMuted} />
+          <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Ej: Firulais" placeholderTextColor={colors.textMutedOnNavy} />
           <SelectModal
             label="Especie"
             placeholder="Selecciona una especie"
@@ -297,7 +297,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
             }}
           />
           {especieSel?.label === "Otra" && (
-            <TextInput style={styles.input} value={especieOtra} onChangeText={setEspecieOtra} placeholder="Escribe la especie" placeholderTextColor={colors.textMuted} />
+            <TextInput style={styles.input} value={especieOtra} onChangeText={setEspecieOtra} placeholder="Escribe la especie" placeholderTextColor={colors.textMutedOnNavy} />
           )}
 
           <SelectModal
@@ -317,7 +317,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
             }}
           />
           {razaSel?.label === "Otra" && (
-            <TextInput style={styles.input} value={razaOtra} onChangeText={setRazaOtra} placeholder="Escribe la raza" placeholderTextColor={colors.textMuted} />
+            <TextInput style={styles.input} value={razaOtra} onChangeText={setRazaOtra} placeholder="Escribe la raza" placeholderTextColor={colors.textMutedOnNavy} />
           )}
           <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimiento} onChange={setFechaNacimiento} maximumDate={new Date()} opcional />
           <Text style={styles.label}>N° de chip</Text>
@@ -326,7 +326,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
             value={numeroChip}
             onChangeText={setNumeroChip}
             placeholder="Si tiene chip identificatorio"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.textMutedOnNavy}
           />
           <TouchableOpacity style={styles.botonGuardar} onPress={handleGuardarEdicion} disabled={guardandoEdicion}>
             <Text style={styles.botonGuardarTexto}>{guardandoEdicion ? "Guardando..." : "Guardar cambios"}</Text>
@@ -387,14 +387,14 @@ export default function MascotaDetalleScreen({ navigation }: any) {
             <TextInput
               style={styles.input}
               placeholder="Nombre de la vacuna (ej: Antirrábica)"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               value={nombreVacuna}
               onChangeText={setNombreVacuna}
             />
             <TextInput
               style={styles.input}
               placeholder="Descripción (opcional)"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               value={descripcionVacuna}
               onChangeText={setDescripcionVacuna}
             />
@@ -409,7 +409,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
         )}
 
         {cargandoVacunas ? (
-          <ActivityIndicator style={{ marginVertical: spacing.md }} color={colors.navy900} />
+          <ActivityIndicator style={{ marginVertical: spacing.md }} color={colors.gold} />
         ) : vacunas.length === 0 ? (
           <Text style={styles.sinDato}>Todavía no hay vacunas registradas.</Text>
         ) : (
@@ -463,9 +463,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.navy900,
+    backgroundColor: colors.botonNaranja,
     borderWidth: 3,
-    borderColor: colors.white,
+    borderColor: colors.navy900,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -479,37 +479,37 @@ const styles = StyleSheet.create({
   badgeEspecie: { backgroundColor: "rgba(255,255,255,0.15)", borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 6 },
   badgeEspecieTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 13 },
 
-  cardInfo: { backgroundColor: "rgba(255,255,255,0.08)", borderRadius: radius.lg, padding: spacing.md, gap: 4 },
+  cardInfo: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.md, gap: 4 },
   filaInfo: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: 4 },
   infoIcono: { fontSize: 16 },
   infoLabel: { color: colors.textMutedOnNavy, fontSize: 11 },
   infoTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 14 },
   infoTextoSecundario: { color: colors.textMutedOnNavy, fontSize: 12, marginTop: 4 },
-  divisor: { height: 1, backgroundColor: "rgba(255,255,255,0.15)", marginVertical: 6 },
+  divisor: { height: 1, backgroundColor: colors.navy600, marginVertical: 6 },
   sinDato: { color: colors.textMutedOnNavy, fontStyle: "italic", fontSize: 12 },
 
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
-  label: { fontSize: 13, fontWeight: "600", color: colors.textDark, marginTop: spacing.sm },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginTop: spacing.sm },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 12,
     fontSize: 15,
     marginTop: 4,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
-  botonGuardar: { backgroundColor: colors.success, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.md },
-  botonGuardarTexto: { color: "#fff", fontWeight: "700" },
+  botonGuardar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.md },
+  botonGuardarTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
 
-  cardVacunas: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg, marginTop: spacing.sm },
+  cardVacunas: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg, marginTop: spacing.sm },
   filaSeccionVacunas: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  seccionVacunasTitulo: { fontSize: 17, fontWeight: "800", color: colors.textDark },
-  botonAgregarVacuna: { backgroundColor: "#DBEAFE", borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 8 },
-  botonAgregarVacunaTexto: { color: colors.navy900, fontWeight: "700", fontSize: 12 },
-  formVacuna: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
-  formVacunaTitulo: { fontSize: 14, fontWeight: "800", color: colors.textDark, marginBottom: 4 },
+  seccionVacunasTitulo: { fontSize: 17, fontWeight: "800", color: colors.textOnNavy },
+  botonAgregarVacuna: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 8 },
+  botonAgregarVacunaTexto: { color: colors.botonNaranjaTexto, fontWeight: "700", fontSize: 12 },
+  formVacuna: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: spacing.sm },
+  formVacunaTitulo: { fontSize: 14, fontWeight: "800", color: colors.textOnNavy, marginBottom: 4 },
 
   filaVacuna: {
     flexDirection: "row",
@@ -517,17 +517,17 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.navy600,
     marginTop: spacing.sm,
   },
-  vacunaNombre: { fontWeight: "700", color: colors.textDark, fontSize: 14 },
-  vacunaDescripcion: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  vacunaFecha: { color: colors.textMuted, fontSize: 11 },
+  vacunaNombre: { fontWeight: "700", color: colors.textOnNavy, fontSize: 14 },
+  vacunaDescripcion: { color: colors.textMutedOnNavy, fontSize: 12, marginTop: 2 },
+  vacunaFecha: { color: colors.textMutedOnNavy, fontSize: 11 },
   badgeVigencia: { borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2 },
   badgeVigenciaTexto: { fontSize: 10, fontWeight: "800" },
 
   banner: { backgroundColor: colors.navy700, borderRadius: radius.md, padding: spacing.md },
   bannerTexto: { color: colors.textOnNavy, fontSize: 12, lineHeight: 18 },
   botonOpciones: { paddingHorizontal: 4, paddingVertical: 4, marginLeft: 4 },
-  botonOpcionesTexto: { color: colors.textMuted, fontSize: 20, fontWeight: "800" },
+  botonOpcionesTexto: { color: colors.textMutedOnNavy, fontSize: 20, fontWeight: "800" },
 });

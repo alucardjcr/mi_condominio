@@ -14,6 +14,7 @@ import { useAuth } from "../../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
 import FotoCapture from "../../components/FotoCapture";
 import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
+import { colors } from "../../theme/theme";
 
 function formatearMonto(monto: number) {
   return `$${monto.toLocaleString("es-CL")}`;
@@ -163,7 +164,7 @@ export default function AdminMantencionDetalleScreen({ route }: any) {
   if (loading || !mantencion) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -178,7 +179,7 @@ export default function AdminMantencionDetalleScreen({ route }: any) {
           <Text style={styles.cardTitulo}>Editar mantención</Text>
 
           <Text style={styles.label}>Título *</Text>
-          <TextInput style={styles.input} value={titulo} onChangeText={setTitulo} />
+          <TextInput style={styles.input} value={titulo} onChangeText={setTitulo} placeholderTextColor={colors.textMutedOnNavy} />
 
           <SelectModal
             label="Elemento de infraestructura *"
@@ -189,19 +190,19 @@ export default function AdminMantencionDetalleScreen({ route }: any) {
           />
 
           <Text style={styles.label}>Descripción del trabajo *</Text>
-          <TextInput style={[styles.input, { height: 80 }]} value={descripcion} onChangeText={setDescripcion} multiline />
+          <TextInput style={[styles.input, { height: 80 }]} value={descripcion} onChangeText={setDescripcion} multiline placeholderTextColor={colors.textMutedOnNavy} />
 
           <Text style={styles.label}>Fecha programada *</Text>
-          <TextInput style={styles.input} value={fechaProgramada} onChangeText={setFechaProgramada} placeholder="AAAA-MM-DD" autoCapitalize="none" />
+          <TextInput style={styles.input} value={fechaProgramada} onChangeText={setFechaProgramada} placeholder="AAAA-MM-DD" placeholderTextColor={colors.textMutedOnNavy} autoCapitalize="none" />
 
           <Text style={styles.label}>Costo estimado (opcional)</Text>
-          <TextInput style={styles.input} value={costoEstimado} onChangeText={setCostoEstimado} keyboardType="numeric" />
+          <TextInput style={styles.input} value={costoEstimado} onChangeText={setCostoEstimado} keyboardType="numeric" placeholderTextColor={colors.textMutedOnNavy} />
 
           <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
             <TouchableOpacity style={[styles.boton, styles.botonPrimario, { flex: 1 }]} onPress={handleGuardarEdicion} disabled={guardando}>
-              <Text style={styles.botonTexto}>{guardando ? "Guardando..." : "Guardar"}</Text>
+              <Text style={[styles.botonTexto, styles.botonTextoPrimario]}>{guardando ? "Guardando..." : "Guardar"}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.boton, { backgroundColor: "#999", flex: 1 }]} onPress={() => setEditando(false)}>
+            <TouchableOpacity style={[styles.boton, { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600, flex: 1 }]} onPress={() => setEditando(false)}>
               <Text style={styles.botonTexto}>Cancelar</Text>
             </TouchableOpacity>
           </View>
@@ -221,7 +222,7 @@ export default function AdminMantencionDetalleScreen({ route }: any) {
           {esProgramada && !cancelando && (
             <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
               <TouchableOpacity style={[styles.boton, styles.botonPrimario, { flex: 1 }]} onPress={iniciarEdicion}>
-                <Text style={styles.botonTexto}>Editar</Text>
+                <Text style={[styles.botonTexto, styles.botonTextoPrimario]}>Editar</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.boton, styles.botonPeligro, { flex: 1 }]} onPress={() => setCancelando(true)}>
                 <Text style={styles.botonTexto}>Cancelar mantención</Text>
@@ -234,6 +235,7 @@ export default function AdminMantencionDetalleScreen({ route }: any) {
               <TextInput
                 style={styles.input}
                 placeholder="Motivo de la cancelación"
+                placeholderTextColor={colors.textMutedOnNavy}
                 value={motivoCancelacion}
                 onChangeText={setMotivoCancelacion}
               />
@@ -242,7 +244,7 @@ export default function AdminMantencionDetalleScreen({ route }: any) {
                   <Text style={styles.botonTexto}>{guardando ? "Guardando..." : "Confirmar cancelación"}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.boton, { backgroundColor: "#999", flex: 1 }]}
+                  style={[styles.boton, { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600, flex: 1 }]}
                   onPress={() => {
                     setCancelando(false);
                     setMotivoCancelacion("");
@@ -302,10 +304,10 @@ export default function AdminMantencionDetalleScreen({ route }: any) {
           <FotoCapture label="Foto del resultado del trabajo (opcional)" value={foto} onChange={setFoto} />
 
           <Text style={styles.label}>Costo real (opcional, solo informativo)</Text>
-          <TextInput style={styles.input} value={costoReal} onChangeText={setCostoReal} keyboardType="numeric" />
+          <TextInput style={styles.input} value={costoReal} onChangeText={setCostoReal} keyboardType="numeric" placeholderTextColor={colors.textMutedOnNavy} />
 
           <TouchableOpacity style={[styles.boton, styles.botonPrimario, { marginTop: 12 }]} onPress={handleSubirDatosFinales} disabled={subiendoDatos}>
-            <Text style={styles.botonTexto}>{subiendoDatos ? "Guardando..." : "Guardar comprobante/costo"}</Text>
+            <Text style={[styles.botonTexto, styles.botonTextoPrimario]}>{subiendoDatos ? "Guardando..." : "Guardar comprobante/costo"}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -314,18 +316,19 @@ export default function AdminMantencionDetalleScreen({ route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 16, borderWidth: 1, borderColor: "#eee" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: colors.navy600 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  cardTitulo: { fontSize: 16, fontWeight: "700", flex: 1 },
-  estado: { fontSize: 12, fontWeight: "800", color: "#014BD2" },
-  detalle: { color: "#555", marginTop: 6, fontSize: 13 },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginTop: 10 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, marginTop: 4 },
+  cardTitulo: { fontSize: 16, fontWeight: "700", flex: 1, color: colors.textOnNavy },
+  estado: { fontSize: 12, fontWeight: "800", color: colors.goldSoft },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 6, fontSize: 13 },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginTop: 10 },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 15, marginTop: 4, backgroundColor: colors.navy700, color: colors.textOnNavy },
   boton: { borderRadius: 8, paddingVertical: 12, alignItems: "center" },
-  botonPrimario: { backgroundColor: "#795548" },
+  botonPrimario: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
   botonPeligro: { backgroundColor: "#c0392b" },
   botonTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  preview: { height: 160, borderRadius: 10, marginTop: 10, backgroundColor: "#fafafa" },
+  botonTextoPrimario: { color: colors.botonNaranjaTexto, fontWeight: "800" },
+  preview: { height: 160, borderRadius: 10, marginTop: 10, backgroundColor: colors.navy700 },
 });

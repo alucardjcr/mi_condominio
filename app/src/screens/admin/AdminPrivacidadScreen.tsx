@@ -72,13 +72,13 @@ export default function AdminPrivacidadScreen() {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.offWhite }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <ScrollView contentContainerStyle={styles.lista}>
         <Text style={styles.intro}>
           Solicitudes de derechos ARCO (Ley N° 21.719) que mandaron residentes, guardias o personal desde "Mis
@@ -123,7 +123,7 @@ export default function AdminPrivacidadScreen() {
               value={respuesta}
               onChangeText={setRespuesta}
               placeholder="Explica qué se hizo (o por qué no corresponde)..."
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               multiline
             />
 
@@ -132,7 +132,7 @@ export default function AdminPrivacidadScreen() {
               onPress={() => handleResolver("Resuelta")}
               disabled={guardando}
             >
-              {guardando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Marcar resuelta</Text>}
+              {guardando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Marcar resuelta</Text>}
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.botonRechazar, guardando && styles.botonDeshabilitado]}
@@ -152,42 +152,42 @@ export default function AdminPrivacidadScreen() {
 }
 
 const styles = StyleSheet.create({
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   lista: { padding: spacing.md, gap: spacing.sm },
-  intro: { ...typography.small, color: colors.textMuted, marginBottom: spacing.xs },
+  intro: { ...typography.small, color: colors.textMutedOnNavy, marginBottom: spacing.xs },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600" },
-  vacio: { textAlign: "center", color: colors.textMuted, marginTop: spacing.xl },
-  tarjeta: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: spacing.xl },
+  tarjeta: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.navy600 },
   tarjetaHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  tipo: { ...typography.heading, fontSize: 15, color: colors.textDark },
-  solicitante: { ...typography.small, color: colors.textMuted, marginTop: 2, fontWeight: "700" },
-  detalle: { ...typography.small, color: colors.textDark, marginTop: 4 },
-  respuesta: { ...typography.small, color: colors.textMuted, marginTop: 4, fontStyle: "italic" },
-  fecha: { fontSize: 11, color: colors.textMuted, marginTop: 6 },
+  tipo: { ...typography.heading, fontSize: 15, color: colors.textOnNavy },
+  solicitante: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2, fontWeight: "700" },
+  detalle: { ...typography.small, color: colors.textOnNavy, marginTop: 4 },
+  respuesta: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 4, fontStyle: "italic" },
+  fecha: { fontSize: 11, color: colors.textMutedOnNavy, marginTop: 6 },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   badgeTexto: { fontSize: 11, fontWeight: "800", color: colors.textDark },
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  modalCard: { backgroundColor: colors.white, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg },
-  modalTitulo: { ...typography.heading, color: colors.textDark },
-  modalSubtitulo: { ...typography.small, color: colors.textMuted, marginTop: 2, fontWeight: "700" },
-  modalDetalle: { ...typography.body, color: colors.textDark, marginTop: spacing.sm },
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.md },
+  modalCard: { backgroundColor: colors.navy800, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg },
+  modalTitulo: { ...typography.heading, color: colors.textOnNavy },
+  modalSubtitulo: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2, fontWeight: "700" },
+  modalDetalle: { ...typography.body, color: colors.textOnNavy, marginTop: spacing.sm },
+  label: { ...typography.label, color: colors.textOnNavy, marginTop: spacing.md },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
     marginTop: 6,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
   inputMultilinea: { minHeight: 80, textAlignVertical: "top" },
-  boton: { backgroundColor: colors.gold, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
-  botonTexto: { color: colors.navy900, fontWeight: "800" },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
   botonDeshabilitado: { opacity: 0.6 },
   botonRechazar: { borderWidth: 1.5, borderColor: colors.danger, borderRadius: radius.sm, padding: 12, alignItems: "center", marginTop: spacing.sm },
   botonRechazarTexto: { color: colors.danger, fontWeight: "700" },
   botonCancelar: { alignItems: "center", marginTop: spacing.md, paddingBottom: spacing.sm },
-  botonCancelarTexto: { color: colors.textMuted, fontWeight: "600" },
+  botonCancelarTexto: { color: colors.textMutedOnNavy, fontWeight: "600" },
 });

@@ -106,5 +106,6 @@ export const navHeaderOptions = {
   headerTitleStyle: { fontWeight: "700" as const, fontSize: 17 },
   headerTitleAlign: "center" as const,
   headerShadowVisible: false,
-  contentStyle: { backgroundColor: colors.offWhite },
+  // Todas las pantallas van sobre azul marino (look del Inicio del Administrador).
+  contentStyle: { backgroundColor: colors.navy900 },
 };

@@ -52,7 +52,7 @@ export default function MisVisitasScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.gold} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
     >
       <Text style={styles.titulo}>Mis visitas</Text>
       <Text style={styles.subtitulo}>
@@ -95,10 +95,10 @@ const styles = StyleSheet.create({
   titulo: { ...typography.title, color: colors.textOnNavy },
   subtitulo: { ...typography.small, color: colors.textMutedOnNavy, marginBottom: spacing.sm },
   vacio: { color: colors.textMutedOnNavy, fontStyle: "italic", marginTop: spacing.md },
-  card: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, padding: spacing.md },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.md },
   filaTop: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
-  nombre: { flex: 1, fontSize: 16, fontWeight: "800", color: colors.textDark },
+  nombre: { flex: 1, fontSize: 16, fontWeight: "800", color: colors.textOnNavy },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
   badgeTexto: { fontSize: 11, fontWeight: "700", color: colors.textDark },
-  detalle: { color: "#344054", fontWeight: "700", marginTop: 4, fontSize: 12 },
+  detalle: { color: colors.textMutedOnNavy, fontWeight: "700", marginTop: 4, fontSize: 12 },
 });

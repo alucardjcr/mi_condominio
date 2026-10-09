@@ -3,6 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 import { adminAsignarTareaPersonal } from "../../api/client";
 import { useAuth } from "../../context/AuthContext";
 import { CONDOMINIO_ID } from "../../config/api";
+import { colors } from "../../theme/theme";
 
 // Ronda 18, a pedido explícito del usuario: tarea de texto libre (no una
 // plantilla de checklist — "en realidad ellos saben sus deberes"), que le
@@ -38,6 +39,7 @@ export default function AdminAsignarTareaScreen({ route, navigation }: any) {
       <TextInput
         style={styles.input}
         placeholder='Ej: "Cortar árboles costado sur"'
+        placeholderTextColor={colors.textMutedOnNavy}
         value={descripcion}
         onChangeText={setDescripcion}
         multiline
@@ -56,18 +58,28 @@ export default function AdminAsignarTareaScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 16 },
-  subtitulo: { fontSize: 14, color: "#666", marginBottom: 16 },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 6 },
+  container: { flex: 1, backgroundColor: colors.navy900, padding: 16 },
+  subtitulo: { fontSize: 14, color: colors.textMutedOnNavy, marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy, marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
     minHeight: 120,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
-  ayuda: { color: "#888", fontSize: 12, marginTop: 10, lineHeight: 17 },
-  boton: { backgroundColor: "#2e7d32", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 20 },
-  botonTexto: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  ayuda: { color: colors.textMutedOnNavy, fontSize: 12, marginTop: 10, lineHeight: 17 },
+  boton: {
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "700", fontSize: 16 },
 });

@@ -21,6 +21,7 @@ import {
 import { EstadoReservaGls, Reserva } from "../../api/types";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
+import { colors } from "../../theme/theme";
 
 function formatearMonto(monto: number) {
   return `$${monto.toLocaleString("es-CL")}`;
@@ -167,7 +168,7 @@ export default function AdminReservasScreen({ navigation }: any) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f5f6f8" }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {CHIPS.map((c, i) => (
           <TouchableOpacity
@@ -186,7 +187,7 @@ export default function AdminReservasScreen({ navigation }: any) {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={colors.gold} />
         </View>
       ) : (
         <FlatList
@@ -249,6 +250,7 @@ export default function AdminReservasScreen({ navigation }: any) {
                   <TextInput
                     style={styles.input}
                     placeholder="Motivo del rechazo"
+                    placeholderTextColor={colors.textMutedOnNavy}
                     value={motivoRechazo}
                     onChangeText={setMotivoRechazo}
                   />
@@ -261,7 +263,7 @@ export default function AdminReservasScreen({ navigation }: any) {
                       <Text style={styles.botonAccionTexto}>Confirmar rechazo</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.botonAccion, { backgroundColor: "#999", flex: 1 }]}
+                      style={[styles.botonAccion, { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600, flex: 1 }]}
                       onPress={() => {
                         setRechazandoId(null);
                         setMotivoRechazo("");
@@ -293,6 +295,7 @@ export default function AdminReservasScreen({ navigation }: any) {
                     <TextInput
                       style={styles.input}
                       placeholder={`Monto a retener (máx ${formatearMonto(item.monto_garantia)})`}
+                      placeholderTextColor={colors.textMutedOnNavy}
                       value={montoRetenido}
                       onChangeText={setMontoRetenido}
                       keyboardType="numeric"
@@ -300,6 +303,7 @@ export default function AdminReservasScreen({ navigation }: any) {
                     <TextInput
                       style={[styles.input, { marginTop: 8 }]}
                       placeholder="Motivo (opcional)"
+                      placeholderTextColor={colors.textMutedOnNavy}
                       value={observacionGarantia}
                       onChangeText={setObservacionGarantia}
                     />
@@ -312,7 +316,7 @@ export default function AdminReservasScreen({ navigation }: any) {
                         <Text style={styles.botonAccionTexto}>Confirmar retención</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.botonAccion, { backgroundColor: "#999", flex: 1 }]}
+                        style={[styles.botonAccion, { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600, flex: 1 }]}
                         onPress={() => {
                           setRetirandoGarantiaId(null);
                           setMontoRetenido("");
@@ -356,20 +360,20 @@ export default function AdminReservasScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   chips: { flexGrow: 0, marginTop: 12 },
-  chip: { borderWidth: 1, borderColor: "#ddd", borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: "#fff" },
-  chipActivo: { backgroundColor: "#333", borderColor: "#333" },
-  chipTexto: { fontSize: 13, fontWeight: "600", color: "#333" },
-  chipTextoActivo: { color: "#fff" },
-  botonNueva: { marginHorizontal: 16, marginTop: 12, backgroundColor: "#8e44ad", borderRadius: 10, padding: 12, alignItems: "center" },
-  botonNuevaTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
+  chip: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: colors.navy700 },
+  chipActivo: { backgroundColor: colors.navy900, borderColor: colors.botonNaranja },
+  chipTexto: { fontSize: 13, fontWeight: "600", color: colors.textMutedOnNavy },
+  chipTextoActivo: { color: colors.goldSoft },
+  botonNueva: { marginHorizontal: 16, marginTop: 12, backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 12, alignItems: "center" },
+  botonNuevaTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 13 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  nombre: { fontSize: 16, fontWeight: "700" },
-  estado: { fontSize: 12, fontWeight: "800", color: "#014BD2" },
-  detalleTexto: { color: "#555", marginTop: 4, fontSize: 13 },
+  nombre: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  estado: { fontSize: 12, fontWeight: "800", color: colors.goldSoft },
+  detalleTexto: { color: colors.textMutedOnNavy, marginTop: 4, fontSize: 13 },
   motivoTexto: { color: "#c0392b", marginTop: 6, fontSize: 12, fontWeight: "600" },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: "#fff" },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: colors.navy700, color: colors.textOnNavy },
   botonAccion: { borderRadius: 8, paddingVertical: 10, alignItems: "center" },
   botonAprobar: { backgroundColor: "#1a9d5c" },
   botonRechazar: { backgroundColor: "#c0392b" },

@@ -23,6 +23,7 @@ import { Residente, ResidenteConCarnet, TipoPermiso, Torre, Unidad } from "../ap
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
+import { colors } from "../theme/theme";
 
 const TIPO_VISITA_VEHICULAR_ID = 1;
 const TIPO_VISITA_PEATONAL_ID = 2;
@@ -281,7 +282,7 @@ export default function EntradaScreen({ navigation, route }: any) {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: colors.navy900 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.container}>
@@ -384,6 +385,7 @@ export default function EntradaScreen({ navigation, route }: any) {
                   value={residenteLibre}
                   onChangeText={setResidenteLibre}
                   placeholder="Nombre que indicó la visita"
+                  placeholderTextColor={colors.textMutedOnNavy}
                 />
               </>
             )}
@@ -394,6 +396,7 @@ export default function EntradaScreen({ navigation, route }: any) {
               value={nombreVisita}
               onChangeText={setNombreVisita}
               placeholder="Ej: Juan Pérez González"
+              placeholderTextColor={colors.textMutedOnNavy}
             />
 
             <Text style={styles.label}>RUT *</Text>
@@ -402,6 +405,7 @@ export default function EntradaScreen({ navigation, route }: any) {
               value={rutVisita}
               onChangeText={setRutVisita}
               placeholder="Ej: 12.345.678-9"
+              placeholderTextColor={colors.textMutedOnNavy}
             />
           </>
         ) : esDiscapacitado && ocupanteResidente ? (
@@ -428,6 +432,7 @@ export default function EntradaScreen({ navigation, route }: any) {
               value={patente}
               onChangeText={setPatente}
               placeholder="Ej: AB-CD-12"
+              placeholderTextColor={colors.textMutedOnNavy}
               autoCapitalize="characters"
             />
           </>
@@ -478,6 +483,7 @@ export default function EntradaScreen({ navigation, route }: any) {
                   value={residenteLibre}
                   onChangeText={setResidenteLibre}
                   placeholder="Nombre que indicó la visita"
+                  placeholderTextColor={colors.textMutedOnNavy}
                 />
               </>
             )}
@@ -488,6 +494,7 @@ export default function EntradaScreen({ navigation, route }: any) {
               value={nombreVisita}
               onChangeText={setNombreVisita}
               placeholder="Ej: Juan Pérez"
+              placeholderTextColor={colors.textMutedOnNavy}
             />
 
             <Text style={styles.label}>Patente</Text>
@@ -496,6 +503,7 @@ export default function EntradaScreen({ navigation, route }: any) {
               value={patente}
               onChangeText={setPatente}
               placeholder="Ej: AB-CD-12"
+              placeholderTextColor={colors.textMutedOnNavy}
               autoCapitalize="characters"
             />
 
@@ -505,11 +513,17 @@ export default function EntradaScreen({ navigation, route }: any) {
               value={rutVisita}
               onChangeText={setRutVisita}
               placeholder="Ej: 12.345.678-9"
+              placeholderTextColor={colors.textMutedOnNavy}
             />
 
             {esDiscapacitado ? (
               <View style={styles.carnetRow}>
-                <Switch value={carnetConfirmado} onValueChange={setCarnetConfirmado} />
+                <Switch
+                  value={carnetConfirmado}
+                  onValueChange={setCarnetConfirmado}
+                  trackColor={{ false: colors.navy600, true: colors.success }}
+                  thumbColor={colors.textOnNavy}
+                />
                 <Text style={styles.carnetTexto}>
                   Confirmo que revisé el carnet de discapacidad de la visita
                 </Text>
@@ -539,13 +553,13 @@ export default function EntradaScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 60 },
+  container: { padding: 20, paddingBottom: 60, backgroundColor: colors.navy900, flexGrow: 1 },
   encabezadoModo: {
     textAlign: "center",
     fontWeight: "700",
     fontSize: 14,
-    color: "#014BD2",
-    backgroundColor: "#eef6ff",
+    color: colors.goldSoft,
+    backgroundColor: colors.navy800,
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
@@ -554,28 +568,30 @@ const styles = StyleSheet.create({
   tipoCupoBoton: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
+    backgroundColor: colors.navy700,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
   },
-  tipoCupoBotonActivo: { backgroundColor: "#014BD2", borderColor: "#014BD2" },
-  tipoCupoTexto: { fontWeight: "600", color: "#333" },
-  tipoCupoTextoActivo: { color: "#fff" },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginTop: 12 },
+  tipoCupoBotonActivo: { backgroundColor: colors.navy900, borderColor: colors.botonNaranja },
+  tipoCupoTexto: { fontWeight: "600", color: colors.textMutedOnNavy },
+  tipoCupoTextoActivo: { color: colors.goldSoft },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy, marginTop: 12 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
     marginTop: 4,
   },
   alerta: { color: "#c0392b", fontSize: 12, marginTop: 8 },
   notaPeatonal: {
-    backgroundColor: "#eef6ff",
-    color: "#014BD2",
+    backgroundColor: colors.navy800,
+    color: colors.textMutedOnNavy,
     fontSize: 13,
     padding: 12,
     borderRadius: 10,
@@ -583,7 +599,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   carnetRow: { flexDirection: "row", alignItems: "center", marginTop: 16, gap: 10 },
-  carnetTexto: { flex: 1, fontSize: 14, color: "#333" },
+  carnetTexto: { flex: 1, fontSize: 14, color: colors.textOnNavy },
   boton: {
     backgroundColor: "#1a9d5c",
     borderRadius: 10,

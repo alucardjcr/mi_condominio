@@ -16,6 +16,7 @@ import { EstadoMantencionGls, Mantencion, TipoElementoMantencion } from "../../a
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
+import { colors } from "../../theme/theme";
 
 function formatearMonto(monto: number) {
   return `$${monto.toLocaleString("es-CL")}`;
@@ -26,13 +27,13 @@ function colorEstado(estado: EstadoMantencionGls) {
     case "Programada":
       return "#b0730a";
     case "En curso":
-      return "#014BD2";
+      return colors.navy500;
     case "Realizada":
       return "#1a9d5c";
     case "Cancelada":
       return "#c0392b";
     default:
-      return "#555";
+      return colors.textMutedOnNavy;
   }
 }
 
@@ -132,7 +133,7 @@ export default function AdminMantencionesScreen({ navigation }: any) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f5f6f8" }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -161,7 +162,7 @@ export default function AdminMantencionesScreen({ navigation }: any) {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={colors.gold} />
         </View>
       ) : (
         <FlatList
@@ -180,6 +181,7 @@ export default function AdminMantencionesScreen({ navigation }: any) {
                     value={titulo}
                     onChangeText={setTitulo}
                     placeholder="Ej: Limpieza de techos Torre 1-3"
+                    placeholderTextColor={colors.textMutedOnNavy}
                   />
 
                   <SelectModal
@@ -196,6 +198,7 @@ export default function AdminMantencionesScreen({ navigation }: any) {
                     value={descripcion}
                     onChangeText={setDescripcion}
                     placeholder="Qué se va a hacer"
+                    placeholderTextColor={colors.textMutedOnNavy}
                     multiline
                   />
 
@@ -205,6 +208,7 @@ export default function AdminMantencionesScreen({ navigation }: any) {
                     value={fechaProgramada}
                     onChangeText={setFechaProgramada}
                     placeholder="AAAA-MM-DD"
+                    placeholderTextColor={colors.textMutedOnNavy}
                     autoCapitalize="none"
                   />
 
@@ -213,6 +217,7 @@ export default function AdminMantencionesScreen({ navigation }: any) {
                     style={styles.input}
                     value={costoEstimado}
                     onChangeText={setCostoEstimado}
+                    placeholderTextColor={colors.textMutedOnNavy}
                     keyboardType="numeric"
                   />
 
@@ -221,13 +226,13 @@ export default function AdminMantencionesScreen({ navigation }: any) {
                       <Text style={styles.botonCrearTexto}>{guardando ? "Guardando..." : "Programar"}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.botonCrear, { flex: 1, backgroundColor: "#999" }]}
+                      style={[styles.botonCrear, { flex: 1, backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600 }]}
                       onPress={() => {
                         limpiarFormulario();
                         setFormVisible(false);
                       }}
                     >
-                      <Text style={styles.botonCrearTexto}>Cancelar</Text>
+                      <Text style={[styles.botonCrearTexto, { color: colors.textOnNavy }]}>Cancelar</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -267,22 +272,22 @@ export default function AdminMantencionesScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   chips: { flexGrow: 0, marginTop: 12 },
-  chip: { borderWidth: 1, borderColor: "#ddd", borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: "#fff" },
-  chipActivo: { backgroundColor: "#333", borderColor: "#333" },
-  chipTexto: { fontSize: 13, fontWeight: "600", color: "#333" },
-  chipTextoActivo: { color: "#fff" },
-  botonSecundario: { backgroundColor: "#eef1f5", borderRadius: 10, padding: 12, alignItems: "center" },
-  botonSecundarioTexto: { color: "#333", fontWeight: "700", fontSize: 13 },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 12 },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginTop: 10 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, marginTop: 4 },
-  botonCrear: { backgroundColor: "#795548", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
+  chip: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: colors.navy700 },
+  chipActivo: { backgroundColor: colors.navy900, borderColor: colors.botonNaranja },
+  chipTexto: { fontSize: 13, fontWeight: "600", color: colors.textMutedOnNavy },
+  chipTextoActivo: { color: colors.goldSoft },
+  botonSecundario: { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, alignItems: "center" },
+  botonSecundarioTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 13 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  form: { backgroundColor: colors.navy800, borderRadius: 12, padding: 16, marginBottom: 12 },
+  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textOnNavy },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginTop: 10 },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 15, marginTop: 4, backgroundColor: colors.navy700, color: colors.textOnNavy },
+  botonCrear: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  nombre: { fontSize: 16, fontWeight: "700", flex: 1 },
+  nombre: { fontSize: 16, fontWeight: "700", flex: 1, color: colors.textOnNavy },
   estado: { fontSize: 12, fontWeight: "800" },
-  detalleTexto: { color: "#555", marginTop: 4, fontSize: 13 },
+  detalleTexto: { color: colors.textMutedOnNavy, marginTop: 4, fontSize: 13 },
 });

@@ -14,6 +14,7 @@ import { ReporteGastoComunDetalleItem, ReporteGastoComunResumenDepto } from "../
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import { descargarYCompartirArchivo } from "../../utils/descargas";
+import { colors } from "../../theme/theme";
 
 function formatearMonto(monto: number) {
   return `$${monto.toLocaleString("es-CL")}`;
@@ -102,7 +103,7 @@ export default function AdminReporteGastoComunScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <View style={styles.filtros}>
         <View style={styles.filaFechas}>
           <View style={{ flex: 1 }}>
@@ -112,6 +113,7 @@ export default function AdminReporteGastoComunScreen() {
               value={fechaInicio}
               onChangeText={setFechaInicio}
               placeholder="AAAA-MM-DD"
+              placeholderTextColor={colors.textMutedOnNavy}
               autoCapitalize="none"
             />
           </View>
@@ -122,12 +124,13 @@ export default function AdminReporteGastoComunScreen() {
               value={fechaTermino}
               onChangeText={setFechaTermino}
               placeholder="AAAA-MM-DD"
+              placeholderTextColor={colors.textMutedOnNavy}
               autoCapitalize="none"
             />
           </View>
         </View>
         <TouchableOpacity style={styles.boton} onPress={handleBuscar} disabled={buscando}>
-          {buscando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botonTexto}>Buscar</Text>}
+          {buscando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Buscar</Text>}
         </TouchableOpacity>
 
         {buscado && (
@@ -139,7 +142,7 @@ export default function AdminReporteGastoComunScreen() {
 
         <TouchableOpacity style={styles.botonExportar} onPress={handleExportar} disabled={exportando}>
           {exportando ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.botonNaranjaTexto} />
           ) : (
             <Text style={styles.botonExportarTexto}>Exportar a Excel (para ComunidadFeliz)</Text>
           )}
@@ -188,53 +191,59 @@ export default function AdminReporteGastoComunScreen() {
 }
 
 const styles = StyleSheet.create({
-  filtros: { padding: 16, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  filtros: { padding: 16, borderBottomWidth: 1, borderBottomColor: colors.navy600 },
   filaFechas: { flexDirection: "row", gap: 12 },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 4 },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textMutedOnNavy, marginBottom: 4 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
   boton: {
-    backgroundColor: "#333",
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: 10,
     padding: 14,
     alignItems: "center",
     marginTop: 14,
   },
-  botonTexto: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  totalGeneral: { marginTop: 12, fontSize: 15, fontWeight: "700", color: "#014BD2" },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "700" },
+  totalGeneral: { marginTop: 12, fontSize: 15, fontWeight: "700", color: colors.goldSoft },
   botonExportar: {
-    backgroundColor: "#0f766e",
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: 10,
     padding: 14,
     alignItems: "center",
     marginTop: 12,
   },
-  botonExportarTexto: { color: "#fff", fontSize: 15, fontWeight: "700" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
+  botonExportarTexto: { color: colors.botonNaranjaTexto, fontSize: 15, fontWeight: "700" },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
   seccionHeader: {
-    backgroundColor: "#f5f6f8",
+    backgroundColor: colors.navy700,
     paddingVertical: 8,
     paddingHorizontal: 4,
     marginTop: 8,
     borderRadius: 8,
   },
-  seccionTitulo: { fontSize: 15, fontWeight: "800", color: "#222" },
-  seccionSubtitulo: { fontSize: 12, color: "#666", marginTop: 1 },
+  seccionTitulo: { fontSize: 15, fontWeight: "800", color: colors.textOnNavy },
+  seccionSubtitulo: { fontSize: 12, color: colors.textMutedOnNavy, marginTop: 1 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy800,
     borderRadius: 12,
     padding: 14,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.navy600,
   },
-  nombre: { fontSize: 15, fontWeight: "700" },
-  detalleTexto: { color: "#555", marginTop: 2, fontSize: 13 },
-  monto: { fontSize: 16, fontWeight: "800", color: "#c0392b", marginLeft: 8 },
+  nombre: { fontSize: 15, fontWeight: "700", color: colors.textOnNavy },
+  detalleTexto: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
+  monto: { fontSize: 16, fontWeight: "800", color: colors.danger, marginLeft: 8 },
 });

@@ -21,6 +21,7 @@ import { PersonalAdmin, TipoPersonal, JefeDeArea } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { CONDOMINIO_ID } from "../../config/api";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
+import { colors } from "../../theme/theme";
 
 // Ronda 18, a pedido del usuario: "el personal externo que trabaja en el
 // condominio... busca la mejor manera de incorporarlos al sistema". Ficha +
@@ -138,7 +139,7 @@ export default function AdminPersonalScreen({ navigation }: any) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -152,10 +153,11 @@ export default function AdminPersonalScreen({ navigation }: any) {
       ListHeaderComponent={
         <View style={styles.form}>
           <Text style={styles.formTitulo}>Nuevo personal externo</Text>
-          <TextInput style={styles.input} placeholder="Nombre" value={nombre} onChangeText={setNombre} />
+          <TextInput style={styles.input} placeholder="Nombre" placeholderTextColor={colors.textMutedOnNavy} value={nombre} onChangeText={setNombre} />
           <TextInput
             style={styles.input}
             placeholder="Usuario (para login)"
+            placeholderTextColor={colors.textMutedOnNavy}
             value={usuariocol}
             onChangeText={setUsuariocol}
             autoCapitalize="none"
@@ -163,6 +165,7 @@ export default function AdminPersonalScreen({ navigation }: any) {
           <TextInput
             style={styles.input}
             placeholder="Contraseña"
+            placeholderTextColor={colors.textMutedOnNavy}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -196,6 +199,7 @@ export default function AdminPersonalScreen({ navigation }: any) {
             <TextInput
               style={styles.input}
               placeholder="Nombre de la empresa (ej: Jardines del Sur)"
+              placeholderTextColor={colors.textMutedOnNavy}
               value={empresaExterna}
               onChangeText={setEmpresaExterna}
             />
@@ -286,44 +290,46 @@ export default function AdminPersonalScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 8 },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 6 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  form: { backgroundColor: colors.navy800, borderRadius: 12, padding: 16, marginBottom: 8 },
+  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textOnNavy },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
     marginBottom: 10,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
   filaChips: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  chip: { borderWidth: 1.5, borderColor: "#ddd", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
-  chipActivo: { borderColor: "#014BD2", backgroundColor: "#EEF2FF" },
-  chipTexto: { color: "#666", fontWeight: "600", fontSize: 13 },
-  chipTextoActivo: { color: "#014BD2" },
-  botonCrear: { backgroundColor: "#2e7d32", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 14 },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 20 },
+  chip: { borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  chipActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  chipTexto: { color: colors.textMutedOnNavy, fontWeight: "600", fontSize: 13 },
+  chipTextoActivo: { color: colors.goldSoft },
+  botonCrear: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 14, alignItems: "center", marginTop: 14 },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 20 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy800,
     borderRadius: 12,
     padding: 14,
   },
   cardHeader: { flexDirection: "row", alignItems: "center" },
-  nombreItem: { fontSize: 16, fontWeight: "700" },
-  detalle: { color: "#666", marginTop: 2, fontSize: 13 },
+  nombreItem: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
   botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   botonActivar: { backgroundColor: "#1a9d5c" },
   botonDesactivar: { backgroundColor: "#c0392b" },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12 },
   cardAcciones: { flexDirection: "row", gap: 8, marginTop: 12 },
-  botonAccion: { flex: 1, backgroundColor: "#2e7d32", borderRadius: 8, paddingVertical: 10, alignItems: "center" },
-  botonAccionSecundario: { backgroundColor: "#eef1f5" },
-  botonAccionTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  botonAccionSecundarioTexto: { color: "#333" },
-  subForm: { marginTop: 12, borderTopWidth: 1, borderTopColor: "#f0f0f0", paddingTop: 12 },
-  enlaceJefe: { color: "#014BD2", fontWeight: "700", fontSize: 12, marginTop: 12 },
+  botonAccion: { flex: 1, backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 8, paddingVertical: 10, alignItems: "center" },
+  botonAccionSecundario: { backgroundColor: colors.navy700, borderColor: colors.navy600 },
+  botonAccionTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 13 },
+  botonAccionSecundarioTexto: { color: colors.textOnNavy },
+  subForm: { marginTop: 12, borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: 12 },
+  enlaceJefe: { color: colors.goldSoft, fontWeight: "700", fontSize: 12, marginTop: 12 },
 });

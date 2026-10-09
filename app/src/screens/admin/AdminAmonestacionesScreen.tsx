@@ -105,13 +105,13 @@ export default function AdminAmonestacionesScreen({ route }: any) {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.offWhite }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <View style={styles.tabs}>
         {(
           [
@@ -235,7 +235,7 @@ function Listado({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.lista}>
+    <ScrollView style={{ backgroundColor: colors.navy900 }} contentContainerStyle={styles.lista}>
       <View style={styles.filtroEstados}>
         {ESTADOS_CHIP.map((e) => (
           <TouchableOpacity
@@ -294,11 +294,11 @@ function Listado({
           )}
           {a.estado === "Aprobada" && rol === "Administrador" && (
             <TouchableOpacity
-              style={[styles.botonAprobar, { marginTop: spacing.sm }]}
+              style={[styles.botonNotificar, { marginTop: spacing.sm }]}
               onPress={() => handleNotificar(a)}
               disabled={procesando === a.id_amonestacion}
             >
-              <Text style={styles.botonAprobarTexto}>{procesando === a.id_amonestacion ? "..." : "Notificar al residente"}</Text>
+              <Text style={styles.botonNotificarTexto}>{procesando === a.id_amonestacion ? "..." : "Notificar al residente"}</Text>
             </TouchableOpacity>
           )}
           {a.estado === "Aprobada" && rol !== "Administrador" && (
@@ -400,7 +400,7 @@ function NuevaAmonestacion({
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
+    <ScrollView style={{ backgroundColor: colors.navy900 }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
       <View style={styles.card}>
         <SelectModal
           label="Torre"
@@ -434,12 +434,12 @@ function NuevaAmonestacion({
           value={descripcion}
           onChangeText={setDescripcion}
           placeholder="¿Qué pasó?"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           multiline
         />
 
         <Text style={styles.label}>Fecha en que ocurrió</Text>
-        <TextInput style={styles.input} value={fechaHecho} onChangeText={setFechaHecho} placeholder="AAAA-MM-DD" />
+        <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={fechaHecho} onChangeText={setFechaHecho} placeholder="AAAA-MM-DD" />
 
         {esMulta && (
           <>
@@ -456,7 +456,7 @@ function NuevaAmonestacion({
             <View style={{ flexDirection: "row", gap: spacing.sm }}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>Monto</Text>
-                <TextInput style={styles.input} value={monto} onChangeText={setMonto} keyboardType="numeric" />
+                <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={monto} onChangeText={setMonto} keyboardType="numeric" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>Unidad</Text>
@@ -478,7 +478,7 @@ function NuevaAmonestacion({
 
         <TouchableOpacity style={[styles.botonCrear, creando && styles.botonDeshabilitado]} onPress={handleCrear} disabled={creando}>
           {creando ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.botonNaranjaTexto} />
           ) : (
             <Text style={styles.botonCrearTexto}>{esMulta ? "Enviar a aprobación" : "Enviar amonestación"}</Text>
           )}
@@ -557,7 +557,7 @@ function GestionTipos({
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
+    <ScrollView style={{ backgroundColor: colors.navy900 }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
       <View style={styles.filtroEstados}>
         <TouchableOpacity
           style={[styles.filtroChip, subvista === "amonestacion" && styles.filtroChipActivo]}
@@ -610,7 +610,7 @@ function GestionTipos({
       <Text style={styles.subtitulo}>Agregar {subvista === "amonestacion" ? "un tipo de amonestación" : "un motivo de multa"}</Text>
       <View style={styles.card}>
         <Text style={styles.label}>Nombre</Text>
-        <TextInput style={styles.input} value={nombreNuevo} onChangeText={setNombreNuevo} placeholder="Nombre" />
+        <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={nombreNuevo} onChangeText={setNombreNuevo} placeholder="Nombre" />
         {subvista === "amonestacion" ? (
           <TouchableOpacity style={styles.checkboxFila} onPress={() => setEsMultaNuevo(!esMultaNuevo)}>
             <View style={[styles.checkbox, esMultaNuevo && styles.checkboxActivo]} />
@@ -620,7 +620,7 @@ function GestionTipos({
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
             <View style={{ flex: 1 }}>
               <Text style={styles.label}>Monto sugerido</Text>
-              <TextInput style={styles.input} value={montoNuevo} onChangeText={setMontoNuevo} keyboardType="numeric" />
+              <TextInput placeholderTextColor={colors.textMutedOnNavy} style={styles.input} value={montoNuevo} onChangeText={setMontoNuevo} keyboardType="numeric" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.label}>Unidad</Text>
@@ -647,27 +647,27 @@ function GestionTipos({
 }
 
 const styles = StyleSheet.create({
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center" },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   tabs: { flexDirection: "row", gap: spacing.xs, padding: spacing.md, paddingBottom: 0 },
-  tab: { flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: 9, alignItems: "center" },
-  tabActivo: { borderColor: colors.navy900, backgroundColor: colors.navy900 },
-  tabTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 12 },
-  tabTextoActivo: { color: colors.textOnNavy },
+  tab: { flex: 1, borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.sm, paddingVertical: 9, alignItems: "center" },
+  tabActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  tabTexto: { color: colors.textMutedOnNavy, fontWeight: "700", fontSize: 12 },
+  tabTextoActivo: { color: colors.goldSoft },
 
   lista: { padding: spacing.md, gap: spacing.sm },
   filtroEstados: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.xs },
-  filtroChip: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
-  filtroChipActivo: { borderColor: colors.navy900, backgroundColor: colors.navy900 },
-  filtroChipTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 11 },
-  filtroChipTextoActivo: { color: colors.textOnNavy },
+  filtroChip: { borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
+  filtroChipActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  filtroChipTexto: { color: colors.textMutedOnNavy, fontWeight: "700", fontSize: 11 },
+  filtroChipTextoActivo: { color: colors.goldSoft },
 
-  vacio: { textAlign: "center", color: colors.textMuted, marginTop: spacing.xl },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: spacing.xl },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.navy600 },
   cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  depto: { ...typography.heading, fontSize: 15, color: colors.textDark },
-  tipo: { color: colors.navy900, fontWeight: "700", fontSize: 13, marginTop: spacing.xs },
-  descripcion: { ...typography.small, color: colors.textDark, marginTop: 4 },
-  meta: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
+  depto: { ...typography.heading, fontSize: 15, color: colors.textOnNavy },
+  tipo: { color: colors.goldSoft, fontWeight: "700", fontSize: 13, marginTop: spacing.xs },
+  descripcion: { ...typography.small, color: colors.textOnNavy, marginTop: 4 },
+  meta: { fontSize: 11, color: colors.textMutedOnNavy, marginTop: 4 },
   motivoRechazo: { fontSize: 12, color: colors.danger, marginTop: 4, fontStyle: "italic" },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   badgeTexto: { fontSize: 11, fontWeight: "800", color: colors.textDark },
@@ -676,40 +676,42 @@ const styles = StyleSheet.create({
   botonAprobarTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },
   botonRechazar: { flex: 1, borderWidth: 1.5, borderColor: colors.danger, borderRadius: radius.sm, padding: 10, alignItems: "center" },
   botonRechazarTexto: { color: colors.danger, fontWeight: "700", fontSize: 13 },
-  ayudaNotificar: { fontSize: 11, color: colors.textMuted, marginTop: spacing.sm, fontStyle: "italic" },
+  botonNotificar: { flex: 1, backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 10, alignItems: "center" },
+  botonNotificarTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 13 },
+  ayudaNotificar: { fontSize: 11, color: colors.textMutedOnNavy, marginTop: spacing.sm, fontStyle: "italic" },
 
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
+  label: { ...typography.label, color: colors.textOnNavy, marginTop: spacing.sm },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 12,
     fontSize: 15,
     marginTop: 4,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
   inputMultilinea: { minHeight: 70, textAlignVertical: "top" },
-  avisoMulta: { ...typography.small, color: colors.textMuted, marginTop: spacing.sm, fontStyle: "italic" },
+  avisoMulta: { ...typography.small, color: colors.textMutedOnNavy, marginTop: spacing.sm, fontStyle: "italic" },
   filaOpciones: { flexDirection: "row", gap: 6, marginTop: 4 },
-  opcionChica: { flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: 10, alignItems: "center" },
-  opcionChicaActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
-  opcionChicaTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 12 },
-  opcionChicaTextoActivo: { color: colors.navy900 },
+  opcionChica: { flex: 1, borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.sm, paddingVertical: 10, alignItems: "center" },
+  opcionChicaActiva: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  opcionChicaTexto: { color: colors.textMutedOnNavy, fontWeight: "700", fontSize: 12 },
+  opcionChicaTextoActivo: { color: colors.goldSoft },
 
-  botonCrear: { backgroundColor: colors.success, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.md },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
+  botonCrear: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.md },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
   botonDeshabilitado: { opacity: 0.6 },
 
-  subtitulo: { ...typography.heading, fontSize: 15, color: colors.textDark, marginTop: spacing.sm },
+  subtitulo: { ...typography.heading, fontSize: 15, color: colors.textOnNavy, marginTop: spacing.sm },
   filaTipo: { flexDirection: "row", alignItems: "center" },
-  nombreTipo: { fontSize: 14, fontWeight: "700", color: colors.textDark },
-  etiquetaMulta: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  nombreTipo: { fontSize: 14, fontWeight: "700", color: colors.textOnNavy },
+  etiquetaMulta: { fontSize: 11, color: colors.textMutedOnNavy, marginTop: 2 },
   linkDesactivar: { color: colors.danger, fontWeight: "700", fontSize: 12 },
   linkActivar: { color: colors.success, fontWeight: "700", fontSize: 12 },
 
   checkboxFila: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.md },
-  checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 1.5, borderColor: colors.border },
-  checkboxActivo: { backgroundColor: colors.navy900, borderColor: colors.navy900 },
-  checkboxTexto: { color: colors.textDark, fontSize: 13 },
+  checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 1.5, borderColor: colors.textMutedOnNavy },
+  checkboxActivo: { backgroundColor: colors.botonNaranja, borderColor: colors.botonNaranjaBorde },
+  checkboxTexto: { color: colors.textOnNavy, fontSize: 13 },
 });

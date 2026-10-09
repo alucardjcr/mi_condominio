@@ -57,9 +57,9 @@ const styles = StyleSheet.create({
   container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.navy900 },
   saludo: { ...typography.heading, textAlign: "center", marginTop: spacing.sm, marginBottom: 4, color: colors.textOnNavy },
   subtitulo: { ...typography.small, textAlign: "center", marginBottom: spacing.lg, color: colors.textMutedOnNavy },
-  boton: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg, marginTop: spacing.md },
-  botonTitulo: { ...typography.heading, color: colors.textDark },
-  botonAyuda: { ...typography.small, color: colors.textMuted, marginTop: 2 },
+  boton: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg, marginTop: spacing.md },
+  botonTitulo: { ...typography.heading, color: colors.textOnNavy },
+  botonAyuda: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
   cerrarSesion: { marginTop: spacing.xl, alignItems: "center" },
   cerrarSesionTexto: { color: colors.textMutedOnNavy, fontSize: 13 },
 });

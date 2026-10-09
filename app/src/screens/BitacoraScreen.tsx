@@ -5,6 +5,7 @@ import { crearEntradaBitacora, getBitacora } from "../api/client";
 import { EntradaBitacora } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 function formatearFecha(fechaMysql: string) {
   const iso = fechaMysql.replace(" ", "T");
@@ -69,7 +70,7 @@ export default function BitacoraScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -78,7 +79,7 @@ export default function BitacoraScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
     >
       {esGuardia && (
         <View style={styles.formCard}>
@@ -88,6 +89,7 @@ export default function BitacoraScreen() {
             value={texto}
             onChangeText={setTexto}
             placeholder="Ej: Se revisaron accesos, todo en orden."
+            placeholderTextColor={colors.textMutedOnNavy}
             multiline
           />
           <TouchableOpacity style={styles.boton} onPress={handleEnviar} disabled={enviando || !texto.trim()}>
@@ -110,15 +112,15 @@ export default function BitacoraScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  formCard: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
-  label: { fontSize: 14, fontWeight: "600", color: "#333" },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: "#fff", marginTop: 4 },
-  boton: { backgroundColor: "#014BD2", borderRadius: 10, padding: 12, alignItems: "center", marginTop: 10 },
-  botonTexto: { color: "#fff", fontWeight: "700" },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
-  texto: { fontSize: 14, color: "#333", lineHeight: 20 },
-  meta: { color: "#999", marginTop: 8, fontSize: 12, fontWeight: "600" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  formCard: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: colors.navy700, color: colors.textOnNavy, marginTop: 4 },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 12, alignItems: "center", marginTop: 10 },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
+  texto: { fontSize: 14, color: colors.textOnNavy, lineHeight: 20 },
+  meta: { color: colors.textMutedOnNavy, marginTop: 8, fontSize: 12, fontWeight: "600" },
 });

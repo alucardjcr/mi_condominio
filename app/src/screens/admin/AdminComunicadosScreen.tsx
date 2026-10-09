@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 import { adminCrearComunicado } from "../../api/client";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
+import { colors } from "../../theme/theme";
 
 // Comunicados (ronda 16), a pedido explícito del usuario: "el administrador
 // o el comité podrá emitir un comunicado y debería llegarles a todos como
@@ -66,6 +67,7 @@ export default function AdminComunicadosScreen() {
         <TextInput
           style={styles.input}
           placeholder="Ej: Corte de agua programado"
+          placeholderTextColor={colors.textMutedOnNavy}
           value={titulo}
           onChangeText={setTitulo}
         />
@@ -73,6 +75,7 @@ export default function AdminComunicadosScreen() {
         <TextInput
           style={[styles.input, styles.inputMultilinea]}
           placeholder="Detalle del comunicado..."
+          placeholderTextColor={colors.textMutedOnNavy}
           value={cuerpo}
           onChangeText={setCuerpo}
           multiline
@@ -87,19 +90,28 @@ export default function AdminComunicadosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  intro: { color: "#666", fontSize: 13, marginBottom: 14, lineHeight: 18 },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16 },
-  label: { fontSize: 13, fontWeight: "700", color: "#555", marginBottom: 6 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  intro: { color: colors.textMutedOnNavy, fontSize: 13, marginBottom: 14, lineHeight: 18 },
+  form: { backgroundColor: colors.navy800, borderRadius: 12, padding: 16 },
+  label: { fontSize: 13, fontWeight: "700", color: colors.textMutedOnNavy, marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
     marginBottom: 14,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
   inputMultilinea: { minHeight: 110, textAlignVertical: "top" },
-  boton: { backgroundColor: "#b0730a", borderRadius: 10, padding: 14, alignItems: "center" },
-  botonTexto: { color: "#fff", fontWeight: "700" },
+  boton: {
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+  },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
 });

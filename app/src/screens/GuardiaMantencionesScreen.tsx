@@ -15,6 +15,7 @@ import { getMantencionesEnCurso, getMantencionesProgramadas, registrarIngresoMan
 import { Mantencion } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 // Ronda 19: pantalla de portería para mantenciones — el guardia SIEMPRE
 // elige de la lista de mantenciones ya programadas cuál está llegando a
@@ -106,7 +107,7 @@ export default function GuardiaMantencionesScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -115,7 +116,7 @@ export default function GuardiaMantencionesScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
     >
       <Text style={styles.seccionTitulo}>Programadas</Text>
       {programadas.length === 0 && <Text style={styles.vacio}>No hay mantenciones programadas pendientes.</Text>}
@@ -130,18 +131,21 @@ export default function GuardiaMantencionesScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Nombre de la empresa"
+                placeholderTextColor={colors.textMutedOnNavy}
                 value={empresaNombre}
                 onChangeText={setEmpresaNombre}
               />
               <TextInput
                 style={[styles.input, { marginTop: 8 }]}
                 placeholder="Nombre de la persona"
+                placeholderTextColor={colors.textMutedOnNavy}
                 value={personaNombre}
                 onChangeText={setPersonaNombre}
               />
               <TextInput
                 style={[styles.input, { marginTop: 8 }]}
                 placeholder="RUT (opcional)"
+                placeholderTextColor={colors.textMutedOnNavy}
                 value={personaRut}
                 onChangeText={setPersonaRut}
                 autoCapitalize="none"
@@ -156,8 +160,8 @@ export default function GuardiaMantencionesScreen() {
                     {procesandoId === m.id_mantencion ? "Guardando..." : "Confirmar ingreso"}
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.boton, { backgroundColor: "#999", flex: 1 }]} onPress={limpiarFormularioIngreso}>
-                  <Text style={styles.botonTexto}>Cancelar</Text>
+                <TouchableOpacity style={[styles.boton, styles.botonSecundario, { flex: 1 }]} onPress={limpiarFormularioIngreso}>
+                  <Text style={[styles.botonTexto, { color: colors.textOnNavy }]}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -193,15 +197,16 @@ export default function GuardiaMantencionesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  seccionTitulo: { fontSize: 14, fontWeight: "700", color: "#666", textTransform: "uppercase" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 8, marginBottom: 8 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
-  nombre: { fontSize: 16, fontWeight: "700" },
-  detalleTexto: { color: "#555", marginTop: 2, fontSize: 13 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  seccionTitulo: { fontSize: 14, fontWeight: "700", color: colors.textMutedOnNavy, textTransform: "uppercase" },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 8, marginBottom: 8 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
+  nombre: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalleTexto: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: colors.navy700, color: colors.textOnNavy },
   boton: { borderRadius: 8, paddingVertical: 10, alignItems: "center", marginTop: 10 },
+  botonSecundario: { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.textMutedOnNavy },
   botonLlegada: { backgroundColor: "#1a9d5c" },
   botonSalida: { backgroundColor: "#c0392b" },
   botonTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },

@@ -161,7 +161,7 @@ export default function MisDatosScreen({ navigation }: any) {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -186,7 +186,7 @@ export default function MisDatosScreen({ navigation }: any) {
             {fuenteImagenPrivada(perfil.foto_url, token) && !pFoto ? (
               <Image source={fuenteImagenPrivada(perfil.foto_url, token)!} style={styles.fotoPerfil} />
             ) : !pFoto ? (
-              <View style={[styles.fotoPerfil, { alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite }]}>
+              <View style={[styles.fotoPerfil, { alignItems: "center", justifyContent: "center", backgroundColor: colors.navy700 }]}>
                 <Text style={{ fontSize: 56 }}>👤</Text>
               </View>
             ) : null}
@@ -210,7 +210,7 @@ export default function MisDatosScreen({ navigation }: any) {
               value={pCorreo}
               onChangeText={setPCorreo}
               placeholder="correo@ejemplo.com"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               autoCapitalize="none"
               keyboardType="email-address"
             />
@@ -227,7 +227,7 @@ export default function MisDatosScreen({ navigation }: any) {
               value={pTelefono}
               onChangeText={setPTelefono}
               placeholder="+56 9 1234 5678"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               keyboardType="phone-pad"
             />
           </View>
@@ -249,7 +249,7 @@ export default function MisDatosScreen({ navigation }: any) {
               value={pRnac}
               onChangeText={setPRnac}
               placeholder="N° de registro (opcional)"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
             />
           </View>
 
@@ -367,7 +367,7 @@ export default function MisDatosScreen({ navigation }: any) {
               value={detalle}
               onChangeText={setDetalle}
               placeholder="Describe qué dato y qué necesitas..."
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               multiline
             />
 
@@ -377,7 +377,7 @@ export default function MisDatosScreen({ navigation }: any) {
               disabled={!tipoSel || enviando}
               activeOpacity={0.85}
             >
-              {enviando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Enviar solicitud</Text>}
+              {enviando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Enviar solicitud</Text>}
             </TouchableOpacity>
             <TouchableOpacity style={styles.botonCancelar} onPress={() => setFormularioAbierto(false)}>
               <Text style={styles.botonCancelarTexto}>Cancelar</Text>
@@ -410,25 +410,25 @@ export default function MisDatosScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.offWhite, gap: spacing.md },
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
-  intro: { ...typography.small, color: colors.textMuted },
-  linkAviso: { color: colors.info, fontSize: 13, fontWeight: "700", marginTop: 4 },
+  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.navy900, gap: spacing.md },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  intro: { ...typography.small, color: colors.textMutedOnNavy },
+  linkAviso: { color: colors.goldSoft, fontSize: 13, fontWeight: "700", marginTop: 4 },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600" },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
-  tituloCard: { ...typography.heading, color: colors.textDark, marginBottom: spacing.xs },
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
-  dato: { ...typography.body, color: colors.textDark, fontWeight: "700" },
-  datoChico: { ...typography.small, color: colors.textMuted },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg },
+  tituloCard: { ...typography.heading, color: colors.textOnNavy, marginBottom: spacing.xs },
+  label: { ...typography.label, color: colors.textOnNavy, marginTop: spacing.sm },
+  dato: { ...typography.body, color: colors.textOnNavy, fontWeight: "700" },
+  datoChico: { ...typography.small, color: colors.textMutedOnNavy },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
     marginTop: 6,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
   inputMultilinea: { minHeight: 90, textAlignVertical: "top" },
   campoPerfil: { marginBottom: spacing.md },
@@ -465,17 +465,17 @@ const styles = StyleSheet.create({
   },
   botonSecundarioTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
   botonCancelar: { alignItems: "center", marginTop: spacing.sm },
-  botonCancelarTexto: { color: colors.textMuted, fontWeight: "600" },
-  opcionLarga: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, padding: spacing.md },
-  opcionLargaActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
-  opcionLargaTitulo: { color: colors.textDark, fontWeight: "800", fontSize: 14 },
-  opcionLargaTituloActivo: { color: colors.navy900 },
-  opcionLargaAyuda: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  solicitudItem: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, marginTop: spacing.sm },
+  botonCancelarTexto: { color: colors.textMutedOnNavy, fontWeight: "600" },
+  opcionLarga: { borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.sm, padding: spacing.md },
+  opcionLargaActiva: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  opcionLargaTitulo: { color: colors.textOnNavy, fontWeight: "800", fontSize: 14 },
+  opcionLargaTituloActivo: { color: colors.goldSoft },
+  opcionLargaAyuda: { color: colors.textMutedOnNavy, fontSize: 12, marginTop: 2 },
+  solicitudItem: { borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: spacing.sm, marginTop: spacing.sm },
   solicitudHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  solicitudTipo: { color: colors.textDark, fontWeight: "700", fontSize: 14 },
-  solicitudDetalle: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
-  solicitudRespuesta: { color: colors.textDark, fontSize: 13, marginTop: 4, fontStyle: "italic" },
+  solicitudTipo: { color: colors.textOnNavy, fontWeight: "700", fontSize: 14 },
+  solicitudDetalle: { color: colors.textMutedOnNavy, fontSize: 13, marginTop: 2 },
+  solicitudRespuesta: { color: colors.textOnNavy, fontSize: 13, marginTop: 4, fontStyle: "italic" },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   badgeTexto: { fontSize: 11, fontWeight: "800", color: colors.textDark },
 });

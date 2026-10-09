@@ -15,6 +15,7 @@ import { getPaquete, paqueteRegistrarEntrega } from "../api/client";
 import { Paquete } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 import FotoCapture from "../components/FotoCapture";
 import SignaturePad from "../components/SignaturePad";
 
@@ -42,7 +43,7 @@ export default function PaqueteEntregaScreen({ navigation, route }: any) {
   if (cargando || !paquete) {
     return (
       <View style={styles.centro}>
-        <ActivityIndicator size="large" color="#014BD2" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -82,7 +83,7 @@ export default function PaqueteEntregaScreen({ navigation, route }: any) {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.navy900 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.resumen}>
           <Text style={styles.resumenTipo}>{paquete.gls_tipopaquete}</Text>
@@ -123,6 +124,7 @@ export default function PaqueteEntregaScreen({ navigation, route }: any) {
               value={nombreQuienRetira}
               onChangeText={setNombreQuienRetira}
               placeholder="Ej: Pedro Soto (conserje del turno)"
+              placeholderTextColor={colors.textMutedOnNavy}
             />
             <FotoCapture label="Foto de quien retira *" value={fotoRetiro} onChange={setFotoRetiro} />
           </>
@@ -143,21 +145,21 @@ export default function PaqueteEntregaScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  centro: { flex: 1, alignItems: "center", justifyContent: "center" },
-  container: { padding: 20, paddingBottom: 60 },
-  resumen: { backgroundColor: "#eef6ff", borderRadius: 10, padding: 14, marginBottom: 8 },
-  resumenTipo: { fontSize: 12, color: "#014BD2", fontWeight: "700" },
-  resumenReceptor: { fontSize: 18, fontWeight: "700", color: "#222", marginTop: 2 },
-  resumenDetalle: { fontSize: 13, color: "#555", marginTop: 2 },
+  centro: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  container: { padding: 20, paddingBottom: 60, backgroundColor: colors.navy900 },
+  resumen: { backgroundColor: colors.navy800, borderRadius: 10, padding: 14, marginBottom: 8 },
+  resumenTipo: { fontSize: 12, color: colors.goldSoft, fontWeight: "700" },
+  resumenReceptor: { fontSize: 18, fontWeight: "700", color: colors.textOnNavy, marginTop: 2 },
+  resumenDetalle: { fontSize: 13, color: colors.textMutedOnNavy, marginTop: 2 },
   tipoCupoSelector: { flexDirection: "row", gap: 10, marginTop: 12 },
-  tipoCupoBoton: { flex: 1, borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
-  tipoCupoBotonActivo: { backgroundColor: "#014BD2", borderColor: "#014BD2" },
-  tipoCupoTexto: { fontWeight: "600", color: "#333", textAlign: "center" },
-  tipoCupoTextoActivo: { color: "#fff" },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginTop: 12 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 16, backgroundColor: "#fff", marginTop: 4 },
-  alerta: { color: "#c0392b", fontSize: 12, marginTop: 10 },
-  boton: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 16, alignItems: "center", marginTop: 28 },
+  tipoCupoBoton: { flex: 1, borderWidth: 1, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  tipoCupoBotonActivo: { backgroundColor: colors.navy900, borderColor: colors.botonNaranja },
+  tipoCupoTexto: { fontWeight: "600", color: colors.textMutedOnNavy, textAlign: "center" },
+  tipoCupoTextoActivo: { color: colors.goldSoft },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy, marginTop: 12 },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 16, backgroundColor: colors.navy700, color: colors.textOnNavy, marginTop: 4 },
+  alerta: { color: colors.danger, fontSize: 12, marginTop: 10 },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 16, alignItems: "center", marginTop: 28 },
   botonDeshabilitado: { opacity: 0.6 },
-  botonTexto: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "700" },
 });

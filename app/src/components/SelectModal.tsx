@@ -83,6 +83,7 @@ export default function SelectModal({
           <TextInput
             style={styles.buscador}
             placeholder="Buscar..."
+            placeholderTextColor={colors.textMutedOnNavy}
             value={busqueda}
             onChangeText={setBusqueda}
             autoFocus
@@ -128,37 +129,39 @@ export default function SelectModal({
 }
 
 const styles = StyleSheet.create({
-  label: { fontSize: 14, fontWeight: "600", color: "#333" },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy },
   campo: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy700,
     marginTop: 4,
   },
   campoEnFoco: { borderColor: colors.gold },
-  campoDeshabilitado: { backgroundColor: "#f0f0f0" },
-  valorTexto: { fontSize: 16, color: "#222" },
-  placeholderTexto: { fontSize: 16, color: "#999" },
-  flecha: { fontSize: 14, color: "#888", marginLeft: 8 },
-  flechaDeshabilitada: { color: "#ccc" },
-  modalContainer: { flex: 1, paddingTop: 60, paddingHorizontal: 16, backgroundColor: "#fff" },
+  campoDeshabilitado: { backgroundColor: colors.navy800, opacity: 0.6 },
+  valorTexto: { fontSize: 16, color: colors.textOnNavy },
+  placeholderTexto: { fontSize: 16, color: colors.textMutedOnNavy },
+  flecha: { fontSize: 14, color: colors.textMutedOnNavy, marginLeft: 8 },
+  flechaDeshabilitada: { color: colors.navy600 },
+  modalContainer: { flex: 1, paddingTop: 60, paddingHorizontal: 16, backgroundColor: colors.navy800 },
   buscador: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
     marginBottom: 8,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
-  opcion: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#eee" },
-  opcionTexto: { fontSize: 16 },
-  opcionExtra: { backgroundColor: "#fafafa" },
-  opcionExtraTexto: { fontSize: 16, color: "#014BD2", fontWeight: "600" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 20 },
+  opcion: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.navy600 },
+  opcionTexto: { fontSize: 16, color: colors.textOnNavy },
+  opcionExtra: { backgroundColor: colors.navy800 },
+  opcionExtraTexto: { fontSize: 16, color: colors.goldSoft, fontWeight: "600" },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 20 },
   cerrar: { padding: 16, alignItems: "center" },
   cerrarTexto: { color: "#c0392b", fontWeight: "700", fontSize: 16 },
 });

@@ -91,7 +91,7 @@ export default function DateField({ label, value, onChange, maximumDate, separad
           value={texto}
           onChangeText={handleChangeTexto}
           placeholder={`DD${separador}MM${separador}AAAA`}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           keyboardType="number-pad"
           maxLength={10}
         />
@@ -108,6 +108,8 @@ export default function DateField({ label, value, onChange, maximumDate, separad
             maximumDate={maximumDate}
             onChange={handleSeleccionarFecha}
             locale="es-ES"
+            themeVariant="dark"
+            textColor={colors.textOnNavy}
           />
           {/* Ronda 75, a pedido explícito del usuario ("gira el calendario
               pero no deja guardar la fecha"): en iOS el picker es tipo
@@ -130,30 +132,32 @@ export default function DateField({ label, value, onChange, maximumDate, separad
 
 const styles = StyleSheet.create({
   wrap: { marginTop: spacing.sm },
-  label: { ...typography.label, color: colors.textDark },
+  label: { ...typography.label, color: colors.textOnNavy },
   fila: { flexDirection: "row", gap: spacing.xs, marginTop: 6, alignItems: "stretch" },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
   botonCalendario: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     paddingHorizontal: 14,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.offWhite,
+    backgroundColor: colors.navy700,
   },
   botonCalendarioTexto: { fontSize: 20 },
-  calendarioWrap: { alignItems: "center" },
+  calendarioWrap: { alignItems: "center", backgroundColor: colors.navy800, borderRadius: radius.sm },
   botonListo: {
-    backgroundColor: colors.navy900,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: radius.sm,
     paddingVertical: 10,
     paddingHorizontal: spacing.lg,
@@ -161,5 +165,5 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
     alignSelf: "center",
   },
-  botonListoTexto: { color: colors.gold, fontWeight: "700", fontSize: 14 },
+  botonListoTexto: { color: colors.botonNaranjaTexto, fontWeight: "700", fontSize: 14 },
 });

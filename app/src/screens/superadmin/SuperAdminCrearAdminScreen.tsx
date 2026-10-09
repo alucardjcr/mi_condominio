@@ -138,7 +138,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
           value={nombreUsuario}
           onChangeText={setNombreUsuario}
           placeholder="ej: María Pérez"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
         />
 
         <Text style={styles.label}>RUT</Text>
@@ -163,7 +163,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
             setRut(formatearRutConPuntos(rut));
           }}
           placeholder="ej: 12.345.678-9"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           autoCapitalize="characters"
         />
 
@@ -176,7 +176,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
           value={numeroRegistroRnac}
           onChangeText={setNumeroRegistroRnac}
           placeholder="ej: RNAC-4521"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
         />
 
         <Text style={styles.label}>Correo electrónico</Text>
@@ -185,7 +185,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
           value={correo}
           onChangeText={setCorreo}
           placeholder="ej: maria@ejemplo.cl"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           autoCapitalize="none"
           keyboardType="email-address"
         />
@@ -196,7 +196,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
           value={telefono}
           onChangeText={setTelefono}
           placeholder="ej: +56912345678"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           keyboardType="phone-pad"
         />
 
@@ -206,7 +206,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
           value={usuariocol}
           onChangeText={setUsuariocol}
           placeholder="ej: mperez"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           autoCapitalize="none"
         />
 
@@ -217,7 +217,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
           value={password}
           onChangeText={setPassword}
           placeholder="Mínimo 12 caracteres"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           secureTextEntry
         />
 
@@ -256,7 +256,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
           disabled={enviando}
           activeOpacity={0.85}
         >
-          {enviando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Crear administrador</Text>}
+          {enviando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Crear administrador</Text>}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -264,30 +264,30 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.offWhite },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
-  ayuda: { ...typography.small, color: colors.textMuted, marginTop: spacing.sm },
-  ayudaChica: { ...typography.small, color: colors.textMuted, marginTop: 2, fontSize: 11 },
+  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.navy900 },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg },
+  label: { ...typography.label, color: colors.textMutedOnNavy, marginTop: spacing.sm },
+  ayuda: { ...typography.small, color: colors.textMutedOnNavy, marginTop: spacing.sm },
+  ayudaChica: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2, fontSize: 11 },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
     marginTop: 6,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
   inputConError: { borderColor: colors.danger, borderWidth: 1.5 },
   listaCondominios: { gap: spacing.xs, marginTop: 6 },
-  opcionCondominio: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, padding: spacing.sm },
-  opcionCondominioActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
-  opcionCondominioTexto: { color: colors.textMuted, fontWeight: "600" },
-  opcionCondominioTextoActivo: { color: colors.navy900 },
-  boton: { backgroundColor: colors.gold, borderRadius: radius.sm, padding: 16, alignItems: "center", marginTop: spacing.lg },
+  opcionCondominio: { borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.sm, padding: spacing.sm },
+  opcionCondominioActiva: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  opcionCondominioTexto: { color: colors.textMutedOnNavy, fontWeight: "600" },
+  opcionCondominioTextoActivo: { color: colors.goldSoft },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 16, alignItems: "center", marginTop: spacing.lg },
   botonDeshabilitado: { opacity: 0.6 },
-  botonTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "800" },
   error: { color: colors.danger, marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
   exito: { color: colors.success, marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
 });

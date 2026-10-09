@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { adminActualizarJefeDeArea, adminCrearJefeDeArea, adminGetJefesDeArea } from "../../api/client";
 import { JefeDeArea, RolJefeDeArea } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
+import { colors } from "../../theme/theme";
 
 // Ronda 68, a pedido explícito del usuario: el Administrador arma su
 // condominio según cómo se organice — puede crear un Jefe para
@@ -120,7 +121,7 @@ export default function AdminJefesAreaScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -153,15 +154,16 @@ export default function AdminJefesAreaScreen() {
             ))}
           </View>
 
-          <TextInput style={styles.input} placeholder="Nombre completo" value={nombre} onChangeText={setNombre} />
+          <TextInput style={styles.input} placeholder="Nombre completo" placeholderTextColor={colors.textMutedOnNavy} value={nombre} onChangeText={setNombre} />
           <TextInput
             style={styles.input}
             placeholder="Usuario (para login)"
+            placeholderTextColor={colors.textMutedOnNavy}
             value={usuariocol}
             onChangeText={setUsuariocol}
             autoCapitalize="none"
           />
-          <TextInput style={styles.input} placeholder="Contraseña" value={password} onChangeText={setPassword} secureTextEntry />
+          <TextInput style={styles.input} placeholder="Contraseña" placeholderTextColor={colors.textMutedOnNavy} value={password} onChangeText={setPassword} secureTextEntry />
 
           <Text style={styles.label}>¿Es personal interno del condominio o viene de una empresa externa?</Text>
           <View style={styles.filaChips}>
@@ -176,6 +178,7 @@ export default function AdminJefesAreaScreen() {
             <TextInput
               style={styles.input}
               placeholder="Nombre de la empresa (ej: Vigilancia Segura SPA)"
+              placeholderTextColor={colors.textMutedOnNavy}
               value={empresaExterna}
               onChangeText={setEmpresaExterna}
             />
@@ -226,17 +229,17 @@ export default function AdminJefesAreaScreen() {
                   </TouchableOpacity>
                 </View>
                 {editInterno === false && (
-                  <TextInput style={styles.input} placeholder="Nombre de la empresa" value={editEmpresa} onChangeText={setEditEmpresa} />
+                  <TextInput style={styles.input} placeholder="Nombre de la empresa" placeholderTextColor={colors.textMutedOnNavy} value={editEmpresa} onChangeText={setEditEmpresa} />
                 )}
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   <TouchableOpacity
-                    style={[styles.botonToggle, styles.botonActivar, { flex: 1 }]}
+                    style={[styles.botonToggle, { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, flex: 1 }]}
                     onPress={() => handleGuardarInterno(item.id_usuario)}
                     disabled={guardandoInterno}
                   >
-                    <Text style={styles.botonToggleTexto}>{guardandoInterno ? "Guardando..." : "Guardar"}</Text>
+                    <Text style={[styles.botonToggleTexto, { color: colors.botonNaranjaTexto, fontWeight: "800" }]}>{guardandoInterno ? "Guardando..." : "Guardar"}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]} onPress={() => setEditandoId(null)}>
+                  <TouchableOpacity style={[styles.botonToggle, { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600, flex: 1 }]} onPress={() => setEditandoId(null)}>
                     <Text style={styles.botonToggleTexto}>Cancelar</Text>
                   </TouchableOpacity>
                 </View>
@@ -254,40 +257,42 @@ export default function AdminJefesAreaScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 8 },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
-  ayuda: { color: "#888", fontSize: 12, marginBottom: 12, lineHeight: 17 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  form: { backgroundColor: colors.navy800, borderRadius: 12, padding: 16, marginBottom: 8 },
+  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 4, color: colors.textOnNavy },
+  ayuda: { color: colors.textMutedOnNavy, fontSize: 12, marginBottom: 12, lineHeight: 17 },
   filaRoles: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  chipRol: { borderWidth: 1.5, borderColor: "#ddd", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 },
-  chipRolActivo: { borderColor: "#014BD2", backgroundColor: "#EEF2FF" },
-  chipRolTexto: { color: "#666", fontWeight: "600", fontSize: 12 },
-  chipRolTextoActivo: { color: "#014BD2" },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 6 },
+  chipRol: { borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 },
+  chipRolActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  chipRolTexto: { color: colors.textMutedOnNavy, fontWeight: "600", fontSize: 12 },
+  chipRolTextoActivo: { color: colors.goldSoft },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginBottom: 6 },
   filaChips: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  chip: { borderWidth: 1.5, borderColor: "#ddd", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
-  chipActivo: { borderColor: "#014BD2", backgroundColor: "#EEF2FF" },
-  chipTexto: { color: "#666", fontWeight: "600", fontSize: 13 },
-  chipTextoActivo: { color: "#014BD2" },
+  chip: { borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  chipActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  chipTexto: { color: colors.textMutedOnNavy, fontWeight: "600", fontSize: 13 },
+  chipTextoActivo: { color: colors.goldSoft },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
     marginBottom: 10,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
-  botonCrear: { backgroundColor: "#2e7d32", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 20 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14 },
-  nombreItem: { fontSize: 16, fontWeight: "700" },
-  detalle: { color: "#666", marginTop: 2, fontSize: 13 },
+  botonCrear: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 20 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14 },
+  nombreItem: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
   botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   botonActivar: { backgroundColor: "#1a9d5c" },
   botonDesactivar: { backgroundColor: "#c0392b" },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  subForm: { marginTop: 10, borderTopWidth: 1, borderTopColor: "#f0f0f0", paddingTop: 10, gap: 8 },
-  enlaceEditar: { color: "#014BD2", fontWeight: "700", fontSize: 12, marginTop: 10 },
+  subForm: { marginTop: 10, borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: 10, gap: 8 },
+  enlaceEditar: { color: colors.goldSoft, fontWeight: "700", fontSize: 12, marginTop: 10 },
 });

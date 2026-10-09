@@ -33,12 +33,14 @@ const styles = StyleSheet.create({
   opciones: { flexDirection: "row", gap: spacing.md },
   boton: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: colors.navy800,
+    borderWidth: 1,
+    borderColor: colors.navy600,
     borderRadius: radius.lg,
     paddingVertical: 32,
     alignItems: "center",
   },
   presionado: { opacity: 0.85, transform: [{ scale: 0.97 }] },
   emoji: { fontSize: 36, marginBottom: spacing.sm },
-  botonTexto: { color: colors.textDark, fontSize: 16, fontWeight: "800" },
+  botonTexto: { color: colors.textOnNavy, fontSize: 16, fontWeight: "800" },
 });

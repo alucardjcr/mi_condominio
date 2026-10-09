@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { jefeActualizarGuardia, jefeCrearGuardia, jefeGetGuardias } from "../../api/client";
 import { Guardia } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
+import { colors } from "../../theme/theme";
 import { esRutValido, formatearRut } from "../../utils/validarRut";
 
 // Ronda 20: CRUD de guardias para el rol JEFE_GUARDIAS — misma lógica que
@@ -118,7 +119,7 @@ export default function JefeGuardiasGuardiasScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -132,18 +133,20 @@ export default function JefeGuardiasGuardiasScreen() {
       ListHeaderComponent={
         <View style={styles.form}>
           <Text style={styles.formTitulo}>Nuevo guardia</Text>
-          <TextInput style={styles.input} placeholder="Nombre" value={nombre} onChangeText={setNombre} />
+          <TextInput style={styles.input} placeholder="Nombre" placeholderTextColor={colors.textMutedOnNavy} value={nombre} onChangeText={setNombre} />
           <TextInput
             style={styles.input}
             placeholder="Usuario (para login)"
+            placeholderTextColor={colors.textMutedOnNavy}
             value={usuariocol}
             onChangeText={setUsuariocol}
             autoCapitalize="none"
           />
-          <TextInput style={styles.input} placeholder="Contraseña" value={password} onChangeText={setPassword} secureTextEntry />
+          <TextInput style={styles.input} placeholder="Contraseña" placeholderTextColor={colors.textMutedOnNavy} value={password} onChangeText={setPassword} secureTextEntry />
           <TextInput
             style={[styles.input, rutNuevoError && styles.inputConError]}
             placeholder="RUT (opcional) — ej: 12345678-9"
+            placeholderTextColor={colors.textMutedOnNavy}
             value={rutNuevo}
             onChangeText={(t) => {
               setRutNuevo(t);
@@ -160,7 +163,7 @@ export default function JefeGuardiasGuardiasScreen() {
             }}
             autoCapitalize="characters"
           />
-          <TextInput style={styles.input} placeholder="Teléfono (opcional)" value={telefonoNuevo} onChangeText={setTelefonoNuevo} keyboardType="phone-pad" />
+          <TextInput style={styles.input} placeholder="Teléfono (opcional)" placeholderTextColor={colors.textMutedOnNavy} value={telefonoNuevo} onChangeText={setTelefonoNuevo} keyboardType="phone-pad" />
           <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
             <Text style={styles.botonCrearTexto}>{creando ? "Creando..." : "Crear guardia"}</Text>
           </TouchableOpacity>
@@ -190,6 +193,7 @@ export default function JefeGuardiasGuardiasScreen() {
               <TextInput
                 style={[styles.input, rutEditarError && styles.inputConError]}
                 placeholder="RUT"
+                placeholderTextColor={colors.textMutedOnNavy}
                 value={rutEditar}
                 onChangeText={(t) => {
                   setRutEditar(t);
@@ -206,17 +210,17 @@ export default function JefeGuardiasGuardiasScreen() {
                 }}
                 autoCapitalize="characters"
               />
-              <TextInput style={styles.input} placeholder="Teléfono" value={telefonoEditar} onChangeText={setTelefonoEditar} keyboardType="phone-pad" />
+              <TextInput style={styles.input} placeholder="Teléfono" placeholderTextColor={colors.textMutedOnNavy} value={telefonoEditar} onChangeText={setTelefonoEditar} keyboardType="phone-pad" />
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
-                  style={[styles.botonToggle, styles.botonActivar, { flex: 1 }]}
+                  style={[styles.botonToggle, styles.botonPrimario, { flex: 1 }]}
                   onPress={() => handleGuardarPerfil(item.id_usuario)}
                   disabled={guardandoPerfil}
                 >
-                  <Text style={styles.botonToggleTexto}>{guardandoPerfil ? "Guardando..." : "Guardar"}</Text>
+                  <Text style={[styles.botonToggleTexto, { color: colors.botonNaranjaTexto }]}>{guardandoPerfil ? "Guardando..." : "Guardar"}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]} onPress={() => setPerfilEnEdicion(null)}>
-                  <Text style={styles.botonToggleTexto}>Cancelar</Text>
+                <TouchableOpacity style={[styles.botonToggle, styles.botonSecundario, { flex: 1 }]} onPress={() => setPerfilEnEdicion(null)}>
+                  <Text style={[styles.botonToggleTexto, { color: colors.textOnNavy }]}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -232,21 +236,23 @@ export default function JefeGuardiasGuardiasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 8 },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 10 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  form: { backgroundColor: colors.navy800, borderRadius: 12, padding: 16, marginBottom: 8 },
+  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textOnNavy },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 10, backgroundColor: colors.navy700, color: colors.textOnNavy },
   inputConError: { borderColor: "#c0392b", borderWidth: 1.5 },
-  botonCrear: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center" },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14 },
-  nombreItem: { fontSize: 16, fontWeight: "700" },
-  detalle: { color: "#666", marginTop: 2, fontSize: 13 },
+  botonCrear: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 14, alignItems: "center" },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14 },
+  nombreItem: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
   botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  botonPrimario: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonSecundario: { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.textMutedOnNavy },
   botonActivar: { backgroundColor: "#1a9d5c" },
   botonDesactivar: { backgroundColor: "#c0392b" },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  subForm: { marginTop: 10, borderTopWidth: 1, borderTopColor: "#f0f0f0", paddingTop: 10, gap: 8 },
-  enlaceEditarPerfil: { color: "#014BD2", fontWeight: "700", fontSize: 12, marginTop: 10 },
+  subForm: { marginTop: 10, borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: 10, gap: 8 },
+  enlaceEditarPerfil: { color: colors.goldSoft, fontWeight: "700", fontSize: 12, marginTop: 10 },
 });

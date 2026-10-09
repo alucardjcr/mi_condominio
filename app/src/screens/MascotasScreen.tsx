@@ -16,6 +16,7 @@ import { crearMascota, eliminarMascota, getEspeciesMascota, getMascotas } from "
 import { EspecieMascota, Mascota } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 import DateField from "../components/DateField";
 import FotoCapture from "../components/FotoCapture";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
@@ -139,7 +140,7 @@ export default function MascotasScreen({ navigation }: any) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -148,7 +149,7 @@ export default function MascotasScreen({ navigation }: any) {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
     >
       {!esAdmin && (
         <TouchableOpacity style={styles.botonNuevo} onPress={() => setMostrarForm((v) => !v)}>
@@ -159,7 +160,7 @@ export default function MascotasScreen({ navigation }: any) {
       {mostrarForm && (
         <View style={styles.card}>
           <Text style={styles.label}>Nombre *</Text>
-          <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Ej: Firulais" />
+          <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Ej: Firulais" placeholderTextColor={colors.textMutedOnNavy} />
 
           <SelectModal
             label="Especie"
@@ -181,7 +182,7 @@ export default function MascotasScreen({ navigation }: any) {
             }}
           />
           {especieSel?.label === "Otra" && (
-            <TextInput style={styles.input} value={especieOtra} onChangeText={setEspecieOtra} placeholder="Escribe la especie" />
+            <TextInput style={styles.input} value={especieOtra} onChangeText={setEspecieOtra} placeholder="Escribe la especie" placeholderTextColor={colors.textMutedOnNavy} />
           )}
 
           <SelectModal
@@ -201,13 +202,13 @@ export default function MascotasScreen({ navigation }: any) {
             }}
           />
           {razaSel?.label === "Otra" && (
-            <TextInput style={styles.input} value={razaOtra} onChangeText={setRazaOtra} placeholder="Escribe la raza" />
+            <TextInput style={styles.input} value={razaOtra} onChangeText={setRazaOtra} placeholder="Escribe la raza" placeholderTextColor={colors.textMutedOnNavy} />
           )}
 
           <DateField label="Fecha de nacimiento (opcional)" value={fechaNacimiento} onChange={setFechaNacimiento} maximumDate={new Date()} opcional />
 
           <Text style={styles.label}>Número de chip</Text>
-          <TextInput style={styles.input} value={numeroChip} onChangeText={setNumeroChip} placeholder="Si tiene chip identificatorio" />
+          <TextInput style={styles.input} value={numeroChip} onChangeText={setNumeroChip} placeholder="Si tiene chip identificatorio" placeholderTextColor={colors.textMutedOnNavy} />
 
           <FotoCapture label="Foto de la mascota" value={foto} onChange={setFoto} recorteCuadrado />
 
@@ -241,7 +242,7 @@ export default function MascotasScreen({ navigation }: any) {
               {textoEdadMascota(m.fecha_nacimiento) && <Text style={styles.detalle}>🎂 {textoEdadMascota(m.fecha_nacimiento)}</Text>}
               {m.numero_chip && <Text style={styles.detalle}>Chip: {m.numero_chip}</Text>}
             </View>
-            <Text style={{ fontSize: 18, color: "#014BD2" }}>›</Text>
+            <Text style={{ fontSize: 18, color: colors.goldSoft }}>›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.botonEliminar} onPress={() => handleEliminar(m)}>
             <Text style={styles.botonEliminarTexto}>Eliminar</Text>
@@ -253,21 +254,21 @@ export default function MascotasScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  botonNuevo: { backgroundColor: "#0f766e", borderRadius: 10, padding: 14, alignItems: "center" },
-  botonNuevoTexto: { color: "#fff", fontWeight: "700" },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  botonNuevo: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 14, alignItems: "center" },
+  botonNuevoTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardHeader: { flexDirection: "row", gap: 12, alignItems: "center" },
-  foto: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#eee" },
+  foto: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.navy700 },
   fotoVacia: { alignItems: "center", justifyContent: "center" },
-  nombre: { fontSize: 16, fontWeight: "700" },
-  detalle: { color: "#666", marginTop: 2, fontSize: 13 },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginTop: 10 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: "#fff", marginTop: 4 },
-  botonGuardar: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 16 },
-  botonTexto: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  botonEliminar: { marginTop: 10, alignItems: "center", borderTopWidth: 1, borderTopColor: "#f0f0f0", paddingTop: 10 },
+  nombre: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginTop: 10 },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: colors.navy700, color: colors.textOnNavy, marginTop: 4 },
+  botonGuardar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 14, alignItems: "center", marginTop: 16 },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "700", fontSize: 15 },
+  botonEliminar: { marginTop: 10, alignItems: "center", borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: 10 },
   botonEliminarTexto: { color: "#c0392b", fontWeight: "700", fontSize: 13 },
 });

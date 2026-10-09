@@ -5,6 +5,7 @@ import { adminActualizarGastoComunUnidad, adminGetUnidadesGastoComun } from "../
 import { UnidadGastoComun } from "../../api/types";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
+import { colors } from "../../theme/theme";
 
 // Gasto común por depto (ronda 17), a pedido del usuario: "el flg_gastocomun
 // por ahora solo lo usaremos para identificar quien tiene el gasto comun al
@@ -63,7 +64,7 @@ export default function AdminGastoComunScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -88,6 +89,7 @@ export default function AdminGastoComunScreen() {
           <TextInput
             style={styles.buscador}
             placeholder="Buscar por torre o depto..."
+            placeholderTextColor={colors.textMutedOnNavy}
             value={busqueda}
             onChangeText={setBusqueda}
           />
@@ -123,21 +125,22 @@ export default function AdminGastoComunScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  intro: { color: "#666", fontSize: 13, marginBottom: 8, lineHeight: 18 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  intro: { color: colors.textMutedOnNavy, fontSize: 13, marginBottom: 8, lineHeight: 18 },
   resumenDeuda: { color: "#c0392b", fontWeight: "700", fontSize: 13, marginBottom: 10 },
   buscador: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
     marginBottom: 8,
   },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" },
-  nombreItem: { fontSize: 16, fontWeight: "700" },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" },
+  nombreItem: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
   estado: { marginTop: 2, fontSize: 13, fontWeight: "600" },
   estadoAlDia: { color: "#1a9d5c" },
   estadoConDeuda: { color: "#c0392b" },

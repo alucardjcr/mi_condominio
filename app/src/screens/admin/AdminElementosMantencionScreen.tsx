@@ -14,6 +14,7 @@ import { adminActualizarElementoMantencion, adminCrearElementoMantencion, adminG
 import { TipoElementoMantencion } from "../../api/types";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
+import { colors } from "../../theme/theme";
 
 // Ronda 19, a pedido del usuario: "cada condominio puede elegir su
 // catálogo" — a diferencia de otros catálogos cerrados del MVP (tipo de
@@ -76,7 +77,7 @@ export default function AdminElementosMantencionScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -93,6 +94,7 @@ export default function AdminElementosMantencionScreen() {
           <TextInput
             style={styles.input}
             placeholder="Ej: Techo Torre A, Piscina, Ascensor 1"
+            placeholderTextColor={colors.textMutedOnNavy}
             value={nombre}
             onChangeText={setNombre}
           />
@@ -121,17 +123,33 @@ export default function AdminElementosMantencionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 8 },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 16 },
-  botonCrear: { backgroundColor: "#795548", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 14 },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 20 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" },
-  nombreItem: { fontSize: 16, fontWeight: "700" },
-  detalle: { color: "#666", marginTop: 2, fontSize: 13 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  form: { backgroundColor: colors.navy800, borderRadius: 12, padding: 16, marginBottom: 8 },
+  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textOnNavy },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.navy600,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
+  },
+  botonCrear: {
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+    marginTop: 14,
+  },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 20 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" },
+  nombreItem: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
   botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   botonActivar: { backgroundColor: "#1a9d5c" },
   botonDesactivar: { backgroundColor: "#c0392b" },

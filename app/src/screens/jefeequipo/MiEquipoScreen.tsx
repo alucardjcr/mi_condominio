@@ -215,6 +215,7 @@ export default function MiEquipoScreen() {
                             value={slot.hora_inicio}
                             onChangeText={(v) => handleCambiarHora(d.valor, "hora_inicio", v)}
                             placeholder="08:00"
+                            placeholderTextColor={colors.textMutedOnNavy}
                             keyboardType="numbers-and-punctuation"
                             maxLength={5}
                           />
@@ -224,6 +225,7 @@ export default function MiEquipoScreen() {
                             value={slot.hora_termino}
                             onChangeText={(v) => handleCambiarHora(d.valor, "hora_termino", v)}
                             placeholder="12:00"
+                            placeholderTextColor={colors.textMutedOnNavy}
                             keyboardType="numbers-and-punctuation"
                             maxLength={5}
                           />
@@ -240,7 +242,7 @@ export default function MiEquipoScreen() {
                     disabled={guardando}
                   >
                     {guardando ? (
-                      <ActivityIndicator color={colors.white} size="small" />
+                      <ActivityIndicator color={colors.botonNaranjaTexto} size="small" />
                     ) : (
                       <Text style={styles.botonGuardarTexto}>Guardar horario</Text>
                     )}
@@ -276,54 +278,55 @@ const styles = StyleSheet.create({
   tituloPagina: { ...typography.title, color: colors.textOnNavy },
   subtituloPagina: { ...typography.small, color: colors.textMutedOnNavy, marginBottom: spacing.sm },
 
-  cardVacio: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
-  vacioTexto: { color: colors.textMuted, lineHeight: 20 },
+  cardVacio: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg },
+  vacioTexto: { color: colors.textMutedOnNavy, lineHeight: 20 },
 
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.md },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.offWhite, alignItems: "center", justifyContent: "center" },
-  avatarTexto: { fontWeight: "800", color: colors.navy900 },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.navy700, alignItems: "center", justifyContent: "center" },
+  avatarTexto: { fontWeight: "800", color: colors.textOnNavy },
   filaNombreBadge: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  nombreItem: { fontSize: 15, fontWeight: "700", color: colors.textDark },
+  nombreItem: { fontSize: 15, fontWeight: "700", color: colors.textOnNavy },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
   badgeTexto: { fontSize: 11, fontWeight: "700" },
-  detalle: { color: colors.textMuted, marginTop: 2, fontSize: 12 },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 12 },
 
   botonEditarHorario: {
     marginTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.navy600,
     paddingTop: spacing.sm,
     alignItems: "center",
   },
-  botonEditarHorarioTexto: { color: colors.info, fontWeight: "700", fontSize: 13 },
+  botonEditarHorarioTexto: { color: colors.goldSoft, fontWeight: "700", fontSize: 13 },
 
-  editorHorario: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, gap: 8 },
+  editorHorario: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: spacing.sm, gap: 8 },
   filaDia: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  chipDia: { width: 52, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.border, alignItems: "center" },
-  chipDiaActivo: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
-  chipDiaTexto: { fontSize: 12, fontWeight: "700", color: colors.textMuted },
-  chipDiaTextoActivo: { color: colors.navy900 },
+  chipDia: { width: 52, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, alignItems: "center" },
+  chipDiaActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  chipDiaTexto: { fontSize: 12, fontWeight: "700", color: colors.textMutedOnNavy },
+  chipDiaTextoActivo: { color: colors.goldSoft },
   horasFila: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
   inputHora: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
+    backgroundColor: colors.navy700,
     borderRadius: radius.sm,
     paddingVertical: 8,
     paddingHorizontal: 10,
     fontSize: 14,
-    color: colors.textDark,
+    color: colors.textOnNavy,
     width: 68,
     textAlign: "center",
   },
-  horaGuion: { color: colors.textMuted },
+  horaGuion: { color: colors.textMutedOnNavy },
 
   filaBotones: { flexDirection: "row", gap: 8, marginTop: spacing.sm },
   boton: { flex: 1, borderRadius: radius.sm, paddingVertical: 12, alignItems: "center" },
-  botonGuardar: { backgroundColor: colors.navy900 },
-  botonGuardarTexto: { color: colors.white, fontWeight: "700" },
-  botonCancelar: { backgroundColor: colors.offWhite },
-  botonCancelarTexto: { color: colors.textMuted, fontWeight: "700" },
+  botonGuardar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonGuardarTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
+  botonCancelar: { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.textMutedOnNavy },
+  botonCancelarTexto: { color: colors.textOnNavy, fontWeight: "700" },
 
   banner: { backgroundColor: colors.navy700, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.sm, marginBottom: spacing.lg },
   bannerTexto: { color: colors.textOnNavy, fontSize: 12, lineHeight: 18 },

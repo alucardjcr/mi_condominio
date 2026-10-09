@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Image, PanResponder, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import ViewShot, { ViewShotRef } from "react-native-view-shot";
+import { colors } from "../theme/theme";
 
 interface Props {
   label?: string;
@@ -104,32 +105,33 @@ export default function SignaturePad({ label = "Firma de quien retira *", value,
 
 const styles = StyleSheet.create({
   wrap: { marginTop: 12 },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 4 },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy, marginBottom: 4 },
   lienzoWrap: { borderRadius: 10, overflow: "hidden" },
   lienzo: {
     height: ALTO_LIENZO,
     backgroundColor: "#fafafa",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
   },
   acciones: { flexDirection: "row", gap: 10, marginTop: 8 },
   botonSecundario: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
+    backgroundColor: colors.navy700,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
   },
-  botonSecundarioTexto: { color: "#555", fontWeight: "600" },
-  botonPrimario: { flex: 1, backgroundColor: "#014BD2", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
-  botonPrimarioTexto: { color: "#fff", fontWeight: "700" },
+  botonSecundarioTexto: { color: colors.textOnNavy, fontWeight: "600" },
+  botonPrimario: { flex: 1, backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  botonPrimarioTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
   botonDeshabilitado: { opacity: 0.5 },
   previewWrap: {
     height: ALTO_LIENZO,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     backgroundColor: "#fafafa",
   },

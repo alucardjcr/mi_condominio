@@ -16,6 +16,7 @@ import { actualizarEstadoArriendo, getPizarronArriendo } from "../api/client";
 import { CupoArriendo } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 const GLS_DISPONIBLE_ARRIENDO = "Disponible para arriendo";
 
@@ -99,7 +100,7 @@ export default function EstacionamientosArriendoScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -108,7 +109,7 @@ export default function EstacionamientosArriendoScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
     >
       <Text style={styles.subtitulo}>
         Cupos de residente del condominio. Los que aparecen "Disponible para arriendo" tienen precio — puedes
@@ -144,6 +145,7 @@ export default function EstacionamientosArriendoScreen() {
                       value={precioEditado}
                       onChangeText={setPrecioEditado}
                       placeholder="Ej: 45000"
+                      placeholderTextColor={colors.textMutedOnNavy}
                       keyboardType="numeric"
                     />
                     <View style={styles.botonesRow}>
@@ -152,12 +154,12 @@ export default function EstacionamientosArriendoScreen() {
                         onPress={() => handleGuardarDisponible(cupo)}
                         disabled={guardando === cupo.id_estacionamiento}
                       >
-                        <Text style={styles.botonTexto}>
+                        <Text style={[styles.botonTexto, styles.botonGuardarTexto]}>
                           {guardando === cupo.id_estacionamiento ? "Guardando..." : "Publicar"}
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.boton, { backgroundColor: "#999", flex: 1 }]}
+                        style={[styles.boton, styles.botonCancelar, { flex: 1 }]}
                         onPress={() => setEditandoId(null)}
                       >
                         <Text style={styles.botonTexto}>Cancelar</Text>
@@ -171,6 +173,8 @@ export default function EstacionamientosArriendoScreen() {
                       value={disponible}
                       onValueChange={(v) => (v ? empezarEdicion(cupo) : handleMarcarOcupado(cupo))}
                       disabled={guardando === cupo.id_estacionamiento}
+                      trackColor={{ false: colors.navy600, true: colors.success }}
+                      thumbColor={colors.textOnNavy}
                     />
                   </View>
                 )}
@@ -184,26 +188,28 @@ export default function EstacionamientosArriendoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  subtitulo: { color: "#888", fontSize: 13, marginBottom: 4 },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  subtitulo: { color: colors.textMutedOnNavy, fontSize: 13, marginBottom: 4 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  numero: { fontSize: 18, fontWeight: "800", color: "#222" },
+  numero: { fontSize: 18, fontWeight: "800", color: colors.textOnNavy },
   badge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   badgeDisponible: { backgroundColor: "#e6f7ee" },
   badgeOcupado: { backgroundColor: "#f0f0f0" },
   badgeTexto: { fontSize: 12, fontWeight: "700", color: "#333" },
-  detalle: { color: "#555", marginTop: 4, fontSize: 13 },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 4, fontSize: 13 },
   precio: { color: "#1a9d5c", fontWeight: "800", fontSize: 15, marginTop: 6 },
-  editorWrap: { marginTop: 10, borderTopWidth: 1, borderTopColor: "#f0f0f0", paddingTop: 10 },
+  editorWrap: { marginTop: 10, borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: 10 },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  switchLabel: { fontSize: 14, color: "#333", fontWeight: "600" },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: "#fff" },
+  switchLabel: { fontSize: 14, color: colors.textOnNavy, fontWeight: "600" },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginBottom: 4 },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: colors.navy700, color: colors.textOnNavy },
   botonesRow: { flexDirection: "row", gap: 8, marginTop: 8 },
   boton: { borderRadius: 8, paddingVertical: 10, alignItems: "center" },
-  botonGuardar: { backgroundColor: "#1a9d5c" },
-  botonTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  botonGuardar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonGuardarTexto: { color: colors.botonNaranjaTexto },
+  botonCancelar: { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600 },
+  botonTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 13 },
 });

@@ -12,6 +12,7 @@ import { getDisponibilidad } from "../api/client";
 import { Estacionamiento } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 const COLOR_POR_ESTADO: Record<string, string> = {
   Disponible: "#1a9d5c",
@@ -57,7 +58,7 @@ export default function DisponibilidadScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -85,6 +86,7 @@ export default function DisponibilidadScreen() {
               setRefreshing(true);
               cargar();
             }}
+            tintColor={colors.textOnNavy}
           />
         }
         renderItem={({ item }) => (
@@ -119,13 +121,13 @@ export default function DisponibilidadScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   resumen: { padding: 16, paddingBottom: 4 },
-  resumenTexto: { fontSize: 16, fontWeight: "600", color: "#222" },
+  resumenTexto: { fontSize: 16, fontWeight: "600", color: colors.textOnNavy },
   error: { color: "#c0392b", paddingHorizontal: 16 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy800,
     borderRadius: 12,
     padding: 14,
     shadowColor: "#000",
@@ -134,9 +136,9 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  numero: { fontSize: 18, fontWeight: "700" },
+  numero: { fontSize: 18, fontWeight: "700", color: colors.textOnNavy },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   badgeTexto: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  ubicacion: { color: "#666", marginTop: 4 },
-  ocupante: { color: "#333", marginTop: 6, fontWeight: "500" },
+  ubicacion: { color: colors.textMutedOnNavy, marginTop: 4 },
+  ocupante: { color: colors.textOnNavy, marginTop: 6, fontWeight: "500" },
 });

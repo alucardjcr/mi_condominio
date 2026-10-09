@@ -53,14 +53,16 @@ const styles = StyleSheet.create({
   titulo: { ...typography.title, color: colors.textOnNavy, textAlign: "center", marginBottom: spacing.sm },
   texto: { ...typography.body, color: colors.textMutedOnNavy, textAlign: "center", marginBottom: spacing.xl },
   botonPagar: {
-    backgroundColor: colors.gold,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: radius.lg,
     paddingVertical: 18,
     paddingHorizontal: spacing.xl,
     width: "100%",
     alignItems: "center",
   },
-  botonPagarTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
+  botonPagarTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "800" },
   salirWrap: { marginTop: spacing.xl, alignItems: "center" },
   salirTexto: { color: colors.textMutedOnNavy, fontSize: 14, fontWeight: "600" },
 });

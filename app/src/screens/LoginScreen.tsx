@@ -167,7 +167,7 @@ export default function LoginScreen({ navigation }: any) {
             activeOpacity={0.85}
           >
             {cargando ? (
-              <ActivityIndicator color={colors.navy900} />
+              <ActivityIndicator color={colors.botonNaranjaTexto} />
             ) : (
               <View style={styles.botonContenido}>
                 <Text style={styles.botonTexto}>Ingresar</Text>
@@ -236,7 +236,9 @@ const styles = StyleSheet.create({
   },
   error: { color: "#FF8A80", marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
   boton: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: radius.pill,
     padding: 16,
     alignItems: "center",
@@ -244,8 +246,8 @@ const styles = StyleSheet.create({
   },
   botonDeshabilitado: { opacity: 0.7 },
   botonContenido: { flexDirection: "row", alignItems: "center", gap: 8 },
-  botonTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
-  botonFlecha: { color: colors.navy900, fontSize: 18, fontWeight: "800" },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "800" },
+  botonFlecha: { color: colors.botonNaranjaTexto, fontSize: 18, fontWeight: "800" },
   olvideWrap: { marginTop: spacing.md, alignItems: "center" },
   olvideTexto: { color: colors.textOnNavy, fontSize: 14, fontWeight: "700" },
   privacidadWrap: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: spacing.lg, paddingHorizontal: spacing.md },

@@ -120,7 +120,7 @@ export default function AdminRetencionScreen() {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -146,7 +146,7 @@ export default function AdminRetencionScreen() {
                 value={estado.cantidad}
                 onChangeText={(t) => setValores((prev) => ({ ...prev, [p.categoria]: { ...estado, cantidad: t } }))}
                 placeholder="Sin configurar"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.textMutedOnNavy}
                 keyboardType="number-pad"
               />
               <TouchableOpacity
@@ -155,7 +155,7 @@ export default function AdminRetencionScreen() {
                 disabled={guardandoCategoria === p.categoria}
               >
                 {guardandoCategoria === p.categoria ? (
-                  <ActivityIndicator color={colors.navy900} size="small" />
+                  <ActivityIndicator color={colors.botonNaranjaTexto} size="small" />
                 ) : (
                   <Text style={styles.botonGuardarTexto}>Guardar</Text>
                 )}
@@ -199,33 +199,33 @@ export default function AdminRetencionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.offWhite, gap: spacing.md },
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
-  intro: { ...typography.small, color: colors.textMuted },
+  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.navy900, gap: spacing.md },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  intro: { ...typography.small, color: colors.textMutedOnNavy },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600" },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
-  nombreCategoria: { ...typography.heading, color: colors.textDark, fontSize: 15 },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg },
+  nombreCategoria: { ...typography.heading, color: colors.textOnNavy, fontSize: 15 },
   filaInput: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 12,
     fontSize: 15,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
-  botonGuardar: { backgroundColor: colors.gold, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 10 },
-  botonGuardarTexto: { color: colors.navy900, fontWeight: "800", fontSize: 13 },
+  botonGuardar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 10 },
+  botonGuardarTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 13 },
   botonDeshabilitado: { opacity: 0.6 },
   filaUnidades: { flexDirection: "row", gap: spacing.xs, marginTop: spacing.sm },
-  opcionUnidad: { flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: 8, alignItems: "center" },
-  opcionUnidadActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
-  opcionUnidadTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 12 },
-  opcionUnidadTextoActivo: { color: colors.navy900 },
+  opcionUnidad: { flex: 1, borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.sm, paddingVertical: 8, alignItems: "center" },
+  opcionUnidadActiva: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  opcionUnidadTexto: { color: colors.textMutedOnNavy, fontWeight: "700", fontSize: 12 },
+  opcionUnidadTextoActivo: { color: colors.goldSoft },
   botonEjecutar: { backgroundColor: colors.danger, borderRadius: radius.sm, padding: 16, alignItems: "center", marginTop: spacing.md },
   botonEjecutarTexto: { color: colors.white, fontWeight: "800" },
-  ayudaEjecutar: { ...typography.small, color: colors.textMuted, textAlign: "center" },
+  ayudaEjecutar: { ...typography.small, color: colors.textMutedOnNavy, textAlign: "center" },
 });
 

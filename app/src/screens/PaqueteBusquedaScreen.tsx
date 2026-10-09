@@ -13,6 +13,7 @@ import { buscarPaquetes } from "../api/client";
 import { EstadoPaqueteGls, Paquete } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
 
 const ESTADOS: EstadoPaqueteGls[] = [
@@ -77,21 +78,21 @@ export default function PaqueteBusquedaScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <View style={styles.filtros}>
         <View style={styles.filaFechas}>
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>Fecha inicio</Text>
-            <TextInput style={styles.input} value={fechaInicio} onChangeText={setFechaInicio} placeholder="AAAA-MM-DD" autoCapitalize="none" />
+            <TextInput style={styles.input} value={fechaInicio} onChangeText={setFechaInicio} placeholder="AAAA-MM-DD" placeholderTextColor={colors.textMutedOnNavy} autoCapitalize="none" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>Fecha término</Text>
-            <TextInput style={styles.input} value={fechaTermino} onChangeText={setFechaTermino} placeholder="AAAA-MM-DD" autoCapitalize="none" />
+            <TextInput style={styles.input} value={fechaTermino} onChangeText={setFechaTermino} placeholder="AAAA-MM-DD" placeholderTextColor={colors.textMutedOnNavy} autoCapitalize="none" />
           </View>
         </View>
 
         <Text style={styles.label}>Nombre o RUT del residente</Text>
-        <TextInput style={styles.input} value={q} onChangeText={setQ} placeholder="Ej: Juan Pérez o 12345678-9" />
+        <TextInput style={styles.input} value={q} onChangeText={setQ} placeholder="Ej: Juan Pérez o 12345678-9" placeholderTextColor={colors.textMutedOnNavy} />
 
         <SelectModal
           label="Estado (opcional)"
@@ -107,7 +108,7 @@ export default function PaqueteBusquedaScreen() {
         )}
 
         <TouchableOpacity style={styles.boton} onPress={handleBuscar} disabled={buscando}>
-          {buscando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botonTexto}>Buscar</Text>}
+          {buscando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Buscar</Text>}
         </TouchableOpacity>
 
         {buscado && (
@@ -152,20 +153,20 @@ export default function PaqueteBusquedaScreen() {
 }
 
 const styles = StyleSheet.create({
-  filtros: { padding: 16, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  filtros: { padding: 16, borderBottomWidth: 1, borderBottomColor: colors.navy600 },
   filaFechas: { flexDirection: "row", gap: 12 },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 4, marginTop: 10 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15 },
-  limpiarEstado: { color: "#014BD2", fontSize: 12, marginTop: 4 },
-  boton: { backgroundColor: "#333", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 16 },
-  botonTexto: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  totalGeneral: { marginTop: 12, fontSize: 14, fontWeight: "700", color: "#014BD2" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginBottom: 4, marginTop: 10 },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: colors.navy700, color: colors.textOnNavy },
+  limpiarEstado: { color: colors.goldSoft, fontSize: 12, marginTop: 4 },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 14, alignItems: "center", marginTop: 16 },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "700" },
+  totalGeneral: { marginTop: 12, fontSize: 14, fontWeight: "700", color: colors.goldSoft },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between" },
-  tipo: { fontSize: 12, color: "#888", fontWeight: "600" },
-  estado: { fontSize: 12, color: "#014BD2", fontWeight: "700" },
-  receptor: { fontSize: 16, fontWeight: "700", color: "#222", marginTop: 2 },
-  detalleTexto: { color: "#555", marginTop: 2, fontSize: 13 },
-  observaciones: { color: "#c0392b", marginTop: 4, fontSize: 12, fontStyle: "italic" },
+  tipo: { fontSize: 12, color: colors.textMutedOnNavy, fontWeight: "600" },
+  estado: { fontSize: 12, color: colors.goldSoft, fontWeight: "700" },
+  receptor: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy, marginTop: 2 },
+  detalleTexto: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
+  observaciones: { color: colors.danger, marginTop: 4, fontSize: 12, fontStyle: "italic" },
 });

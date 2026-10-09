@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { colors } from "../theme/theme";
 import { cambiarPassword } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { validarPassword, AYUDA_PASSWORD } from "../utils/validarPassword";
@@ -46,27 +47,27 @@ export default function CambiarPasswordScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Contraseña actual</Text>
-      <TextInput style={styles.input} value={actual} onChangeText={setActual} secureTextEntry placeholder="••••••" />
+      <TextInput style={styles.input} value={actual} onChangeText={setActual} secureTextEntry placeholder="••••••" placeholderTextColor={colors.textMutedOnNavy} />
 
       <Text style={styles.label}>Contraseña nueva</Text>
       <Text style={styles.ayuda}>{AYUDA_PASSWORD}</Text>
-      <TextInput style={styles.input} value={nueva} onChangeText={setNueva} secureTextEntry placeholder="ej: Matimania1500!" />
+      <TextInput style={styles.input} value={nueva} onChangeText={setNueva} secureTextEntry placeholder="ej: Matimania1500!" placeholderTextColor={colors.textMutedOnNavy} />
 
       <Text style={styles.label}>Confirmar contraseña nueva</Text>
-      <TextInput style={styles.input} value={confirmacion} onChangeText={setConfirmacion} secureTextEntry placeholder="••••••" />
+      <TextInput style={styles.input} value={confirmacion} onChangeText={setConfirmacion} secureTextEntry placeholder="••••••" placeholderTextColor={colors.textMutedOnNavy} />
 
       <TouchableOpacity style={styles.boton} onPress={handleGuardar} disabled={guardando}>
-        {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botonTexto}>Guardar</Text>}
+        {guardando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Guardar</Text>}
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: "#fff" },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginTop: 16 },
-  ayuda: { fontSize: 12, color: "#888", marginTop: 2 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 14, fontSize: 16, marginTop: 4 },
-  boton: { backgroundColor: "#014BD2", borderRadius: 10, padding: 16, alignItems: "center", marginTop: 28 },
-  botonTexto: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  container: { flex: 1, padding: 24, backgroundColor: colors.navy900 },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy, marginTop: 16 },
+  ayuda: { fontSize: 12, color: colors.textMutedOnNavy, marginTop: 2 },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 14, fontSize: 16, marginTop: 4, backgroundColor: colors.navy700, color: colors.textOnNavy },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 16, alignItems: "center", marginTop: 28 },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "700" },
 });

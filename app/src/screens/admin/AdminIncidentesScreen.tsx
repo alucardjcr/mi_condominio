@@ -139,13 +139,13 @@ export default function AdminIncidentesScreen() {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.offWhite }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <ScrollView contentContainerStyle={styles.lista}>
         <Text style={styles.intro}>
           Si detectas un incidente que compromete datos personales (ej. una fuga, acceso indebido), regístralo acá —
@@ -229,7 +229,7 @@ export default function AdminIncidentesScreen() {
               value={fechaDeteccion}
               onChangeText={setFechaDeteccion}
               placeholder="YYYY-MM-DD HH:mm"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
             />
 
             <Text style={styles.label}>Descripción del incidente</Text>
@@ -238,7 +238,7 @@ export default function AdminIncidentesScreen() {
               value={descripcion}
               onChangeText={setDescripcion}
               placeholder="¿Qué pasó?"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               multiline
             />
 
@@ -248,7 +248,7 @@ export default function AdminIncidentesScreen() {
               value={datosAfectados}
               onChangeText={setDatosAfectados}
               placeholder="Ej: nombres, RUT y patentes de residentes"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               multiline
             />
 
@@ -258,12 +258,12 @@ export default function AdminIncidentesScreen() {
               value={personasAfectadas}
               onChangeText={setPersonasAfectadas}
               placeholder="Número"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               keyboardType="number-pad"
             />
 
             <TouchableOpacity style={[styles.boton, creando && styles.botonDeshabilitado]} onPress={handleCrear} disabled={creando}>
-              {creando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Registrar</Text>}
+              {creando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Registrar</Text>}
             </TouchableOpacity>
             <TouchableOpacity style={styles.botonCancelar} onPress={() => setModalCrearAbierto(false)}>
               <Text style={styles.botonCancelarTexto}>Cancelar</Text>
@@ -282,7 +282,7 @@ export default function AdminIncidentesScreen() {
               value={accionesCierre}
               onChangeText={setAccionesCierre}
               placeholder="Describe qué se hizo..."
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               multiline
             />
             <TouchableOpacity
@@ -290,7 +290,7 @@ export default function AdminIncidentesScreen() {
               onPress={handleConfirmarCierre}
               disabled={accionando !== null}
             >
-              {accionando !== null ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Cerrar incidente</Text>}
+              {accionando !== null ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Cerrar incidente</Text>}
             </TouchableOpacity>
             <TouchableOpacity style={styles.botonCancelar} onPress={() => setIncidenteCerrando(null)}>
               <Text style={styles.botonCancelarTexto}>Cancelar</Text>
@@ -303,45 +303,45 @@ export default function AdminIncidentesScreen() {
 }
 
 const styles = StyleSheet.create({
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   lista: { padding: spacing.md, gap: spacing.sm },
-  intro: { ...typography.small, color: colors.textMuted, marginBottom: spacing.xs },
-  botonCrear: { backgroundColor: colors.gold, borderRadius: radius.sm, padding: 14, alignItems: "center", marginBottom: spacing.sm },
-  botonCrearTexto: { color: colors.navy900, fontWeight: "800" },
+  intro: { ...typography.small, color: colors.textMutedOnNavy, marginBottom: spacing.xs },
+  botonCrear: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 14, alignItems: "center", marginBottom: spacing.sm },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600" },
-  vacio: { textAlign: "center", color: colors.textMuted, marginTop: spacing.xl },
-  tarjeta: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: spacing.xl },
+  tarjeta: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.navy600 },
   tarjetaHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  fecha: { fontSize: 12, color: colors.textMuted, fontWeight: "700" },
+  fecha: { fontSize: 12, color: colors.textMutedOnNavy, fontWeight: "700" },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   badgeTexto: { fontSize: 11, fontWeight: "800", color: colors.textDark },
-  descripcion: { ...typography.body, color: colors.textDark, marginTop: spacing.xs },
-  datosAfectados: { ...typography.small, color: colors.textMuted, marginTop: 2 },
+  descripcion: { ...typography.body, color: colors.textOnNavy, marginTop: spacing.xs },
+  datosAfectados: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
   acciones: { marginTop: spacing.sm, gap: spacing.xs },
-  botonAccion: { borderWidth: 1.5, borderColor: colors.navy900, borderRadius: radius.sm, padding: 10, alignItems: "center" },
-  botonAccionTexto: { color: colors.navy900, fontWeight: "700", fontSize: 13 },
+  botonAccion: { borderWidth: 1.5, borderColor: colors.navy600, borderRadius: radius.sm, padding: 10, alignItems: "center" },
+  botonAccionTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 13 },
   notificadoTexto: { color: colors.success, fontSize: 12, fontWeight: "700" },
   botonCerrar: { borderWidth: 1.5, borderColor: colors.danger, borderRadius: radius.sm, padding: 10, alignItems: "center" },
   botonCerrarTexto: { color: colors.danger, fontWeight: "700", fontSize: 13 },
-  accionesTomadasTexto: { ...typography.small, color: colors.textMuted, marginTop: spacing.sm, fontStyle: "italic" },
+  accionesTomadasTexto: { ...typography.small, color: colors.textMutedOnNavy, marginTop: spacing.sm, fontStyle: "italic" },
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  modalCard: { backgroundColor: colors.white, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg, maxHeight: "85%" },
-  modalTitulo: { ...typography.heading, color: colors.textDark },
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
+  modalCard: { backgroundColor: colors.navy800, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg, maxHeight: "85%" },
+  modalTitulo: { ...typography.heading, color: colors.textOnNavy },
+  label: { ...typography.label, color: colors.textOnNavy, marginTop: spacing.sm },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
     marginTop: 6,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
   inputMultilinea: { minHeight: 70, textAlignVertical: "top" },
-  boton: { backgroundColor: colors.gold, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
-  botonTexto: { color: colors.navy900, fontWeight: "800" },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
   botonDeshabilitado: { opacity: 0.6 },
   botonCancelar: { alignItems: "center", marginTop: spacing.md, paddingBottom: spacing.sm },
-  botonCancelarTexto: { color: colors.textMuted, fontWeight: "600" },
+  botonCancelarTexto: { color: colors.textMutedOnNavy, fontWeight: "600" },
 });

@@ -98,7 +98,7 @@ export default function RecuperarPasswordScreen({ navigation }: any) {
               value={identificador}
               onChangeText={setIdentificador}
               placeholder="ej: guardia1 o tucorreo@ejemplo.com"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               autoCapitalize="none"
               keyboardType="email-address"
             />
@@ -112,7 +112,7 @@ export default function RecuperarPasswordScreen({ navigation }: any) {
               activeOpacity={0.85}
             >
               {cargando ? (
-                <ActivityIndicator color={colors.navy900} />
+                <ActivityIndicator color={colors.botonNaranjaTexto} />
               ) : (
                 <Text style={styles.botonTexto}>Enviar código</Text>
               )}
@@ -128,7 +128,7 @@ export default function RecuperarPasswordScreen({ navigation }: any) {
               value={codigo}
               onChangeText={setCodigo}
               placeholder="000000"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               keyboardType="number-pad"
               maxLength={6}
             />
@@ -141,7 +141,7 @@ export default function RecuperarPasswordScreen({ navigation }: any) {
               onChangeText={setNueva}
               secureTextEntry
               placeholder="ej: Matimania1500!"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
             />
 
             <Text style={styles.label}>Confirmar contraseña nueva</Text>
@@ -151,7 +151,7 @@ export default function RecuperarPasswordScreen({ navigation }: any) {
               onChangeText={setConfirmacion}
               secureTextEntry
               placeholder="••••••"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
             />
 
             {error && <Text style={styles.error}>{error}</Text>}
@@ -163,7 +163,7 @@ export default function RecuperarPasswordScreen({ navigation }: any) {
               activeOpacity={0.85}
             >
               {cargando ? (
-                <ActivityIndicator color={colors.navy900} />
+                <ActivityIndicator color={colors.botonNaranjaTexto} />
               ) : (
                 <Text style={styles.botonTexto}>Restablecer contraseña</Text>
               )}
@@ -205,35 +205,37 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
-  ayuda: { ...typography.small, color: colors.textMuted, marginTop: 2 },
+  label: { ...typography.label, color: colors.textOnNavy, marginTop: spacing.sm },
+  ayuda: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
     marginTop: 6,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
   error: { color: colors.danger, marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
-  mensaje: { color: colors.success, marginBottom: spacing.md, textAlign: "center", fontWeight: "600" },
+  mensaje: { color: "#7FE0AE", marginBottom: spacing.md, textAlign: "center", fontWeight: "600" },
   boton: {
-    backgroundColor: colors.gold,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: radius.sm,
     padding: 16,
     alignItems: "center",
     marginTop: spacing.lg,
   },
   botonDeshabilitado: { opacity: 0.7 },
-  botonTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "800" },
   reenviarWrap: { marginTop: spacing.md, alignItems: "center" },
-  reenviarTexto: { color: colors.info, fontSize: 14, fontWeight: "700" },
+  reenviarTexto: { color: colors.goldSoft, fontSize: 14, fontWeight: "700" },
   volverWrap: { marginTop: spacing.sm, alignItems: "center" },
-  volverTexto: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
+  volverTexto: { color: colors.textMutedOnNavy, fontSize: 13, fontWeight: "600" },
 });

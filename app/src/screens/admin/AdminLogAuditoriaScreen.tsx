@@ -45,7 +45,7 @@ export default function AdminLogAuditoriaScreen() {
   useFocusEffect(cargar);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.offWhite }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <Text style={styles.intro}>
         Registro de accesos y cambios (Ley N° 21.719) — quién hizo qué acción y cuándo, en este condominio. Se
         guardan las últimas 200 coincidencias.
@@ -67,7 +67,7 @@ export default function AdminLogAuditoriaScreen() {
       <TextInput
         style={styles.buscador}
         placeholder="Buscar en ruta o detalle (ej: un RUT, un archivo)..."
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.textMutedOnNavy}
         value={q}
         onChangeText={setQ}
         onSubmitEditing={cargar}
@@ -77,7 +77,7 @@ export default function AdminLogAuditoriaScreen() {
 
       {cargando ? (
         <View style={styles.centrado}>
-          <ActivityIndicator size="large" color={colors.navy900} />
+          <ActivityIndicator size="large" color={colors.gold} />
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.lista}>
@@ -106,32 +106,32 @@ export default function AdminLogAuditoriaScreen() {
 
 const styles = StyleSheet.create({
   centrado: { flex: 1, alignItems: "center", justifyContent: "center" },
-  intro: { ...typography.small, color: colors.textMuted, padding: spacing.md, paddingBottom: 0 },
+  intro: { ...typography.small, color: colors.textMutedOnNavy, padding: spacing.md, paddingBottom: 0 },
   filtroAcciones: { flexDirection: "row", gap: spacing.xs, padding: spacing.md, paddingBottom: 0 },
-  filtroAccion: { flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: 8, alignItems: "center" },
-  filtroAccionActivo: { borderColor: colors.navy900, backgroundColor: colors.navy900 },
-  filtroAccionTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 12 },
+  filtroAccion: { flex: 1, borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.sm, paddingVertical: 8, alignItems: "center" },
+  filtroAccionActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  filtroAccionTexto: { color: colors.textMutedOnNavy, fontWeight: "700", fontSize: 12 },
   filtroAccionTextoActivo: { color: colors.textOnNavy },
   buscador: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 12,
     fontSize: 15,
     margin: spacing.md,
     marginBottom: spacing.xs,
-    backgroundColor: colors.white,
-    color: colors.textDark,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600", marginTop: spacing.sm },
   lista: { padding: spacing.md, paddingTop: spacing.xs, gap: spacing.sm },
-  vacio: { textAlign: "center", color: colors.textMuted, marginTop: spacing.xl },
-  tarjeta: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: spacing.xl },
+  tarjeta: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.navy600 },
   tarjetaHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   badgeTexto: { fontSize: 11, fontWeight: "800", color: colors.textDark },
-  fecha: { fontSize: 11, color: colors.textMuted },
-  ruta: { ...typography.body, color: colors.textDark, fontWeight: "700", marginTop: spacing.xs, fontSize: 14 },
-  detalle: { ...typography.small, color: colors.textMuted, marginTop: 2 },
-  autor: { fontSize: 12, color: colors.textMuted, marginTop: spacing.xs, fontWeight: "600" },
+  fecha: { fontSize: 11, color: colors.textMutedOnNavy },
+  ruta: { ...typography.body, color: colors.textOnNavy, fontWeight: "700", marginTop: spacing.xs, fontSize: 14 },
+  detalle: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
+  autor: { fontSize: 12, color: colors.textMutedOnNavy, marginTop: spacing.xs, fontWeight: "600" },
 });

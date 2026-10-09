@@ -66,7 +66,7 @@ export default function CambiarPasswordObligatorioScreen() {
           value={passwordNueva}
           onChangeText={setPasswordNueva}
           placeholder="ej: Matimania1500!"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           secureTextEntry
         />
 
@@ -76,7 +76,7 @@ export default function CambiarPasswordObligatorioScreen() {
           value={confirmacion}
           onChangeText={setConfirmacion}
           placeholder="••••••"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           secureTextEntry
         />
 
@@ -88,7 +88,7 @@ export default function CambiarPasswordObligatorioScreen() {
           disabled={cargando}
           activeOpacity={0.85}
         >
-          {cargando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Continuar</Text>}
+          {cargando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Continuar</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.salirWrap} onPress={logout} activeOpacity={0.7}>
@@ -108,29 +108,31 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: spacing.xl,
   },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
-  ayuda: { ...typography.small, color: colors.textMuted, marginTop: 2 },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg },
+  label: { ...typography.label, color: colors.textOnNavy, marginTop: spacing.sm },
+  ayuda: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
     marginTop: 6,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
   error: { color: colors.danger, marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
   boton: {
-    backgroundColor: colors.gold,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: radius.sm,
     padding: 16,
     alignItems: "center",
     marginTop: spacing.lg,
   },
   botonDeshabilitado: { opacity: 0.7 },
-  botonTexto: { color: colors.navy900, fontSize: 16, fontWeight: "800" },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "800" },
   salirWrap: { marginTop: spacing.md, alignItems: "center" },
-  salirTexto: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
+  salirTexto: { color: colors.textMutedOnNavy, fontSize: 13, fontWeight: "600" },
 });

@@ -1,12 +1,13 @@
 import React, { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { adminGetActividadReciente, adminGetDashboard, getNotificaciones } from "../../api/client";
+import { adminGetActividadReciente, adminGetDashboard, getMiPerfilAdmin, getNotificaciones } from "../../api/client";
 import { ActividadRecienteItem, DashboardAdmin } from "../../api/types";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import { colors, radius, spacing, typography } from "../../theme/theme";
 import { formatearFechaHora } from "../../utils/fechas";
+import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
 
 // Ronda 47, a pedido explícito del usuario, con una referencia visual que
 // mandó: el Home de Administrador pasa de un aviso genérico + contador de
@@ -54,6 +55,9 @@ export default function AdminHomeScreen({ navigation }: any) {
   const [noLeidas, setNoLeidas] = useState(0);
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
+  // Foto del propio Administrador (la carga él mismo en Mis datos). Si no tiene,
+  // se muestra un círculo con sus iniciales.
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
 
   const cargar = useCallback(
     (mostrarRefresh = false) => {
@@ -81,7 +85,12 @@ export default function AdminHomeScreen({ navigation }: any) {
   useFocusEffect(
     useCallback(() => {
       cargar();
-    }, [cargar])
+      if (token && rol === "Administrador") {
+        getMiPerfilAdmin(token)
+          .then((p) => setFotoUrl(p.foto_url ?? null))
+          .catch(() => {});
+      }
+    }, [cargar, token, rol])
   );
 
   if (cargando || !dashboard) {
@@ -99,10 +108,29 @@ export default function AdminHomeScreen({ navigation }: any) {
       contentContainerStyle={styles.container}
       refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
     >
-      <Text style={styles.saludo}>
-        ¡{saludoSegunHora()}, {guardia?.nombre_usuario?.split(" ")[0]}!
-      </Text>
-      <Text style={styles.subtitulo}>{nombreCondominioActual ?? dashboard.condominio.nombre}</Text>
+      <View style={styles.encabezado}>
+        {fuenteImagenPrivada(fotoUrl, token) ? (
+          <Image source={fuenteImagenPrivada(fotoUrl, token)!} style={styles.encabezadoFoto} />
+        ) : (
+          <View style={[styles.encabezadoFoto, styles.encabezadoIniciales]}>
+            <Text style={styles.encabezadoInicialesTexto}>
+              {(guardia?.nombre_usuario ?? "")
+                .trim()
+                .split(/\s+/)
+                .slice(0, 2)
+                .map((x) => x[0] ?? "")
+                .join("")
+                .toUpperCase()}
+            </Text>
+          </View>
+        )}
+        <View style={{ flex: 1, marginLeft: spacing.md }}>
+          <Text style={styles.saludo}>
+            ¡{saludoSegunHora()}, {guardia?.nombre_usuario?.split(" ")[0]}!
+          </Text>
+          <Text style={styles.subtitulo}>{nombreCondominioActual ?? dashboard.condominio.nombre}</Text>
+        </View>
+      </View>
 
       <View style={styles.cardCondominio}>
         <View style={styles.filaTitulo}>
@@ -210,6 +238,10 @@ export default function AdminHomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.navy900, gap: spacing.sm },
+  encabezado: { flexDirection: "row", alignItems: "center", marginBottom: spacing.sm },
+  encabezadoFoto: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.navy700 },
+  encabezadoIniciales: { alignItems: "center", justifyContent: "center", backgroundColor: colors.gold },
+  encabezadoInicialesTexto: { fontWeight: "800", fontSize: 24, color: colors.navy900 },
   saludo: { ...typography.heading, color: colors.textOnNavy, marginTop: spacing.xs },
   subtitulo: { ...typography.small, color: colors.textMutedOnNavy, marginBottom: spacing.sm },
 

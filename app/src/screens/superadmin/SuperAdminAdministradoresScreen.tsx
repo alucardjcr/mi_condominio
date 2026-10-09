@@ -56,7 +56,7 @@ export default function SuperAdminAdministradoresScreen() {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -105,25 +105,25 @@ export default function SuperAdminAdministradoresScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: spacing.lg, gap: spacing.sm, backgroundColor: colors.offWhite },
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
+  container: { flexGrow: 1, padding: spacing.lg, gap: spacing.sm, backgroundColor: colors.navy900 },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600", marginBottom: spacing.md },
   tarjeta: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
   },
-  nombre: { ...typography.heading, color: colors.textDark },
-  detalle: { ...typography.small, color: colors.textMuted, marginTop: 2 },
-  detalleChico: { color: colors.textMuted, marginTop: 2, fontSize: 11 },
-  avatar: { width: 44, height: 44, borderRadius: 22, marginRight: spacing.sm, backgroundColor: colors.offWhite },
-  avatarIniciales: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border },
-  avatarInicialesTexto: { fontWeight: "800", color: colors.navy900 },
+  nombre: { ...typography.heading, color: colors.textOnNavy },
+  detalle: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
+  detalleChico: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 11 },
+  avatar: { width: 44, height: 44, borderRadius: 22, marginRight: spacing.sm, backgroundColor: colors.navy700 },
+  avatarIniciales: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.navy600 },
+  avatarInicialesTexto: { fontWeight: "800", color: colors.textOnNavy },
   badge: { borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6, marginLeft: spacing.sm, minWidth: 70, alignItems: "center" },
   badgeActivo: { backgroundColor: "#DCFCE7" },
   badgeInactivo: { backgroundColor: "#FEE2E2" },

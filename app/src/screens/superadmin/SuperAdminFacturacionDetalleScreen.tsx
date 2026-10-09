@@ -80,7 +80,7 @@ export default function SuperAdminFacturacionDetalleScreen({ route }: any) {
   if (cargando || !datos) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -97,7 +97,7 @@ export default function SuperAdminFacturacionDetalleScreen({ route }: any) {
           value={monto}
           onChangeText={setMonto}
           placeholder="ej: 250000 (vacío = sin facturación configurada)"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           keyboardType="number-pad"
         />
         <Text style={styles.label}>Día límite de pago del mes</Text>
@@ -106,7 +106,7 @@ export default function SuperAdminFacturacionDetalleScreen({ route }: any) {
           value={diaLimite}
           onChangeText={setDiaLimite}
           placeholder="5"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           keyboardType="number-pad"
         />
         <TouchableOpacity
@@ -115,7 +115,7 @@ export default function SuperAdminFacturacionDetalleScreen({ route }: any) {
           disabled={guardando}
           activeOpacity={0.85}
         >
-          {guardando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Guardar</Text>}
+          {guardando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Guardar</Text>}
         </TouchableOpacity>
       </View>
 
@@ -134,7 +134,7 @@ export default function SuperAdminFacturacionDetalleScreen({ route }: any) {
           value={montoPago}
           onChangeText={setMontoPago}
           placeholder="Monto"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           keyboardType="number-pad"
         />
         <TouchableOpacity
@@ -157,25 +157,25 @@ export default function SuperAdminFacturacionDetalleScreen({ route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.offWhite, gap: spacing.md },
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
-  titulo: { ...typography.title, color: colors.textDark, textAlign: "center" },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg },
-  subtitulo: { ...typography.heading, color: colors.textDark, marginBottom: spacing.sm },
-  estadoLinea: { ...typography.body, color: colors.textMuted, marginBottom: spacing.md },
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
+  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.navy900, gap: spacing.md },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  titulo: { ...typography.title, color: colors.textOnNavy, textAlign: "center" },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg },
+  subtitulo: { ...typography.heading, color: colors.textOnNavy, marginBottom: spacing.sm },
+  estadoLinea: { ...typography.body, color: colors.textMutedOnNavy, marginBottom: spacing.md },
+  label: { ...typography.label, color: colors.textMutedOnNavy, marginTop: spacing.sm },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
     marginTop: 6,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
-  boton: { backgroundColor: colors.gold, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.md },
-  botonTexto: { color: colors.navy900, fontWeight: "800" },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.md },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
   botonSecundario: {
     borderWidth: 1.5,
     borderColor: colors.success,

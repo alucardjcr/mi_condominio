@@ -191,7 +191,7 @@ export default function AdminGuardiasScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -222,7 +222,7 @@ export default function AdminGuardiasScreen() {
             <Text style={styles.label}>RUT</Text>
             <TextInput
               style={styles.input}
-              placeholder="12345678-9 (opcional)"
+              placeholder="12345678-9 (opcional)" placeholderTextColor={colors.textMutedOnNavy}
               value={rut}
               onChangeText={setRut}
               autoCapitalize="characters"
@@ -231,18 +231,18 @@ export default function AdminGuardiasScreen() {
 
           <View style={styles.campo}>
             <Text style={styles.label}>Nombres</Text>
-            <TextInput style={styles.input} placeholder="Nombres" value={nombres} onChangeText={setNombres} />
+            <TextInput style={styles.input} placeholder="Nombres" placeholderTextColor={colors.textMutedOnNavy} value={nombres} onChangeText={setNombres} />
             <Text style={styles.label}>Apellido paterno</Text>
-            <TextInput style={styles.input} placeholder="Apellido paterno" value={apPaterno} onChangeText={setApPaterno} />
+            <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor={colors.textMutedOnNavy} value={apPaterno} onChangeText={setApPaterno} />
             <Text style={styles.label}>Apellido materno (opcional)</Text>
-            <TextInput style={styles.input} placeholder="Apellido materno" value={apMaterno} onChangeText={setApMaterno} />
+            <TextInput style={styles.input} placeholder="Apellido materno" placeholderTextColor={colors.textMutedOnNavy} value={apMaterno} onChangeText={setApMaterno} />
           </View>
 
           <View style={styles.campo}>
             <Text style={styles.label}>Teléfono</Text>
             <TextInput
               style={styles.input}
-              placeholder="+56 9 1234 5678 (opcional)"
+              placeholder="+56 9 1234 5678 (opcional)" placeholderTextColor={colors.textMutedOnNavy}
               value={telefono}
               onChangeText={setTelefono}
               keyboardType="phone-pad"
@@ -278,7 +278,7 @@ export default function AdminGuardiasScreen() {
             {esInterno === false && (
               <TextInput
                 style={styles.input}
-                placeholder="Nombre de la empresa a la que pertenece *"
+                placeholder="Nombre de la empresa a la que pertenece *" placeholderTextColor={colors.textMutedOnNavy}
                 value={empresaExterna}
                 onChangeText={setEmpresaExterna}
               />
@@ -289,7 +289,7 @@ export default function AdminGuardiasScreen() {
             <Text style={styles.label}>Usuario (para entrar a la app)</Text>
             <TextInput
               style={styles.input}
-              placeholder="Usuario"
+              placeholder="Usuario" placeholderTextColor={colors.textMutedOnNavy}
               value={usuariocol}
               onChangeText={setUsuariocol}
               autoCapitalize="none"
@@ -300,7 +300,7 @@ export default function AdminGuardiasScreen() {
             <Text style={styles.label}>Contraseña</Text>
             <TextInput
               style={styles.input}
-              placeholder="Contraseña"
+              placeholder="Contraseña" placeholderTextColor={colors.textMutedOnNavy}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -365,9 +365,9 @@ export default function AdminGuardiasScreen() {
           {editandoId === item.id_usuario ? (
             <View style={styles.subForm}>
               <Text style={styles.detalle}>Nombre (déjalo vacío si no quieres cambiarlo):</Text>
-              <TextInput style={styles.input} placeholder="Nombres" value={editNombres} onChangeText={setEditNombres} />
-              <TextInput style={styles.input} placeholder="Apellido paterno" value={editApPaterno} onChangeText={setEditApPaterno} />
-              <TextInput style={styles.input} placeholder="Apellido materno (opcional)" value={editApMaterno} onChangeText={setEditApMaterno} />
+              <TextInput style={styles.input} placeholder="Nombres" placeholderTextColor={colors.textMutedOnNavy} value={editNombres} onChangeText={setEditNombres} />
+              <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor={colors.textMutedOnNavy} value={editApPaterno} onChangeText={setEditApPaterno} />
+              <TextInput style={styles.input} placeholder="Apellido materno (opcional)" placeholderTextColor={colors.textMutedOnNavy} value={editApMaterno} onChangeText={setEditApMaterno} />
               <DateField label="Fecha de nacimiento" value={editFechaNac} onChange={setEditFechaNac} maximumDate={new Date()} opcional />
               <View style={styles.filaChips}>
                 <TouchableOpacity style={[styles.chip, editOs10 === true && styles.chipActivo]} onPress={() => setEditOs10(true)}>
@@ -378,10 +378,10 @@ export default function AdminGuardiasScreen() {
                 </TouchableOpacity>
               </View>
               <FotoCapture label="Cambiar foto (solo Administrador/Comité)" value={editFoto} onChange={setEditFoto} recorteCuadrado />
-              <TextInput style={styles.input} placeholder="RUT" value={editRut} onChangeText={setEditRut} autoCapitalize="characters" />
+              <TextInput style={styles.input} placeholder="RUT" placeholderTextColor={colors.textMutedOnNavy} value={editRut} onChangeText={setEditRut} autoCapitalize="characters" />
               <TextInput
                 style={styles.input}
-                placeholder="Teléfono"
+                placeholder="Teléfono" placeholderTextColor={colors.textMutedOnNavy}
                 value={editTelefono}
                 onChangeText={setEditTelefono}
                 keyboardType="phone-pad"
@@ -395,18 +395,18 @@ export default function AdminGuardiasScreen() {
                 </TouchableOpacity>
               </View>
               {editInterno === false && (
-                <TextInput style={styles.input} placeholder="Nombre de la empresa a la que pertenece *" value={editEmpresa} onChangeText={setEditEmpresa} />
+                <TextInput style={styles.input} placeholder="Nombre de la empresa a la que pertenece *" placeholderTextColor={colors.textMutedOnNavy} value={editEmpresa} onChangeText={setEditEmpresa} />
               )}
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
-                  style={[styles.botonToggle, styles.botonActivar, { flex: 1 }]}
+                  style={[styles.botonToggle, styles.botonGuardar, { flex: 1 }]}
                   onPress={() => handleGuardarInterno(item.id_usuario)}
                   disabled={guardandoInterno}
                 >
-                  <Text style={styles.botonToggleTexto}>{guardandoInterno ? "Guardando..." : "Guardar"}</Text>
+                  <Text style={styles.botonGuardarTexto}>{guardandoInterno ? "Guardando..." : "Guardar"}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]} onPress={() => setEditandoId(null)}>
-                  <Text style={styles.botonToggleTexto}>Cancelar</Text>
+                <TouchableOpacity style={[styles.botonToggle, styles.botonCancelar, { flex: 1 }]} onPress={() => setEditandoId(null)}>
+                  <Text style={styles.botonCancelarTexto}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -422,24 +422,26 @@ export default function AdminGuardiasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 8 },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 6 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  form: { backgroundColor: colors.navy800, borderRadius: 12, padding: 16, marginBottom: 8 },
+  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textOnNavy },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textMutedOnNavy, marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
     marginBottom: 10,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
   filaChips: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  chip: { borderWidth: 1.5, borderColor: "#ddd", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
-  chipActivo: { borderColor: "#014BD2", backgroundColor: "#EEF2FF" },
-  chipTexto: { color: "#666", fontWeight: "600", fontSize: 13 },
-  chipTextoActivo: { color: "#014BD2" },
+  chip: { borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  chipActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  chipTexto: { color: colors.textMutedOnNavy, fontWeight: "600", fontSize: 13 },
+  chipTextoActivo: { color: colors.goldSoft },
   campo: { marginBottom: 18 },
   fotoVacia: {
     width: 180,
@@ -448,7 +450,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#e6e8ee",
+    backgroundColor: colors.navy700,
   },
   botonCrear: {
     backgroundColor: colors.botonNaranja,
@@ -461,17 +463,21 @@ const styles = StyleSheet.create({
   },
   botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy800,
     borderRadius: 12,
     padding: 14,
   },
-  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#e6e8ee", marginRight: 12, overflow: "hidden" },
-  nombreItem: { fontSize: 16, fontWeight: "700" },
-  detalle: { color: "#666", marginTop: 2, fontSize: 13 },
+  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.navy700, marginRight: 12, overflow: "hidden" },
+  nombreItem: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
   botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   botonActivar: { backgroundColor: "#1a9d5c" },
   botonDesactivar: { backgroundColor: "#c0392b" },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  subForm: { marginTop: 10, borderTopWidth: 1, borderTopColor: "#f0f0f0", paddingTop: 10, gap: 8 },
-  enlaceEditar: { color: "#014BD2", fontWeight: "700", fontSize: 12, marginTop: 10 },
+  botonGuardar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonGuardarTexto: { color: colors.botonNaranjaTexto, fontWeight: "700", fontSize: 12 },
+  botonCancelar: { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600 },
+  botonCancelarTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 12 },
+  subForm: { marginTop: 10, borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: 10, gap: 8 },
+  enlaceEditar: { color: colors.goldSoft, fontWeight: "700", fontSize: 12, marginTop: 10 },
 });

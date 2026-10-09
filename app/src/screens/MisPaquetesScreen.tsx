@@ -5,6 +5,7 @@ import { buscarPaquetes } from "../api/client";
 import { Paquete } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 // Pantalla del residente: sus propios paquetes (pendientes y ya
 // entregados). No hay filtro de depto acá porque el backend ya acota el
@@ -58,7 +59,7 @@ export default function MisPaquetesScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -69,7 +70,7 @@ export default function MisPaquetesScreen() {
       data={[...pendientes, ...historial]}
       keyExtractor={(item) => String(item.id_paquete)}
       contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
       ListHeaderComponent={
         <View style={{ marginBottom: 4 }}>
           <Text style={styles.subtitulo}>
@@ -107,15 +108,15 @@ export default function MisPaquetesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  subtitulo: { color: "#888", fontSize: 13, marginBottom: 6 },
-  seccionTitulo: { fontSize: 13, fontWeight: "700", color: "#555", marginTop: 10, marginBottom: 6 },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
-  cardPendiente: { borderColor: "#8e44ad", borderWidth: 1.5 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  subtitulo: { color: colors.textMutedOnNavy, fontSize: 13, marginBottom: 6 },
+  seccionTitulo: { fontSize: 13, fontWeight: "700", color: colors.textMutedOnNavy, marginTop: 10, marginBottom: 6 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
+  cardPendiente: { borderColor: colors.botonNaranja, borderWidth: 1.5 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between" },
-  tipo: { fontSize: 12, color: "#888", fontWeight: "600" },
-  estado: { fontSize: 12, color: "#8e44ad", fontWeight: "700" },
-  detalleTexto: { color: "#555", marginTop: 4, fontSize: 13 },
+  tipo: { fontSize: 12, color: colors.textMutedOnNavy, fontWeight: "600" },
+  estado: { fontSize: 12, color: colors.goldSoft, fontWeight: "700" },
+  detalleTexto: { color: colors.textMutedOnNavy, marginTop: 4, fontSize: 13 },
 });

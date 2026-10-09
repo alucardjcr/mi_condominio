@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { getNotificaciones, marcarNotificacionLeida } from "../api/client";
 import { Notificacion, TipoNotificacionGls } from "../api/types";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 // Bandeja de notificaciones (ronda 16): paquetes, visitas y comunicados que
 // le llegaron a este usuario. Esta pantalla es la que SIEMPRE funciona
@@ -78,7 +79,7 @@ export default function NotificacionesScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -89,7 +90,7 @@ export default function NotificacionesScreen() {
       data={notificaciones}
       keyExtractor={(item) => String(item.id_notificacionusuario)}
       contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
       ListHeaderComponent={
         noLeidas > 0 ? (
           <Text style={styles.subtitulo}>
@@ -119,15 +120,15 @@ export default function NotificacionesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  subtitulo: { color: "#888", fontSize: 13, marginBottom: 6 },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
-  cardNoLeida: { borderColor: "#014BD2", borderWidth: 1.5, backgroundColor: "#f3f8ff" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  subtitulo: { color: colors.textMutedOnNavy, fontSize: 13, marginBottom: 6 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
+  cardNoLeida: { borderColor: colors.botonNaranja, borderWidth: 1.5, backgroundColor: colors.navy900 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  titulo: { fontSize: 15, fontWeight: "700", color: "#222", flex: 1 },
-  puntoNoLeido: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#014BD2", marginLeft: 8 },
-  cuerpo: { color: "#555", marginTop: 4, fontSize: 13, lineHeight: 18 },
-  fecha: { color: "#999", marginTop: 6, fontSize: 11 },
+  titulo: { fontSize: 15, fontWeight: "700", color: colors.textOnNavy, flex: 1 },
+  puntoNoLeido: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.botonNaranja, marginLeft: 8 },
+  cuerpo: { color: colors.textMutedOnNavy, marginTop: 4, fontSize: 13, lineHeight: 18 },
+  fecha: { color: colors.textMutedOnNavy, marginTop: 6, fontSize: 11 },
 });

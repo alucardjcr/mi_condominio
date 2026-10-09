@@ -5,6 +5,7 @@ import { getEspaciosComunes } from "../api/client";
 import { EspacioComun } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 // Pantalla compartida por Residente/Comité/Administrador: catálogo de
 // espacios comunes reservables. Se usa tanto para que un residente reserve
@@ -47,7 +48,7 @@ export default function ReservasEspaciosScreen({ navigation }: any) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -58,7 +59,7 @@ export default function ReservasEspaciosScreen({ navigation }: any) {
       data={espacios}
       keyExtractor={(item) => String(item.id_espaciocomun)}
       contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
       ListEmptyComponent={
         <Text style={styles.vacio}>
           Todavía no hay espacios comunes reservables configurados en el condominio.
@@ -92,20 +93,20 @@ export default function ReservasEspaciosScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy800,
     borderRadius: 12,
     padding: 14,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.navy600,
   },
-  nombre: { fontSize: 16, fontWeight: "700" },
-  detalleTexto: { color: "#666", marginTop: 2, fontSize: 13 },
-  precio: { fontSize: 14, fontWeight: "800", color: "#014BD2", marginLeft: 8, textAlign: "right" },
+  nombre: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalleTexto: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
+  precio: { fontSize: 14, fontWeight: "800", color: colors.goldSoft, marginLeft: 8, textAlign: "right" },
   precioGratis: { fontSize: 14, fontWeight: "800", color: "#1a9d5c", marginLeft: 8, textAlign: "right" },
 });

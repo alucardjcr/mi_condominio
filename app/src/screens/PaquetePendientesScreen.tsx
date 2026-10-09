@@ -16,6 +16,7 @@ import { getPaquetesPendientes, paqueteCambiarEstado } from "../api/client";
 import { EstadoPaqueteGls, PaquetePendiente } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 const OPCIONES_ESTADO_EXCEPCION: { gls: EstadoPaqueteGls; label: string }[] = [
   { gls: "Rechazado por el residente", label: "Rechazado por el residente" },
@@ -35,7 +36,7 @@ function colorEstado(gls: string) {
     case "Notificado":
       return "#c98a1a";
     case "En portería":
-      return "#014BD2";
+      return colors.navy500;
     default:
       return "#8a8a8a";
   }
@@ -105,13 +106,13 @@ export default function PaquetePendientesScreen({ navigation }: any) {
   if (cargando) {
     return (
       <View style={styles.centro}>
-        <ActivityIndicator size="large" color="#014BD2" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <View style={styles.acciones}>
         <TouchableOpacity style={styles.botonTop} onPress={() => navigation.navigate("PaqueteRegistrar")}>
           <Text style={styles.botonTopTexto}>+ Registrar paquete</Text>
@@ -125,7 +126,7 @@ export default function PaquetePendientesScreen({ navigation }: any) {
         data={paquetes}
         keyExtractor={(p) => String(p.id_paquete)}
         contentContainerStyle={styles.lista}
-        refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => { setRefrescando(true); cargar(); }} />}
+        refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => { setRefrescando(true); cargar(); }} tintColor={colors.textOnNavy} />}
         ListEmptyComponent={<Text style={styles.vacio}>No hay paquetes pendientes de retiro.</Text>}
         renderItem={({ item }) => (
           <View style={styles.card}>
@@ -199,6 +200,7 @@ export default function PaquetePendientesScreen({ navigation }: any) {
             <TextInput
               style={styles.observacionInput}
               placeholder="Observación (opcional)"
+              placeholderTextColor={colors.textMutedOnNavy}
               value={observacion}
               onChangeText={setObservacion}
               multiline
@@ -221,56 +223,58 @@ export default function PaquetePendientesScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  centro: { flex: 1, alignItems: "center", justifyContent: "center" },
+  centro: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   acciones: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, paddingBottom: 8 },
-  botonTop: { backgroundColor: "#1a9d5c", borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14 },
-  botonTopTexto: { color: "#fff", fontWeight: "700" },
+  botonTop: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14 },
+  botonTopTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
   enlace: { paddingVertical: 10 },
-  enlaceTexto: { color: "#014BD2", fontWeight: "600" },
+  enlaceTexto: { color: colors.goldSoft, fontWeight: "600" },
   lista: { padding: 16, paddingTop: 4, paddingBottom: 40 },
-  vacio: { textAlign: "center", color: "#888", marginTop: 40 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 40 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy800,
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.navy600,
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  tipo: { fontSize: 13, color: "#888", fontWeight: "600" },
+  tipo: { fontSize: 13, color: colors.textMutedOnNavy, fontWeight: "600" },
   badgeEstado: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   badgeEstadoTexto: { color: "#fff", fontSize: 11, fontWeight: "700" },
-  receptor: { fontSize: 17, fontWeight: "700", color: "#222", marginTop: 4 },
-  detalle: { fontSize: 13, color: "#555", marginTop: 2 },
+  receptor: { fontSize: 17, fontWeight: "700", color: colors.textOnNavy, marginTop: 4 },
+  detalle: { fontSize: 13, color: colors.textMutedOnNavy, marginTop: 2 },
   filaDias: { flexDirection: "row", alignItems: "center", marginTop: 6, flexWrap: "wrap", gap: 8 },
-  dias: { fontSize: 12, color: "#555" },
+  dias: { fontSize: 12, color: colors.textMutedOnNavy },
   alertaBadge: { fontSize: 12, color: "#c0392b", fontWeight: "700" },
   alertaTexto: { color: "#c0392b", fontSize: 12, marginTop: 4 },
   botones: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
-  botonSecundario: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 10 },
-  botonSecundarioTexto: { color: "#333", fontSize: 12, fontWeight: "600" },
-  botonEntregar: { backgroundColor: "#1a9d5c", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 14 },
-  botonEntregarTexto: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  botonSecundario: { borderWidth: 1, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 10 },
+  botonSecundarioTexto: { color: colors.textOnNavy, fontSize: 12, fontWeight: "600" },
+  botonEntregar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 14 },
+  botonEntregarTexto: { color: colors.botonNaranjaTexto, fontSize: 12, fontWeight: "700" },
   botonOtro: { borderWidth: 1, borderColor: "#c0392b", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 10 },
   botonOtroTexto: { color: "#c0392b", fontSize: 12, fontWeight: "600" },
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 24 },
-  modalCard: { backgroundColor: "#fff", borderRadius: 14, padding: 20 },
-  modalTitulo: { fontSize: 16, fontWeight: "700", color: "#222", marginBottom: 12 },
-  opcionModal: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#eee" },
-  opcionModalTexto: { fontSize: 15, color: "#333" },
+  modalCard: { backgroundColor: colors.navy800, borderRadius: 14, padding: 20, borderWidth: 1, borderColor: colors.navy600 },
+  modalTitulo: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy, marginBottom: 12 },
+  opcionModal: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.navy600 },
+  opcionModalTexto: { fontSize: 15, color: colors.textOnNavy },
   observacionInput: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
     borderRadius: 10,
     padding: 12,
     fontSize: 14,
     minHeight: 70,
     textAlignVertical: "top",
   },
-  confirmar: { backgroundColor: "#014BD2", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 14 },
-  confirmarTexto: { color: "#fff", fontWeight: "700" },
+  confirmar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 14 },
+  confirmarTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
   botonDeshabilitado: { opacity: 0.6 },
   cancelar: { alignItems: "center", marginTop: 10 },
-  cancelarTexto: { color: "#999", fontWeight: "600" },
+  cancelarTexto: { color: colors.textMutedOnNavy, fontWeight: "600" },
 });

@@ -22,6 +22,7 @@ import { HorarioOcupado, Residente, Torre, Unidad } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
+import { colors } from "../theme/theme";
 
 function hoyComoTexto() {
   const hoy = new Date();
@@ -130,7 +131,7 @@ export default function ReservaCrearScreen({ navigation, route }: any) {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.navy900 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.resumen}>
           <Text style={styles.resumenNombre}>{espacio.nombre}</Text>
@@ -181,11 +182,12 @@ export default function ReservaCrearScreen({ navigation, route }: any) {
           value={fecha}
           onChangeText={setFecha}
           placeholder="AAAA-MM-DD"
+          placeholderTextColor={colors.textMutedOnNavy}
           autoCapitalize="none"
         />
 
         {cargandoOcupados ? (
-          <ActivityIndicator style={{ marginTop: 10 }} />
+          <ActivityIndicator style={{ marginTop: 10 }} color={colors.gold} />
         ) : ocupados.length > 0 ? (
           <View style={styles.ocupadosBox}>
             <Text style={styles.ocupadosTitulo}>Horarios ya tomados ese día:</Text>
@@ -207,6 +209,7 @@ export default function ReservaCrearScreen({ navigation, route }: any) {
               value={horaInicio}
               onChangeText={setHoraInicio}
               placeholder="HH:MM"
+              placeholderTextColor={colors.textMutedOnNavy}
               autoCapitalize="none"
             />
           </View>
@@ -217,6 +220,7 @@ export default function ReservaCrearScreen({ navigation, route }: any) {
               value={horaTermino}
               onChangeText={setHoraTermino}
               placeholder="HH:MM"
+              placeholderTextColor={colors.textMutedOnNavy}
               autoCapitalize="none"
             />
           </View>
@@ -235,26 +239,27 @@ export default function ReservaCrearScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 60 },
-  resumen: { backgroundColor: "#eef6ff", borderRadius: 10, padding: 14, marginBottom: 8 },
-  resumenNombre: { fontSize: 18, fontWeight: "700", color: "#222" },
-  resumenDetalle: { fontSize: 13, color: "#555", marginTop: 2 },
-  seccionTitulo: { fontSize: 14, fontWeight: "700", color: "#333", marginTop: 18, marginBottom: 4 },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginTop: 12 },
+  container: { padding: 20, paddingBottom: 60, backgroundColor: colors.navy900 },
+  resumen: { backgroundColor: colors.navy800, borderRadius: 10, padding: 14, marginBottom: 8 },
+  resumenNombre: { fontSize: 18, fontWeight: "700", color: colors.textOnNavy },
+  resumenDetalle: { fontSize: 13, color: colors.textMutedOnNavy, marginTop: 2 },
+  seccionTitulo: { fontSize: 14, fontWeight: "700", color: colors.textOnNavy, marginTop: 18, marginBottom: 4 },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy, marginTop: 12 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
     marginTop: 4,
   },
   ocupadosBox: { backgroundColor: "#fff5f5", borderRadius: 10, padding: 10, marginTop: 8 },
   ocupadosTitulo: { fontSize: 12, fontWeight: "700", color: "#c0392b" },
   ocupadosItem: { fontSize: 12, color: "#c0392b", marginTop: 2 },
   sinOcupados: { fontSize: 12, color: "#1a9d5c", marginTop: 8 },
-  boton: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 16, alignItems: "center", marginTop: 28 },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 16, alignItems: "center", marginTop: 28 },
   botonDeshabilitado: { opacity: 0.6 },
-  botonTexto: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "700" },
 });

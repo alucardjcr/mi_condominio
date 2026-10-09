@@ -453,7 +453,7 @@ export default function AdminResidentesScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -529,7 +529,7 @@ export default function AdminResidentesScreen() {
                 <TextInput
                   style={styles.campoInput}
                   placeholder="Ej: Juan Andrés"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.textMutedOnNavy}
                   value={nombresNuevo}
                   onChangeText={setNombresNuevo}
                 />
@@ -545,7 +545,7 @@ export default function AdminResidentesScreen() {
                 <TextInput
                   style={styles.campoInput}
                   placeholder="Ej: Pérez"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.textMutedOnNavy}
                   value={apellidoPaternoNuevo}
                   onChangeText={setApellidoPaternoNuevo}
                 />
@@ -561,7 +561,7 @@ export default function AdminResidentesScreen() {
                 <TextInput
                   style={styles.campoInput}
                   placeholder="Ej: Soto"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.textMutedOnNavy}
                   value={apellidoMaternoNuevo}
                   onChangeText={setApellidoMaternoNuevo}
                 />
@@ -578,7 +578,7 @@ export default function AdminResidentesScreen() {
                 <TextInput
                   style={styles.campoInput}
                   placeholder="Ej: 12345678-9"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.textMutedOnNavy}
                   value={rutNuevo}
                   onChangeText={setRutNuevo}
                   autoCapitalize="characters"
@@ -666,7 +666,7 @@ export default function AdminResidentesScreen() {
             </View>
           </View>
 
-          <TextInput
+          <TextInput placeholderTextColor={colors.textMutedOnNavy}
             style={styles.buscador}
             placeholder="Buscar por nombre o depto..."
             value={busqueda}
@@ -733,10 +733,10 @@ export default function AdminResidentesScreen() {
               />
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
-                  style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]}
+                  style={[styles.botonToggle, styles.botonSecundarioChico, { flex: 1 }]}
                   onPress={() => setTipoResidenteEnEdicion(null)}
                 >
-                  <Text style={styles.botonToggleTexto}>Cerrar</Text>
+                  <Text style={styles.botonSecundarioChicoTexto}>Cerrar</Text>
                 </TouchableOpacity>
                 {item.tipo_residente_id_tiporesidente != null && (
                   <TouchableOpacity
@@ -752,7 +752,7 @@ export default function AdminResidentesScreen() {
 
           {carnetEnEdicion === item.id_usuario ? (
             <View style={styles.carnetForm}>
-              <TextInput
+              <TextInput placeholderTextColor={colors.textMutedOnNavy}
                 style={styles.input}
                 placeholder="N° de carnet (opcional)"
                 value={numeroCarnet}
@@ -760,16 +760,16 @@ export default function AdminResidentesScreen() {
               />
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
-                  style={[styles.botonToggle, styles.botonActivar, { flex: 1 }]}
+                  style={[styles.botonToggle, styles.botonGuardarChico, { flex: 1 }]}
                   onPress={() => handleGuardarCarnet(item)}
                 >
-                  <Text style={styles.botonToggleTexto}>Guardar</Text>
+                  <Text style={styles.botonGuardarChicoTexto}>Guardar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]}
+                  style={[styles.botonToggle, styles.botonSecundarioChico, { flex: 1 }]}
                   onPress={() => setCarnetEnEdicion(null)}
                 >
-                  <Text style={styles.botonToggleTexto}>Cancelar</Text>
+                  <Text style={styles.botonSecundarioChicoTexto}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -790,19 +790,19 @@ export default function AdminResidentesScreen() {
 
           {perfilEnEdicion === item.id_usuario ? (
             <View style={styles.carnetForm}>
-              <TextInput
+              <TextInput placeholderTextColor={colors.textMutedOnNavy}
                 style={styles.input}
                 placeholder="Nombres"
                 value={nombresEditar}
                 onChangeText={setNombresEditar}
               />
-              <TextInput
+              <TextInput placeholderTextColor={colors.textMutedOnNavy}
                 style={styles.input}
                 placeholder="Apellido paterno"
                 value={apellidoPaternoEditar}
                 onChangeText={setApellidoPaternoEditar}
               />
-              <TextInput
+              <TextInput placeholderTextColor={colors.textMutedOnNavy}
                 style={styles.input}
                 placeholder="Apellido materno (opcional)"
                 value={apellidoMaternoEditar}
@@ -815,7 +815,7 @@ export default function AdminResidentesScreen() {
                 valorSeleccionado={nacionalidadEditarSel}
                 onSeleccionar={setNacionalidadEditarSel}
               />
-              <TextInput
+              <TextInput placeholderTextColor={colors.textMutedOnNavy}
                 style={styles.input}
                 placeholder="RUT (opcional)"
                 value={rutEditar}
@@ -840,17 +840,17 @@ export default function AdminResidentesScreen() {
               />
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
-                  style={[styles.botonToggle, styles.botonActivar, { flex: 1 }]}
+                  style={[styles.botonToggle, styles.botonGuardarChico, { flex: 1 }]}
                   onPress={() => handleGuardarPerfil(item.id_usuario)}
                   disabled={guardandoPerfil}
                 >
-                  <Text style={styles.botonToggleTexto}>{guardandoPerfil ? "Guardando..." : "Guardar"}</Text>
+                  <Text style={styles.botonGuardarChicoTexto}>{guardandoPerfil ? "Guardando..." : "Guardar"}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]}
+                  style={[styles.botonToggle, styles.botonSecundarioChico, { flex: 1 }]}
                   onPress={() => setPerfilEnEdicion(null)}
                 >
-                  <Text style={styles.botonToggleTexto}>Cancelar</Text>
+                  <Text style={styles.botonSecundarioChicoTexto}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -897,101 +897,111 @@ export default function AdminResidentesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   // Ronda 76 — tarjeta "hero" + tarjeta de campos con ícono, "Nuevo residente"
   heroCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.skyLight,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.sm,
   },
   heroTextWrap: { flex: 1, paddingRight: spacing.sm },
-  heroEyebrow: { color: colors.azulVivo, fontWeight: "800", fontSize: 11, letterSpacing: 1 },
-  heroTitle: { color: colors.textDark, fontWeight: "800", fontSize: 24, marginTop: 4 },
-  heroSubtitle: { color: colors.textMuted, fontSize: 13, marginTop: 6, lineHeight: 18 },
-  formCard: { backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
+  heroEyebrow: { color: colors.goldSoft, fontWeight: "800", fontSize: 11, letterSpacing: 1 },
+  heroTitle: { color: colors.textOnNavy, fontWeight: "800", fontSize: 24, marginTop: 4 },
+  heroSubtitle: { color: colors.textMutedOnNavy, fontSize: 13, marginTop: 6, lineHeight: 18 },
+  formCard: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
   campoFila: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, marginBottom: spacing.sm },
   campoIcono: {
     width: 44,
     height: 44,
     borderRadius: radius.md,
-    backgroundColor: colors.skyBadge,
+    backgroundColor: colors.navy700,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
   },
   campoIconoTexto: { fontSize: 20 },
-  campoLabel: { ...typography.label, color: colors.textDark, marginBottom: 4 },
+  campoLabel: { ...typography.label, color: colors.textOnNavy, marginBottom: 4 },
   campoInput: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 12,
     fontSize: 16,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
-  campoAyuda: { ...typography.small, color: colors.textMuted, marginTop: 4 },
-  divisor: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
+  campoAyuda: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 4 },
+  divisor: { height: 1, backgroundColor: colors.navy600, marginVertical: spacing.sm },
   botonesFila: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
   botonCancelar: {
     flex: 1,
     borderWidth: 1.5,
-    borderColor: colors.navy900,
+    borderColor: colors.navy600,
+    backgroundColor: colors.navy700,
     borderRadius: radius.sm,
     paddingVertical: 14,
     alignItems: "center",
   },
-  botonCancelarTexto: { color: colors.navy900, fontWeight: "700", fontSize: 15 },
+  botonCancelarTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 15 },
   botonGuardar: {
     flex: 1.3,
-    backgroundColor: colors.navy900,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
     borderRadius: radius.sm,
     paddingVertical: 14,
     alignItems: "center",
   },
   botonDeshabilitado: { opacity: 0.6 },
-  botonGuardarTexto: { color: colors.textOnNavy, fontWeight: "800", fontSize: 15 },
+  botonGuardarTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 15 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
     marginBottom: 10,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
   buscador: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
     marginBottom: 8,
   },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   avatarItem: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   avatarItemTexto: { fontWeight: "800", fontSize: 15, color: colors.navy900 },
-  avatarFotoItem: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.offWhite },
-  nombreItem: { fontSize: 16, fontWeight: "700" },
-  detalle: { color: "#666", marginTop: 2, fontSize: 13 },
-  carnetTexto: { color: "#014BD2", marginTop: 4, fontSize: 12, fontWeight: "600" },
+  avatarFotoItem: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.navy700 },
+  nombreItem: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
+  carnetTexto: { color: colors.goldSoft, marginTop: 4, fontSize: 12, fontWeight: "600" },
   accesoActivo: { color: "#1a9d5c", marginTop: 4, fontSize: 12, fontWeight: "600" },
-  comiteTexto: { color: "#8e44ad", marginTop: 4, fontSize: 12, fontWeight: "600" },
-  propietarioTexto: { color: "#0f766e", marginTop: 4, fontSize: 12, fontWeight: "600" },
-  tipoResidenteTexto: { color: "#b0730a", marginTop: 4, fontSize: 12, fontWeight: "600" },
-  accesoInactivo: { color: "#999", marginTop: 4, fontSize: 12 },
-  subLabel: { fontSize: 12, fontWeight: "600", color: "#555", marginBottom: 4 },
+  comiteTexto: { color: "#C39BD3", marginTop: 4, fontSize: 12, fontWeight: "600" },
+  propietarioTexto: { color: "#5EEAD4", marginTop: 4, fontSize: 12, fontWeight: "600" },
+  tipoResidenteTexto: { color: "#F0B54A", marginTop: 4, fontSize: 12, fontWeight: "600" },
+  accesoInactivo: { color: colors.textMutedOnNavy, marginTop: 4, fontSize: 12 },
+  subLabel: { fontSize: 12, fontWeight: "600", color: colors.textMutedOnNavy, marginBottom: 4 },
   enlaceQuitarAcceso: { color: "#c0392b", fontSize: 12, fontWeight: "600" },
   botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   botonActivar: { backgroundColor: "#1a9d5c" },
   botonDesactivar: { backgroundColor: "#c0392b" },
+  botonGuardarChico: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonGuardarChicoTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 12, textAlign: "center" },
+  botonSecundarioChico: { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600 },
+  botonSecundarioChicoTexto: { color: colors.textOnNavy, fontWeight: "700", fontSize: 12, textAlign: "center" },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12, textAlign: "center" },
   enlaceCarnet: { marginTop: 10 },
-  enlaceCarnetTexto: { color: "#014BD2", fontSize: 12, fontWeight: "600" },
+  enlaceCarnetTexto: { color: colors.goldSoft, fontSize: 12, fontWeight: "600" },
   carnetForm: { marginTop: 10 },
 });

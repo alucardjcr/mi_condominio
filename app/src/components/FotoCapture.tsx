@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { elegirDeGaleria, tomarFoto } from "../utils/camara";
+import { colors } from "../theme/theme";
 
 interface Props {
   label: string;
@@ -82,14 +83,14 @@ export default function FotoCapture({ label, value, onChange, recorteCuadrado }:
 
 const styles = StyleSheet.create({
   wrap: { marginTop: 12 },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 4 },
-  previewWrap: { height: 160, borderRadius: 10, overflow: "hidden", backgroundColor: "#fafafa", marginBottom: 8 },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy, marginBottom: 4 },
+  previewWrap: { height: 160, borderRadius: 10, overflow: "hidden", backgroundColor: colors.navy700, marginBottom: 8 },
   previewWrapCuadrada: { height: 180, width: 180, alignSelf: "center", borderRadius: 90 },
   preview: { flex: 1 },
   filaBotones: { flexDirection: "row", gap: 8 },
   boton: { borderRadius: 10, paddingVertical: 14, alignItems: "center" },
-  botonPrimario: { backgroundColor: "#014BD2" },
-  botonPrimarioTexto: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  botonSecundario: { borderWidth: 1, borderColor: "#ddd" },
-  botonSecundarioTexto: { color: "#555", fontWeight: "600", fontSize: 13 },
+  botonPrimario: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonPrimarioTexto: { color: colors.botonNaranjaTexto, fontWeight: "700", fontSize: 15 },
+  botonSecundario: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonSecundarioTexto: { color: colors.botonNaranjaTexto, fontWeight: "700", fontSize: 13 },
 });

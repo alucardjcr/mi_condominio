@@ -22,6 +22,7 @@ import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../components/SelectModal";
 import FotoCapture from "../components/FotoCapture";
+import { colors } from "../theme/theme";
 
 export default function PaqueteRegistrarScreen({ navigation }: any) {
   const { token } = useAuth();
@@ -126,7 +127,7 @@ export default function PaqueteRegistrarScreen({ navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.navy900 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
         <SelectModal
           label="Torre *"
@@ -172,6 +173,7 @@ export default function PaqueteRegistrarScreen({ navigation }: any) {
               value={receptorLibre}
               onChangeText={setReceptorLibre}
               placeholder="Nombre a quien viene dirigido el paquete"
+              placeholderTextColor={colors.textMutedOnNavy}
             />
           </>
         )}
@@ -182,6 +184,7 @@ export default function PaqueteRegistrarScreen({ navigation }: any) {
           value={rutReceptor}
           onChangeText={setRutReceptor}
           placeholder="Ej: 12.345.678-9"
+          placeholderTextColor={colors.textMutedOnNavy}
         />
 
         <SelectModal
@@ -207,19 +210,20 @@ export default function PaqueteRegistrarScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 60 },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginTop: 12 },
+  container: { padding: 20, paddingBottom: 60, backgroundColor: colors.navy900 },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy, marginTop: 12 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
     marginTop: 4,
   },
-  alerta: { color: "#c0392b", fontSize: 12, marginTop: 8 },
-  boton: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 16, alignItems: "center", marginTop: 28 },
+  alerta: { color: colors.danger, fontSize: 12, marginTop: 8 },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 16, alignItems: "center", marginTop: 28 },
   botonDeshabilitado: { opacity: 0.6 },
-  botonTexto: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  botonTexto: { color: colors.botonNaranjaTexto, fontSize: 16, fontWeight: "700" },
 });

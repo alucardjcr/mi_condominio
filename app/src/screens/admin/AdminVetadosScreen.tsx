@@ -16,6 +16,7 @@ import { adminActualizarVetado, adminCrearVetado, adminGetVetados, getTorres, ge
 import { Torre, Unidad, Vetado } from "../../api/types";
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
+import { colors } from "../../theme/theme";
 import FotoCapture from "../../components/FotoCapture";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
 import { esRutValido, formatearRut } from "../../utils/validarRut";
@@ -196,7 +197,7 @@ export default function AdminVetadosScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -205,7 +206,7 @@ export default function AdminVetadosScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
     >
       <Text style={styles.subtitulo}>
         Personas con prohibición de ingreso (ej. orden de alejamiento). Al registrar una visita con este RUT o
@@ -219,7 +220,7 @@ export default function AdminVetadosScreen() {
       {mostrarForm && (
         <View style={styles.card}>
           <Text style={styles.label}>Nombre completo *</Text>
-          <TextInput style={styles.input} value={nombreCompleto} onChangeText={setNombreCompleto} placeholder="Nombre y apellidos" />
+          <TextInput style={styles.input} value={nombreCompleto} onChangeText={setNombreCompleto} placeholder="Nombre y apellidos" placeholderTextColor={colors.textMutedOnNavy} />
 
           <Text style={styles.label}>RUT *</Text>
           <TextInput
@@ -239,11 +240,12 @@ export default function AdminVetadosScreen() {
               setRut(formatearRut(rut));
             }}
             placeholder="Ej: 12345678-9"
+            placeholderTextColor={colors.textMutedOnNavy}
             autoCapitalize="none"
           />
 
           <Text style={styles.label}>Patente del vehículo (si tiene)</Text>
-          <TextInput style={styles.input} value={patente} onChangeText={setPatente} placeholder="Ej: AB-CD-12" autoCapitalize="characters" />
+          <TextInput style={styles.input} value={patente} onChangeText={setPatente} placeholder="Ej: AB-CD-12" placeholderTextColor={colors.textMutedOnNavy} autoCapitalize="characters" />
 
           <Text style={styles.label}>Parentesco / relación con la residente</Text>
           <TextInput
@@ -251,6 +253,7 @@ export default function AdminVetadosScreen() {
             value={parentesco}
             onChangeText={setParentesco}
             placeholder="Ej: Ex pareja del depto 305"
+            placeholderTextColor={colors.textMutedOnNavy}
           />
 
           <Text style={styles.label}>Depto asociado (opcional)</Text>
@@ -265,7 +268,7 @@ export default function AdminVetadosScreen() {
           />
 
           <Text style={styles.label}>Fecha de ingreso al listado</Text>
-          <TextInput style={styles.input} value={fechaIngreso} onChangeText={setFechaIngreso} placeholder="YYYY-MM-DD" />
+          <TextInput style={styles.input} value={fechaIngreso} onChangeText={setFechaIngreso} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMutedOnNavy} />
 
           <Text style={styles.label}>Observaciones</Text>
           <TextInput
@@ -273,6 +276,7 @@ export default function AdminVetadosScreen() {
             value={observaciones}
             onChangeText={setObservaciones}
             placeholder="Ej: orden de alejamiento vigente, N° de causa, etc."
+            placeholderTextColor={colors.textMutedOnNavy}
             multiline
           />
 
@@ -320,7 +324,7 @@ export default function AdminVetadosScreen() {
                   <Text style={styles.botonTexto}>Guardar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.botonBaja, { flex: 1, borderTopWidth: 0, paddingTop: 0 }]} onPress={() => setVetadoEditandoDepto(null)}>
-                  <Text style={styles.botonBajaTexto}>Cancelar</Text>
+                  <Text style={[styles.botonBajaTexto, { color: colors.textOnNavy }]}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -345,27 +349,27 @@ export default function AdminVetadosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  subtitulo: { color: "#888", fontSize: 13 },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  botonNuevo: { backgroundColor: "#c0392b", borderRadius: 10, padding: 14, alignItems: "center" },
-  botonNuevoTexto: { color: "#fff", fontWeight: "700" },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  subtitulo: { color: colors.textMutedOnNavy, fontSize: 13 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  botonNuevo: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 14, alignItems: "center" },
+  botonNuevoTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardInactiva: { opacity: 0.6 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  nombre: { fontSize: 16, fontWeight: "700", flex: 1 },
-  chipInactiva: { fontSize: 11, color: "#999", fontWeight: "700" },
-  detalle: { color: "#555", marginTop: 2, fontSize: 13 },
-  observaciones: { color: "#888", marginTop: 6, fontSize: 12, fontStyle: "italic" },
-  enlaceDepto: { color: "#014BD2", fontWeight: "700", fontSize: 12, marginTop: 8 },
+  nombre: { fontSize: 16, fontWeight: "700", flex: 1, color: colors.textOnNavy },
+  chipInactiva: { fontSize: 11, color: colors.textMutedOnNavy, fontWeight: "700" },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
+  observaciones: { color: colors.textMutedOnNavy, marginTop: 6, fontSize: 12, fontStyle: "italic" },
+  enlaceDepto: { color: colors.goldSoft, fontWeight: "700", fontSize: 12, marginTop: 8 },
   fotosRow: { flexDirection: "row", gap: 10, marginTop: 10 },
-  foto: { width: 80, height: 80, borderRadius: 8, backgroundColor: "#eee" },
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginTop: 10 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: "#fff", marginTop: 4 },
+  foto: { width: 80, height: 80, borderRadius: 8, backgroundColor: colors.navy700 },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textOnNavy, marginTop: 10 },
+  input: { borderWidth: 1, borderColor: colors.navy600, borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: colors.navy700, color: colors.textOnNavy, marginTop: 4 },
   inputConError: { borderColor: "#c0392b", borderWidth: 1.5 },
-  botonGuardar: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 16 },
-  botonTexto: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  botonBaja: { marginTop: 10, alignItems: "center", borderTopWidth: 1, borderTopColor: "#f0f0f0", paddingTop: 10 },
+  botonGuardar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 10, padding: 14, alignItems: "center", marginTop: 16 },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 15 },
+  botonBaja: { marginTop: 10, alignItems: "center", borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: 10 },
   botonBajaTexto: { color: "#c0392b", fontWeight: "700", fontSize: 13 },
 });

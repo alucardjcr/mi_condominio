@@ -82,7 +82,7 @@ export default function CambiarCondominioScreen({ navigation }: any) {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -111,7 +111,7 @@ export default function CambiarCondominioScreen({ navigation }: any) {
                 {c.rol && <Text style={styles.tarjetaRol}>{c.rol}</Text>}
               </View>
               {cambiandoId === c.id_condominio ? (
-                <ActivityIndicator color={colors.navy900} />
+                <ActivityIndicator color={colors.gold} />
               ) : esActual ? (
                 <Text style={styles.actualEtiqueta}>Actual</Text>
               ) : (
@@ -153,14 +153,14 @@ export default function CambiarCondominioScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: spacing.lg, backgroundColor: colors.offWhite, gap: spacing.sm },
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
-  subtitulo: { ...typography.body, color: colors.textMuted, marginBottom: spacing.sm },
+  container: { flex: 1, padding: spacing.lg, backgroundColor: colors.navy900, gap: spacing.sm },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  subtitulo: { ...typography.body, color: colors.textMutedOnNavy, marginBottom: spacing.sm },
   tarjeta: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     overflow: "hidden",
   },
   tarjetaContenido: {
@@ -169,15 +169,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  tarjetaActiva: { borderColor: colors.navy900 },
-  tarjetaTexto: { ...typography.heading, color: colors.textDark, flexShrink: 1 },
-  tarjetaComuna: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  tarjetaRol: { color: colors.textMuted, fontSize: 12, fontWeight: "600", marginTop: 2 },
-  tarjetaFlecha: { fontSize: 24, color: colors.textMuted, fontWeight: "700" },
-  actualEtiqueta: { color: colors.navy900, fontWeight: "700", fontSize: 12 },
+  tarjetaActiva: { borderColor: colors.botonNaranja },
+  tarjetaTexto: { ...typography.heading, color: colors.textOnNavy, flexShrink: 1 },
+  tarjetaComuna: { color: colors.textMutedOnNavy, fontSize: 12, marginTop: 2 },
+  tarjetaRol: { color: colors.textMutedOnNavy, fontSize: 12, fontWeight: "600", marginTop: 2 },
+  tarjetaFlecha: { fontSize: 24, color: colors.textMutedOnNavy, fontWeight: "700" },
+  actualEtiqueta: { color: colors.goldSoft, fontWeight: "700", fontSize: 12 },
   botonEliminar: {
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.navy600,
     paddingVertical: spacing.sm,
     alignItems: "center",
   },
@@ -191,6 +191,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: spacing.xs,
   },
-  tarjetaNuevaTexto: { color: colors.info, fontWeight: "800", fontSize: 15 },
+  tarjetaNuevaTexto: { color: colors.goldSoft, fontWeight: "800", fontSize: 15 },
   error: { color: colors.danger, marginTop: spacing.md, textAlign: "center", fontWeight: "600" },
 });

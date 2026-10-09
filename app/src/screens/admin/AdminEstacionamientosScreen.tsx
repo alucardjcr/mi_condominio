@@ -228,13 +228,13 @@ export default function AdminEstacionamientosScreen() {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.offWhite }}>
+    <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
       <View style={styles.filtroTipos}>
         {tipos.map((t) => (
           <TouchableOpacity
@@ -254,7 +254,7 @@ export default function AdminEstacionamientosScreen() {
         <TextInput
           style={styles.buscador}
           placeholder="Buscar por número o depto..."
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textMutedOnNavy}
           value={busqueda}
           onChangeText={setBusqueda}
         />
@@ -302,7 +302,7 @@ export default function AdminEstacionamientosScreen() {
 
             <View style={{ alignItems: "flex-end", gap: spacing.xs }}>
               {actualizandoId === e.id_estacionamiento ? (
-                <ActivityIndicator color={colors.navy900} />
+                <ActivityIndicator color={colors.gold} />
               ) : (
                 <TouchableOpacity onPress={() => handleCambiarEstado(e)}>
                   <View style={[styles.badge, { backgroundColor: colorEstado(e.estado) }]}>
@@ -326,7 +326,7 @@ export default function AdminEstacionamientosScreen() {
             <Text style={styles.modalTitulo}>Nuevo cupo — {tipoFiltro}</Text>
 
             <Text style={styles.label}>Número del cupo *</Text>
-            <TextInput style={styles.input} value={numeroNuevo} onChangeText={setNumeroNuevo} placeholder="ej: V-12" placeholderTextColor={colors.textMuted} />
+            <TextInput style={styles.input} value={numeroNuevo} onChangeText={setNumeroNuevo} placeholder="ej: V-12" placeholderTextColor={colors.textMutedOnNavy} />
 
             <Text style={styles.label}>Ubicación (opcional)</Text>
             <TextInput
@@ -334,7 +334,7 @@ export default function AdminEstacionamientosScreen() {
               value={ubicacionNueva}
               onChangeText={setUbicacionNueva}
               placeholder="ej: Subterráneo -1"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
             />
 
             {tipoFiltro === "Residente" && (
@@ -359,7 +359,7 @@ export default function AdminEstacionamientosScreen() {
             )}
 
             <TouchableOpacity style={[styles.boton, creando && styles.botonDeshabilitado]} onPress={handleCrear} disabled={creando}>
-              {creando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Crear cupo</Text>}
+              {creando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Crear cupo</Text>}
             </TouchableOpacity>
             <TouchableOpacity style={styles.botonCancelar} onPress={() => setModalCrearAbierto(false)}>
               <Text style={styles.botonCancelarTexto}>Cancelar</Text>
@@ -407,7 +407,7 @@ export default function AdminEstacionamientosScreen() {
                 value={patenteDetalle}
                 onChangeText={setPatenteDetalle}
                 placeholder="ej: AB-CD-12"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.textMutedOnNavy}
                 autoCapitalize="characters"
               />
 
@@ -442,7 +442,7 @@ export default function AdminEstacionamientosScreen() {
                 onPress={handleGuardarDetalle}
                 disabled={asignando}
               >
-                {asignando ? <ActivityIndicator color={colors.navy900} /> : <Text style={styles.botonTexto}>Guardar</Text>}
+                {asignando ? <ActivityIndicator color={colors.botonNaranjaTexto} /> : <Text style={styles.botonTexto}>Guardar</Text>}
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.botonCancelar} onPress={() => setCupoAsignando(null)}>
@@ -457,70 +457,70 @@ export default function AdminEstacionamientosScreen() {
 }
 
 const styles = StyleSheet.create({
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   filtroTipos: { flexDirection: "row", gap: spacing.xs, padding: spacing.md, paddingBottom: 0 },
-  filtroTipo: { flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: 10, alignItems: "center" },
-  filtroTipoActivo: { borderColor: colors.navy900, backgroundColor: colors.navy900 },
-  filtroTipoTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 13 },
-  filtroTipoTextoActivo: { color: colors.textOnNavy },
+  filtroTipo: { flex: 1, borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.sm, paddingVertical: 10, alignItems: "center" },
+  filtroTipoActivo: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  filtroTipoTexto: { color: colors.textMutedOnNavy, fontWeight: "700", fontSize: 13 },
+  filtroTipoTextoActivo: { color: colors.goldSoft },
   filaBuscadorBoton: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginHorizontal: spacing.md, marginTop: spacing.xs },
   buscador: {
     flex: 1,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 12,
     fontSize: 15,
-    backgroundColor: colors.white,
-    color: colors.textDark,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
-  botonAgregar: { backgroundColor: colors.gold, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 12 },
-  botonAgregarTexto: { color: colors.navy900, fontWeight: "800", fontSize: 13 },
-  ayudaResidente: { ...typography.small, color: colors.textMuted, marginHorizontal: spacing.md, marginTop: spacing.sm },
+  botonAgregar: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 12 },
+  botonAgregarTexto: { color: colors.botonNaranjaTexto, fontWeight: "800", fontSize: 13 },
+  ayudaResidente: { ...typography.small, color: colors.textMutedOnNavy, marginHorizontal: spacing.md, marginTop: spacing.sm },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600", marginTop: spacing.sm },
   lista: { padding: spacing.md, paddingTop: spacing.sm, gap: spacing.sm },
-  vacio: { textAlign: "center", color: colors.textMuted, marginTop: spacing.xl },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: spacing.xl },
   tarjeta: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     padding: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
   },
-  numero: { ...typography.heading, color: colors.textDark, fontSize: 16 },
-  detalle: { ...typography.small, color: colors.textMuted, marginTop: 2 },
+  numero: { ...typography.heading, color: colors.textOnNavy, fontSize: 16 },
+  detalle: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
   detalleSinAsignar: { ...typography.small, color: colors.warning, marginTop: 2, fontWeight: "700" },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 6 },
   badgeTexto: { fontSize: 11, fontWeight: "800", color: colors.textDark },
-  linkAsignar: { color: colors.info, fontSize: 12, fontWeight: "700" },
+  linkAsignar: { color: colors.goldSoft, fontSize: 12, fontWeight: "700" },
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  modalCard: { backgroundColor: colors.white, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg, maxHeight: "85%" },
-  modalTitulo: { ...typography.heading, color: colors.textDark },
-  modalSubtitulo: { ...typography.small, color: colors.textMuted, marginTop: 2, marginBottom: spacing.sm },
-  label: { ...typography.label, color: colors.textDark, marginTop: spacing.sm },
+  modalCard: { backgroundColor: colors.navy800, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg, maxHeight: "85%" },
+  modalTitulo: { ...typography.heading, color: colors.textOnNavy },
+  modalSubtitulo: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2, marginBottom: spacing.sm },
+  label: { ...typography.label, color: colors.textOnNavy, marginTop: spacing.sm },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 14,
     fontSize: 16,
     marginTop: 6,
-    color: colors.textDark,
-    backgroundColor: colors.offWhite,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
-  boton: { backgroundColor: colors.gold, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
-  botonTexto: { color: colors.navy900, fontWeight: "800" },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
   botonDeshabilitado: { opacity: 0.5 },
   botonQuitar: { borderWidth: 1.5, borderColor: colors.danger, borderRadius: radius.sm, padding: 12, alignItems: "center", marginTop: spacing.sm },
   botonQuitarTexto: { color: colors.danger, fontWeight: "700", fontSize: 13 },
   filaOpciones: { flexDirection: "row", gap: spacing.sm, marginTop: 6 },
-  opcionChica: { flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: 12, alignItems: "center" },
-  opcionChicaActiva: { borderColor: colors.navy900, backgroundColor: colors.offWhite },
-  opcionChicaTexto: { color: colors.textMuted, fontWeight: "700", fontSize: 13 },
-  opcionChicaTextoActivo: { color: colors.navy900 },
+  opcionChica: { flex: 1, borderWidth: 1.5, borderColor: colors.navy600, backgroundColor: colors.navy700, borderRadius: radius.sm, paddingVertical: 12, alignItems: "center" },
+  opcionChicaActiva: { borderColor: colors.botonNaranja, backgroundColor: colors.navy900 },
+  opcionChicaTexto: { color: colors.textMutedOnNavy, fontWeight: "700", fontSize: 13 },
+  opcionChicaTextoActivo: { color: colors.goldSoft },
   botonCancelar: { alignItems: "center", marginTop: spacing.md, paddingBottom: spacing.sm },
-  botonCancelarTexto: { color: colors.textMuted, fontWeight: "600" },
+  botonCancelarTexto: { color: colors.textOnNavy, fontWeight: "600" },
 });

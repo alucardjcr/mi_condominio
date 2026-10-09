@@ -22,6 +22,7 @@ import { PatenteAdmin, TipoTenenciaPatente, Torre, Unidad } from "../../api/type
 import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import SelectModal, { OpcionSelect } from "../../components/SelectModal";
+import { colors } from "../../theme/theme";
 
 export default function AdminPatentesScreen() {
   const { token } = useAuth();
@@ -113,7 +114,7 @@ export default function AdminPatentesScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -131,6 +132,7 @@ export default function AdminPatentesScreen() {
             <TextInput
               style={styles.input}
               placeholder="Patente"
+              placeholderTextColor={colors.textMutedOnNavy}
               value={patente}
               onChangeText={setPatente}
               autoCapitalize="characters"
@@ -165,6 +167,7 @@ export default function AdminPatentesScreen() {
           <TextInput
             style={styles.buscador}
             placeholder="Buscar por patente o depto..."
+            placeholderTextColor={colors.textMutedOnNavy}
             value={busqueda}
             onChangeText={setBusqueda}
           />
@@ -192,32 +195,43 @@ export default function AdminPatentesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  form: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 12 },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  form: { backgroundColor: colors.navy800, borderRadius: 12, padding: 16, marginBottom: 12 },
+  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textOnNavy },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
     marginBottom: 10,
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
   },
   buscador: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.navy600,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: colors.navy700,
+    color: colors.textOnNavy,
     marginBottom: 8,
   },
-  botonCrear: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" },
-  nombreItem: { fontSize: 16, fontWeight: "700", letterSpacing: 0.5 },
-  detalle: { color: "#666", marginTop: 2, fontSize: 13 },
+  botonCrear: {
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" },
+  nombreItem: { fontSize: 16, fontWeight: "700", letterSpacing: 0.5, color: colors.textOnNavy },
+  detalle: { color: colors.textMutedOnNavy, marginTop: 2, fontSize: 13 },
   botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   botonActivar: { backgroundColor: "#1a9d5c" },
   botonDesactivar: { backgroundColor: "#c0392b" },

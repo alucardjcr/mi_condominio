@@ -28,7 +28,7 @@ export default function SuperAdminFacturacionScreen({ navigation }: any) {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.navy900} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -63,21 +63,21 @@ export default function SuperAdminFacturacionScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: spacing.lg, gap: spacing.sm, backgroundColor: colors.offWhite },
-  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.offWhite },
+  container: { flexGrow: 1, padding: spacing.lg, gap: spacing.sm, backgroundColor: colors.navy900 },
+  centrado: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
   error: { color: colors.danger, textAlign: "center", fontWeight: "600", marginBottom: spacing.md },
   tarjeta: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.navy600,
   },
-  nombre: { ...typography.heading, color: colors.textDark },
-  detalle: { ...typography.small, color: colors.textMuted, marginTop: 2 },
+  nombre: { ...typography.heading, color: colors.textOnNavy },
+  detalle: { ...typography.small, color: colors.textMutedOnNavy, marginTop: 2 },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5, marginLeft: spacing.sm },
   badgePagado: { backgroundColor: "#DCFCE7" },
   badgeGracia: { backgroundColor: "#FEF3C7" },

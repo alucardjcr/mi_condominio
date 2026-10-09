@@ -100,15 +100,15 @@ export default function AvisoPrivacidadScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.offWhite, gap: 2 },
-  encabezado: { ...typography.title, color: colors.textDark, marginBottom: 2 },
-  actualizado: { ...typography.small, color: colors.textMuted, marginBottom: spacing.lg },
-  titulo: { ...typography.heading, color: colors.navy900, marginTop: spacing.lg, marginBottom: spacing.xs },
-  parrafo: { ...typography.body, color: colors.textDark, lineHeight: 20 },
+  container: { flexGrow: 1, padding: spacing.lg, backgroundColor: colors.navy900, gap: 2 },
+  encabezado: { ...typography.title, color: colors.textOnNavy, marginBottom: 2 },
+  actualizado: { ...typography.small, color: colors.textMutedOnNavy, marginBottom: spacing.lg },
+  titulo: { ...typography.heading, color: colors.goldSoft, marginTop: spacing.lg, marginBottom: spacing.xs },
+  parrafo: { ...typography.body, color: colors.textOnNavy, lineHeight: 20 },
   item: { flexDirection: "row", marginTop: 4 },
-  itemVineta: { color: colors.navy900, marginRight: 8, fontWeight: "800" },
-  itemTexto: { ...typography.body, color: colors.textDark, flex: 1, lineHeight: 20 },
-  destacado: { fontWeight: "800", color: colors.navy900 },
-  link: { color: colors.info, fontWeight: "700", marginTop: 4 },
-  nota: { ...typography.small, color: colors.textMuted, marginTop: spacing.xl, fontStyle: "italic" },
+  itemVineta: { color: colors.goldSoft, marginRight: 8, fontWeight: "800" },
+  itemTexto: { ...typography.body, color: colors.textOnNavy, flex: 1, lineHeight: 20 },
+  destacado: { fontWeight: "800", color: colors.textOnNavy },
+  link: { color: colors.goldSoft, fontWeight: "700", marginTop: 4 },
+  nota: { ...typography.small, color: colors.textMutedOnNavy, marginTop: spacing.xl, fontStyle: "italic" },
 });

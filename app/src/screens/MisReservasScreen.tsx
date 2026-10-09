@@ -15,6 +15,7 @@ import { Reserva } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import FotoCapture from "../components/FotoCapture";
+import { colors } from "../theme/theme";
 
 const ESTADOS_CANCELABLES = ["Pendiente", "Aprobado", "Reservado"];
 
@@ -27,18 +28,18 @@ function colorEstado(estado: string) {
     case "Pendiente":
       return "#b0730a";
     case "Aprobado":
-      return "#014BD2";
+      return colors.goldSoft;
     case "Reservado":
     case "En uso":
       return "#1a9d5c";
     case "Finalizado":
-      return "#555";
+      return colors.textMutedOnNavy;
     case "Rechazado":
     case "Cancelado":
     case "Expirado":
       return "#c0392b";
     default:
-      return "#555";
+      return colors.textMutedOnNavy;
   }
 }
 
@@ -111,7 +112,7 @@ export default function MisReservasScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -122,7 +123,7 @@ export default function MisReservasScreen() {
       data={reservas}
       keyExtractor={(item) => String(item.id_reserva)}
       contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
       ListEmptyComponent={<Text style={styles.vacio}>No tienes reservas registradas todavía.</Text>}
       renderItem={({ item }) => (
         <View style={styles.card}>
@@ -161,10 +162,10 @@ export default function MisReservasScreen() {
                       onPress={() => handleSubirComprobante(item)}
                       disabled={enviandoComprobante || !fotoComprobante}
                     >
-                      <Text style={styles.botonAccionTexto}>{enviandoComprobante ? "Enviando..." : "Enviar"}</Text>
+                      <Text style={[styles.botonAccionTexto, styles.botonPrimarioTexto]}>{enviandoComprobante ? "Enviando..." : "Enviar"}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.botonAccion, { backgroundColor: "#999", flex: 1 }]}
+                      style={[styles.botonAccion, styles.botonSecundario, { flex: 1 }]}
                       onPress={() => {
                         setSubiendoComprobanteId(null);
                         setFotoComprobante(null);
@@ -179,7 +180,7 @@ export default function MisReservasScreen() {
                   style={[styles.botonAccion, styles.botonPrimario, { marginTop: 8 }]}
                   onPress={() => setSubiendoComprobanteId(item.id_reserva)}
                 >
-                  <Text style={styles.botonAccionTexto}>Subir comprobante de pago</Text>
+                  <Text style={[styles.botonAccionTexto, styles.botonPrimarioTexto]}>Subir comprobante de pago</Text>
                 </TouchableOpacity>
               )}
             </>
@@ -200,18 +201,20 @@ export default function MisReservasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  nombre: { fontSize: 16, fontWeight: "700" },
+  nombre: { fontSize: 16, fontWeight: "700", color: colors.textOnNavy },
   estado: { fontSize: 12, fontWeight: "800" },
-  detalleTexto: { color: "#555", marginTop: 4, fontSize: 13 },
+  detalleTexto: { color: colors.textMutedOnNavy, marginTop: 4, fontSize: 13 },
   motivoRechazo: { color: "#c0392b", marginTop: 4, fontSize: 12, fontWeight: "600" },
-  esperandoValidacion: { color: "#014BD2", marginTop: 8, fontSize: 12, fontWeight: "600" },
+  esperandoValidacion: { color: colors.goldSoft, marginTop: 8, fontSize: 12, fontWeight: "600" },
   botonAccion: { borderRadius: 8, paddingVertical: 10, alignItems: "center" },
-  botonPrimario: { backgroundColor: "#014BD2" },
+  botonPrimario: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonPrimarioTexto: { color: colors.botonNaranjaTexto },
+  botonSecundario: { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600 },
   botonCancelar: { backgroundColor: "#c0392b", marginTop: 10 },
   botonAccionTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },
 });

@@ -5,6 +5,7 @@ import { adminGetTareasPersonal, adminGetTurnosPersonal } from "../../api/client
 import { TareaPersonal, TurnoPersonal } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { CONDOMINIO_ID } from "../../config/api";
+import { colors } from "../../theme/theme";
 
 // Ronda 18: historial de cumplimiento de UN trabajador — solo
 // Administrador/Comité lo ve (decisión explícita del usuario). Junta turno
@@ -58,7 +59,7 @@ export default function AdminPersonalDetalleScreen({ route }: any) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -116,17 +117,17 @@ export default function AdminPersonalDetalleScreen({ route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  subtitulo: { fontSize: 16, fontWeight: "700", padding: 16, paddingBottom: 8 },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  subtitulo: { fontSize: 16, fontWeight: "700", padding: 16, paddingBottom: 8, color: colors.textOnNavy },
   tabs: { flexDirection: "row", paddingHorizontal: 16, gap: 16, marginBottom: 4 },
-  tab: { fontSize: 14, color: "#888", paddingBottom: 8 },
-  tabActivo: { color: "#2e7d32", fontWeight: "700", borderBottomWidth: 2, borderBottomColor: "#2e7d32" },
-  vacio: { textAlign: "center", color: "#888", marginTop: 20 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
-  cuerpo: { fontSize: 14, color: "#222" },
+  tab: { fontSize: 14, color: colors.textMutedOnNavy, paddingBottom: 8 },
+  tabActivo: { color: colors.goldSoft, fontWeight: "700", borderBottomWidth: 2, borderBottomColor: colors.botonNaranja },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 20 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
+  cuerpo: { fontSize: 14, color: colors.textOnNavy },
   estado: { marginTop: 6, fontSize: 12, fontWeight: "700" },
   estadoOk: { color: "#1a9d5c" },
   estadoPendiente: { color: "#d97706" },
-  fecha: { color: "#999", marginTop: 6, fontSize: 11 },
+  fecha: { color: colors.textMutedOnNavy, marginTop: 6, fontSize: 11 },
 });

@@ -350,7 +350,7 @@ export default function MiHogarScreen({ navigation }: any) {
             <TextInput
               style={[styles.input, { marginBottom: 0 }, rutNuevoError && styles.inputConError]}
               placeholder="Ej: 12345678-9"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.textMutedOnNavy}
               value={rutNuevo}
               onChangeText={(t) => {
                 setRutNuevo(t);
@@ -361,13 +361,13 @@ export default function MiHogarScreen({ navigation }: any) {
             />
           </Campo>
           <Campo label="Nombres">
-            <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Ej: María José" placeholderTextColor={colors.textMuted} value={nombresNuevo} onChangeText={setNombresNuevo} />
+            <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Ej: María José" placeholderTextColor={colors.textMutedOnNavy} value={nombresNuevo} onChangeText={setNombresNuevo} />
           </Campo>
           <Campo label="Apellido paterno">
-            <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido paterno" placeholderTextColor={colors.textMuted} value={apPaternoNuevo} onChangeText={setApPaternoNuevo} />
+            <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido paterno" placeholderTextColor={colors.textMutedOnNavy} value={apPaternoNuevo} onChangeText={setApPaternoNuevo} />
           </Campo>
           <Campo label="Apellido materno (opcional)">
-            <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido materno" placeholderTextColor={colors.textMuted} value={apMaternoNuevo} onChangeText={setApMaternoNuevo} />
+            <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido materno" placeholderTextColor={colors.textMutedOnNavy} value={apMaternoNuevo} onChangeText={setApMaternoNuevo} />
           </Campo>
           <SelectModal
             label="Nacionalidad"
@@ -472,8 +472,8 @@ export default function MiHogarScreen({ navigation }: any) {
               {rutYaCargado ? (
                 <Campo label="RUT">
                   <View style={[styles.input, styles.inputBloqueado, { marginBottom: 0 }]}>
-                    <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "700" }}>{rutEditar}</Text>
-                    <Text style={{ color: colors.textMuted, fontSize: 11, marginTop: 2 }}>Solo el Administrador o el Comité puede cambiarlo</Text>
+                    <Text style={{ color: colors.textOnNavy, fontSize: 15, fontWeight: "700" }}>{rutEditar}</Text>
+                    <Text style={{ color: colors.textMutedOnNavy, fontSize: 11, marginTop: 2 }}>Solo el Administrador o el Comité puede cambiarlo</Text>
                   </View>
                 </Campo>
               ) : (
@@ -481,7 +481,7 @@ export default function MiHogarScreen({ navigation }: any) {
                   <TextInput
                     style={[styles.input, { marginBottom: 0 }, rutEditarError && styles.inputConError]}
                     placeholder="Ej: 12345678-9"
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor={colors.textMutedOnNavy}
                     value={rutEditar}
                     onChangeText={(t) => {
                       setRutEditar(t);
@@ -493,13 +493,13 @@ export default function MiHogarScreen({ navigation }: any) {
                 </Campo>
               )}
               <Campo label="Nombres">
-                <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Nombres" placeholderTextColor={colors.textMuted} value={nombresEditar} onChangeText={setNombresEditar} />
+                <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Nombres" placeholderTextColor={colors.textMutedOnNavy} value={nombresEditar} onChangeText={setNombresEditar} />
               </Campo>
               <Campo label="Apellido paterno">
-                <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido paterno" placeholderTextColor={colors.textMuted} value={apPaternoEditar} onChangeText={setApPaternoEditar} />
+                <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido paterno" placeholderTextColor={colors.textMutedOnNavy} value={apPaternoEditar} onChangeText={setApPaternoEditar} />
               </Campo>
               <Campo label="Apellido materno (opcional)">
-                <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido materno" placeholderTextColor={colors.textMuted} value={apMaternoEditar} onChangeText={setApMaternoEditar} />
+                <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido materno" placeholderTextColor={colors.textMutedOnNavy} value={apMaternoEditar} onChangeText={setApMaternoEditar} />
               </Campo>
               <SelectModal
                 label="Nacionalidad"
@@ -519,14 +519,14 @@ export default function MiHogarScreen({ navigation }: any) {
               <View style={{ height: spacing.md }} />
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
-                  style={[styles.botonToggle, styles.botonActivar, { flex: 1 }]}
+                  style={[styles.botonToggle, styles.botonGuardarNaranja, { flex: 1 }]}
                   onPress={() => handleGuardarPerfil(item.id_usuario)}
                   disabled={guardandoPerfil}
                 >
-                  <Text style={[styles.botonToggleTexto, styles.botonActivarTexto]}>{guardandoPerfil ? "Guardando..." : "Guardar"}</Text>
+                  <Text style={[styles.botonToggleTexto, styles.botonGuardarNaranjaTexto]}>{guardandoPerfil ? "Guardando..." : "Guardar"}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.botonToggle, { backgroundColor: "#999", flex: 1 }]}
+                  style={[styles.botonToggle, styles.botonCancelarOutline, { flex: 1 }]}
                   onPress={() => setPerfilEnEdicion(null)}
                 >
                   <Text style={styles.botonToggleTexto}>Cancelar</Text>
@@ -629,44 +629,47 @@ const styles = StyleSheet.create({
   seccionTitulo: { ...typography.heading, color: colors.textOnNavy, marginTop: spacing.sm, fontSize: 16 },
   vacio: { color: colors.textMutedOnNavy, fontStyle: "italic" },
 
-  form: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, padding: spacing.lg },
-  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textDark },
+  form: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.lg },
+  formTitulo: { fontSize: 16, fontWeight: "700", marginBottom: 10, color: colors.textOnNavy },
   campo: { marginTop: spacing.md },
-  campoLabel: { ...typography.label, color: colors.textDark, marginBottom: 6 },
+  campoLabel: { ...typography.label, color: colors.textOnNavy, marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderColor: colors.cardBlueBorder,
+    borderColor: colors.navy600,
     borderRadius: radius.sm,
     padding: 12,
     fontSize: 15,
     marginBottom: 10,
-    color: colors.textDark,
-    backgroundColor: colors.white,
+    color: colors.textOnNavy,
+    backgroundColor: colors.navy700,
   },
-  inputBloqueado: { backgroundColor: colors.cardBlueBorder, opacity: 0.8 },
+  inputBloqueado: { backgroundColor: colors.navy800, opacity: 0.8 },
   inputConError: { borderColor: colors.danger, borderWidth: 1.5 },
-  botonCrear: { backgroundColor: colors.success, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
+  botonCrear: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: radius.sm, padding: 14, alignItems: "center", marginTop: spacing.lg },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
 
-  card: { backgroundColor: colors.cardBlue, borderRadius: radius.lg, padding: spacing.md },
+  card: { backgroundColor: colors.navy800, borderRadius: radius.lg, padding: spacing.md },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   avatar: { width: 68, height: 68, borderRadius: 34, alignItems: "center", justifyContent: "center" },
   avatarTexto: { fontWeight: "800", fontSize: 21, color: colors.navy900 },
-  avatarFoto: { width: 68, height: 68, borderRadius: 34, backgroundColor: colors.offWhite },
-  nombreItem: { fontSize: 15, fontWeight: "700", color: colors.textDark },
+  avatarFoto: { width: 68, height: 68, borderRadius: 34, backgroundColor: colors.navy700 },
+  nombreItem: { fontSize: 15, fontWeight: "700", color: colors.textOnNavy },
   filaBadges: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
   badgeTexto: { fontSize: 11, fontWeight: "700", color: colors.textDark },
-  detalle: { color: "#344054", fontWeight: "700", marginTop: 4, fontSize: 12 },
+  detalle: { color: colors.textMutedOnNavy, fontWeight: "700", marginTop: 4, fontSize: 12 },
 
   botonToggle: { borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 8 },
   botonActivar: { backgroundColor: colors.success },
   botonActivarTexto: { color: "#fff" },
+  botonGuardarNaranja: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonGuardarNaranjaTexto: { color: colors.botonNaranjaTexto },
+  botonCancelarOutline: { backgroundColor: colors.navy700, borderWidth: 1, borderColor: colors.navy600 },
   botonDesactivar: { backgroundColor: colors.danger },
   botonToggleTexto: { color: "#fff", fontWeight: "700", fontSize: 12 },
 
-  subForm: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.cardBlueBorder, paddingTop: spacing.sm },
-  enlaceCerrar: { color: colors.info, fontSize: 12, fontWeight: "600" },
+  subForm: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.navy600, paddingTop: spacing.sm },
+  enlaceCerrar: { color: colors.goldSoft, fontSize: 12, fontWeight: "600" },
   filaEditar: {
     flexDirection: "row",
     alignItems: "center",
@@ -674,11 +677,11 @@ const styles = StyleSheet.create({
     gap: 4,
     marginTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.cardBlueBorder,
+    borderTopColor: colors.navy600,
     paddingTop: spacing.sm,
   },
-  enlaceEditar: { color: colors.info, fontSize: 13, fontWeight: "700" },
-  chevron: { color: colors.info, fontSize: 16, fontWeight: "700" },
+  enlaceEditar: { color: colors.goldSoft, fontSize: 13, fontWeight: "700" },
+  chevron: { color: colors.goldSoft, fontSize: 16, fontWeight: "700" },
 
   banner: { backgroundColor: colors.navy700, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.sm },
   bannerTexto: { color: colors.textOnNavy, fontSize: 12, lineHeight: 18 },

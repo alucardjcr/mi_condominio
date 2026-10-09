@@ -44,7 +44,7 @@ export default function SeleccionarCondominioScreen({ navigation }: any) {
               {c.rol && <Text style={styles.tarjetaRol}>{c.rol}</Text>}
             </View>
             {cargandoId === c.id_condominio ? (
-              <ActivityIndicator color={colors.navy900} />
+              <ActivityIndicator color={colors.gold} />
             ) : (
               <Text style={styles.tarjetaFlecha}>›</Text>
             )}
@@ -82,16 +82,16 @@ const styles = StyleSheet.create({
   },
   lista: { gap: spacing.sm },
   tarjeta: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.navy800,
     borderRadius: radius.lg,
     padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  tarjetaTexto: { ...typography.heading, color: colors.textDark, flexShrink: 1 },
-  tarjetaRol: { color: colors.textMuted, fontSize: 12, fontWeight: "600", marginTop: 2 },
-  tarjetaFlecha: { fontSize: 24, color: colors.textMuted, fontWeight: "700" },
+  tarjetaTexto: { ...typography.heading, color: colors.textOnNavy, flexShrink: 1 },
+  tarjetaRol: { color: colors.textMutedOnNavy, fontSize: 12, fontWeight: "600", marginTop: 2 },
+  tarjetaFlecha: { fontSize: 24, color: colors.textMutedOnNavy, fontWeight: "700" },
   tarjetaNueva: {
     borderWidth: 1.5,
     borderColor: colors.goldSoft,

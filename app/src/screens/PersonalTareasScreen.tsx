@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { personalCompletarTarea, personalGetTareas } from "../api/client";
 import { TareaPersonal } from "../api/types";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
 
 // Ronda 18: bandeja de tareas del propio trabajador de personal externo —
 // mensajes puntuales que le escribió administrador/comité (ej. "cortar
@@ -64,7 +65,7 @@ export default function PersonalTareasScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -77,7 +78,7 @@ export default function PersonalTareasScreen() {
       data={tareas}
       keyExtractor={(item) => String(item.id_tareapersonal)}
       contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}
       ListHeaderComponent={
         pendientes > 0 ? (
           <Text style={styles.subtitulo}>
@@ -110,15 +111,15 @@ export default function PersonalTareasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f6f8" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  subtitulo: { color: "#888", fontSize: 13, marginBottom: 6 },
-  vacio: { textAlign: "center", color: "#888", marginTop: 30 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#eee" },
+  container: { flex: 1, backgroundColor: colors.navy900 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.navy900 },
+  subtitulo: { color: colors.textMutedOnNavy, fontSize: 13, marginBottom: 6 },
+  vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
+  card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardCompletada: { opacity: 0.7 },
-  cuerpo: { fontSize: 15, color: "#222", fontWeight: "600" },
-  fecha: { color: "#999", marginTop: 6, fontSize: 11 },
-  boton: { backgroundColor: "#2e7d32", borderRadius: 8, paddingVertical: 10, alignItems: "center", marginTop: 12 },
-  botonTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  cuerpo: { fontSize: 15, color: colors.textOnNavy, fontWeight: "600" },
+  fecha: { color: colors.textMutedOnNavy, marginTop: 6, fontSize: 11 },
+  boton: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde, borderRadius: 8, paddingVertical: 10, alignItems: "center", marginTop: 12 },
+  botonTexto: { color: colors.botonNaranjaTexto, fontWeight: "700", fontSize: 13 },
   completadaTexto: { color: "#1a9d5c", fontWeight: "700", marginTop: 10, fontSize: 13 },
 });
