@@ -3,6 +3,7 @@ import { guardarImagenBase64 } from "../utils/imagenes";
 import { sembrarCatalogosPaqueteria } from "./catalogos-default.service";
 import {
   crearNotificacionParaUnidad,
+  crearNotificacionParaUsuario,
   enviarPushesDeNotificacion,
   GLS_TIPONOTIF_PAQUETE_RECIBIDO,
   GLS_TIPONOTIF_PAQUETE_EN_PORTERIA,
@@ -72,6 +73,31 @@ async function getPaqueteConDetalle(conn: DbLike, idPaquete: number) {
        WHERE p.id_paquete = ?`
     )
     .get(idPaquete);
+}
+
+// Privacidad (regalos sorpresa): si el guardia marcó a un residente concreto
+// del depto como destinatario del paquete, el aviso le llega SOLO a él. Si no
+// se marcó a nadie (o el nombre no coincidió con un residente), se avisa a
+// todo el depto como antes.
+async function notificarPaquete(
+  conn: DbLike,
+  paquete: { residente_receptor_usuario_id?: number | null; receptor_coincide?: number | boolean | null },
+  params: {
+    condominioId: number;
+    unidadId: number;
+    tipoGls: string;
+    titulo: string;
+    cuerpo: string;
+    referenciaTipo: "paquete";
+    referenciaId: number;
+    creadoPorUsuarioId?: number;
+  }
+): Promise<number | null> {
+  const { unidadId, ...resto } = params;
+  if (paquete.residente_receptor_usuario_id && paquete.receptor_coincide) {
+    return crearNotificacionParaUsuario(conn, { ...resto, usuarioId: paquete.residente_receptor_usuario_id });
+  }
+  return crearNotificacionParaUnidad(conn, { ...resto, unidadId });
 }
 
 export interface RegistrarLlegadaInput {
@@ -154,16 +180,31 @@ export async function registrarLlegada(input: RegistrarLlegadaInput, guardiaId: 
     // Notificación al residente (ronda 16, a pedido del usuario): le llega
     // a TODOS los residentes activos con acceso de ese depto, no solo a
     // quien coincidió con el nombre del receptor.
-    const idNotificacion = await crearNotificacionParaUnidad(tx, {
+    const idNotificacion = await notificarPaquete(tx, { residente_receptor_usuario_id: input.residente_receptor_usuario_id, receptor_coincide: receptorCoincide }, {
       condominioId: input.condominio_id_condominio,
       unidadId: input.unidad_id_unidad,
       tipoGls: GLS_TIPONOTIF_PAQUETE_RECIBIDO,
-      titulo: "Nuevo paquete",
-      cuerpo: `Llegó un paquete a tu depto, dirigido a ${input.nombre_receptor}.`,
+      titulo: "Paquete pendiente de retiro",
+      cuerpo: `Tienes un paquete pendiente de retiro en portería, dirigido a ${input.nombre_receptor}.`,
       referenciaTipo: "paquete",
       referenciaId: idPaquete,
       creadoPorUsuarioId: guardiaId,
     });
+
+    // Al avisarle al residente, el paquete queda directamente como "Notificado"
+    // (ya no hace falta marcarlo a mano). Si no había a quién avisar, queda
+    // "Recepcionado".
+    if (idNotificacion) {
+      const estadoNotificadoId = await getIdByGls(
+        tx,
+        "estado_paquete",
+        "id_estadopaquete",
+        "gls_estadopaquete",
+        GLS_ESTADO_NOTIFICADO,
+        input.condominio_id_condominio
+      );
+      await tx.prepare(`UPDATE paquete SET estado_paquete_id_estadopaquete = ? WHERE id_paquete = ?`).run(estadoNotificadoId, idPaquete);
+    }
 
     return { paquete: await getPaqueteConDetalle(tx, idPaquete), receptorCoincide: !!receptorCoincide, idNotificacion };
   });
@@ -222,7 +263,7 @@ export async function cambiarEstado(idPaquete: number, nuevoEstadoGls: string, o
     // el paquete (ver registrarLlegada) — ver "Supuestos" en el README.
     let idNotificacion: number | null = null;
     if (nuevoEstadoGls === GLS_ESTADO_EN_PORTERIA) {
-      idNotificacion = await crearNotificacionParaUnidad(tx, {
+      idNotificacion = await notificarPaquete(tx, paquete, {
         condominioId,
         unidadId: paquete.unidad_id_unidad,
         tipoGls: GLS_TIPONOTIF_PAQUETE_EN_PORTERIA,
@@ -348,7 +389,7 @@ export async function listarPendientes(condominioId: number) {
     // después de cruzar los 7 días, marcando alerta7dias_notificada para no
     // repetirla en cada consulta siguiente.
     if (alerta7dias && !p.alerta7dias_notificada) {
-      const idNotificacion = await crearNotificacionParaUnidad(db, {
+      const idNotificacion = await notificarPaquete(db, p, {
         condominioId,
         unidadId: p.unidad_id_unidad,
         tipoGls: GLS_TIPONOTIF_PAQUETE_ALERTA_7DIAS,
@@ -373,6 +414,8 @@ export interface BuscarPaquetesFiltro {
   q?: string; // busca en nombre_receptor o rut_receptor
   unidadId?: number;
   estadoGls?: string;
+  // Residente que consulta: no ve los paquetes dirigidos a OTRO residente del depto.
+  paraResidenteId?: number;
 }
 
 /**
@@ -406,6 +449,10 @@ export async function buscarPaquetes(filtro: BuscarPaquetesFiltro) {
   if (filtro.unidadId) {
     condiciones.push("p.unidad_id_unidad = ?");
     params.push(filtro.unidadId);
+  }
+  if (filtro.paraResidenteId) {
+    condiciones.push("(p.residente_receptor_usuario_id IS NULL OR p.receptor_coincide = 0 OR p.residente_receptor_usuario_id = ?)");
+    params.push(filtro.paraResidenteId);
   }
   if (filtro.estadoGls) {
     condiciones.push("ep.gls_estadopaquete = ?");

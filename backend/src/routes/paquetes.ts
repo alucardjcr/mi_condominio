@@ -86,6 +86,7 @@ paquetesRouter.get("/", async (req, res) => {
       q: req.query.q ? String(req.query.q) : undefined,
       unidadId: esResidente ? req.guardia!.unidad_id_unidad : req.query.unidad_id ? Number(req.query.unidad_id) : undefined,
       estadoGls: req.query.estado ? String(req.query.estado) : undefined,
+      paraResidenteId: req.guardia!.rol === "Residente" ? req.guardia!.id_usuario : undefined,
     });
     res.json(resultado);
   } catch (err: any) {
@@ -104,6 +105,14 @@ paquetesRouter.get("/:id", async (req, res) => {
       paquete.unidad_id_unidad !== req.guardia!.unidad_id_unidad
     ) {
       return res.status(403).json({ error: "No puedes ver un paquete de otro depto." });
+    }
+    if (
+      req.guardia!.rol === "Residente" &&
+      paquete.residente_receptor_usuario_id &&
+      paquete.receptor_coincide &&
+      paquete.residente_receptor_usuario_id !== req.guardia!.id_usuario
+    ) {
+      return res.status(403).json({ error: "Este paquete no está dirigido a ti." });
     }
     res.json(paquete);
   } catch (err: any) {

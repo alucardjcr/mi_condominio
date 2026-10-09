@@ -151,11 +151,6 @@ export default function PaquetePendientesScreen({ navigation }: any) {
             )}
 
             <View style={styles.botones}>
-              {item.gls_estadopaquete === "Recepcionado" && (
-                <TouchableOpacity style={styles.botonSecundario} onPress={() => marcarEstadoRapido(item, "Notificado")}>
-                  <Text style={styles.botonSecundarioTexto}>Marcar notificado</Text>
-                </TouchableOpacity>
-              )}
               {item.gls_estadopaquete !== "En portería" && (
                 <TouchableOpacity style={styles.botonSecundario} onPress={() => marcarEstadoRapido(item, "En portería")}>
                   <Text style={styles.botonSecundarioTexto}>Marcar en portería</Text>

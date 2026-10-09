@@ -1,11 +1,12 @@
 import React, { useCallback, useState } from "react";
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { buscarPaquetes } from "../api/client";
 import { Paquete } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/theme";
+import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
 
 // Pantalla del residente: sus propios paquetes (pendientes y ya
 // entregados). No hay filtro de depto acá porque el backend ya acota el
@@ -78,7 +79,7 @@ export default function MisPaquetesScreen() {
           </Text>
           {pendientes.length > 0 && (
             <Text style={styles.seccionTitulo}>
-              {pendientes.length} paquete{pendientes.length === 1 ? "" : "s"} esperando retiro
+              Tienes {pendientes.length} paquete{pendientes.length === 1 ? "" : "s"} pendiente{pendientes.length === 1 ? "" : "s"} de retiro
             </Text>
           )}
         </View>
@@ -90,16 +91,30 @@ export default function MisPaquetesScreen() {
             <Text style={styles.seccionTitulo}>Ya retirados</Text>
           )}
           <View style={[styles.card, ESTADOS_PENDIENTES.includes(item.gls_estadopaquete) && styles.cardPendiente]}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.tipo}>{item.gls_tipopaquete}</Text>
-              <Text style={styles.estado}>{item.gls_estadopaquete}</Text>
+            <View style={styles.filaPaquete}>
+              {fuenteImagenPrivada(item.foto_recepcion_url, token) ? (
+                <Image source={fuenteImagenPrivada(item.foto_recepcion_url, token)!} style={styles.fotoPaquete} />
+              ) : (
+                <View style={[styles.fotoPaquete, { alignItems: "center", justifyContent: "center" }]}>
+                  <Text style={{ fontSize: 24 }}>📦</Text>
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.tipo}>{item.gls_tipopaquete}</Text>
+                  <Text style={styles.estado}>{item.gls_estadopaquete}</Text>
+                </View>
+                <Text style={styles.detalleTexto}>Recibido: {formatearFecha(item.fecha_recepcion)}</Text>
+                {item.nombre_guardia_creador ? (
+                  <Text style={styles.detalleTexto}>Lo recibió el guardia {item.nombre_guardia_creador}</Text>
+                ) : null}
+                {item.fecha_entrega && (
+                  <Text style={styles.detalleTexto}>
+                    Retirado: {formatearFecha(item.fecha_entrega)} por {item.entregado_a}
+                  </Text>
+                )}
+              </View>
             </View>
-            <Text style={styles.detalleTexto}>Recibido: {formatearFecha(item.fecha_recepcion)}</Text>
-            {item.fecha_entrega && (
-              <Text style={styles.detalleTexto}>
-                Retirado: {formatearFecha(item.fecha_entrega)} por {item.entregado_a}
-              </Text>
-            )}
           </View>
         </View>
       )}
@@ -115,6 +130,8 @@ const styles = StyleSheet.create({
   vacio: { textAlign: "center", color: colors.textMutedOnNavy, marginTop: 30 },
   card: { backgroundColor: colors.navy800, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.navy600 },
   cardPendiente: { borderColor: colors.botonNaranja, borderWidth: 1.5 },
+  filaPaquete: { flexDirection: "row", alignItems: "center", gap: 12 },
+  fotoPaquete: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.navy700, overflow: "hidden" },
   cardHeader: { flexDirection: "row", justifyContent: "space-between" },
   tipo: { fontSize: 12, color: colors.textMutedOnNavy, fontWeight: "600" },
   estado: { fontSize: 12, color: colors.goldSoft, fontWeight: "700" },
