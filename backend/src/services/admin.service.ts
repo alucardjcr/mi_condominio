@@ -22,7 +22,7 @@ async function getIdByGls(table: string, idColumn: string, glsColumn: string, va
 export async function listarGuardias(condominioId: number) {
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.nombres, gp.apellido_paterno, gp.apellido_materno, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, u.correo_usuario, gp.rut, gp.telefono, gp.nombres, gp.apellido_paterno, gp.apellido_materno, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
        FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
        LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario
@@ -107,6 +107,7 @@ export async function crearGuardia(input: {
   fecha_nacimiento?: string | null;
   os10_vigente?: boolean | null;
   foto_url?: string | null;
+  correo_usuario?: string | null;
   // Ronda 69, a pedido explícito del usuario: "¿tenemos si los guardias
   // o conserjes... son internos?" — antes no había ningún dato de esto.
   flg_interno?: boolean | null;
@@ -130,6 +131,9 @@ export async function crearGuardia(input: {
       input.flg_interno === false ? input.empresa_externa?.trim() || null : null
     );
   const id = Number(insert.lastInsertRowid);
+  if (input.correo_usuario && input.correo_usuario.trim()) {
+    await db.prepare(`UPDATE usuario SET correo_usuario = ? WHERE id_usuario = ?`).run(input.correo_usuario.trim(), id);
+  }
   // Ronda 26 (fase 2): sin esto, un Guardia recién creado no tendría
   // ninguna membresía y no podría loguearse (ver auth.service.ts -> login).
   await sincronizarMembresiaPrincipal(id);
@@ -145,7 +149,7 @@ export async function crearGuardia(input: {
   });
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.nombres, gp.apellido_paterno, gp.apellido_materno, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, u.correo_usuario, gp.rut, gp.telefono, gp.nombres, gp.apellido_paterno, gp.apellido_materno, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
        FROM usuario u LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
     )
     .get(id);
@@ -165,10 +169,14 @@ export async function actualizarGuardia(
     fecha_nacimiento?: string | null;
     os10_vigente?: boolean | null;
     foto_url?: string | null;
+    correo_usuario?: string | null;
     flg_interno?: boolean | null;
     empresa_externa?: string | null;
   }
 ) {
+  if (input.correo_usuario !== undefined) {
+    await db.prepare(`UPDATE usuario SET correo_usuario = ? WHERE id_usuario = ?`).run(input.correo_usuario?.trim() || null, id);
+  }
   if (input.nombres !== undefined && input.apellido_paterno) {
     // Nombre separado: el texto de nombre_usuario se reconstruye a partir de las partes.
     const completo = nombreCompletoGuardia(input.nombres, input.apellido_paterno, input.apellido_materno);
@@ -201,7 +209,7 @@ export async function actualizarGuardia(
   await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.nombres, gp.apellido_paterno, gp.apellido_materno, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, u.correo_usuario, gp.rut, gp.telefono, gp.nombres, gp.apellido_paterno, gp.apellido_materno, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
        FROM usuario u LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
     )
     .get(id);

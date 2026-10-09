@@ -157,7 +157,7 @@ adminRouter.get("/guardias", async (req, res) => {
 
 adminRouter.post("/guardias", async (req, res) => {
   try {
-    const { nombre_usuario, nombres, apellido_paterno, apellido_materno, usuariocol, password, rut, telefono, fecha_nacimiento, os10_vigente, foto, flg_interno, empresa_externa } = req.body;
+    const { nombre_usuario, nombres, apellido_paterno, apellido_materno, usuariocol, password, rut, telefono, fecha_nacimiento, os10_vigente, foto, flg_interno, empresa_externa, correo_usuario } = req.body;
     if ((!nombre_usuario && !(nombres && apellido_paterno)) || !usuariocol || !password) {
       return res.status(400).json({ error: "Faltan campos: nombres, apellido_paterno, usuariocol, password." });
     }
@@ -181,6 +181,7 @@ adminRouter.post("/guardias", async (req, res) => {
         foto_url: foto ? await guardarImagenBase64(foto, "guardia", "guardias") : undefined,
         flg_interno: flg_interno === undefined ? undefined : flg_interno === null ? null : Boolean(flg_interno),
         empresa_externa,
+        correo_usuario,
       })
     );
   } catch (err: any) {
@@ -190,7 +191,7 @@ adminRouter.post("/guardias", async (req, res) => {
 
 adminRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
-    const { nombre_usuario, nombres, apellido_paterno, apellido_materno, password, flg_vigencia, rut, telefono, fecha_nacimiento, os10_vigente, foto, flg_interno, empresa_externa } = req.body;
+    const { nombre_usuario, nombres, apellido_paterno, apellido_materno, password, flg_vigencia, rut, telefono, fecha_nacimiento, os10_vigente, foto, flg_interno, empresa_externa, correo_usuario } = req.body;
     res.json(
       await actualizarGuardia(Number(req.params.id), {
         nombre_usuario,
@@ -206,6 +207,7 @@ adminRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_u
         foto_url: foto ? await guardarImagenBase64(foto, "guardia", "guardias") : undefined,
         flg_interno: flg_interno === undefined ? undefined : flg_interno === null ? null : Boolean(flg_interno),
         empresa_externa,
+        correo_usuario,
       })
     );
   } catch (err: any) {
