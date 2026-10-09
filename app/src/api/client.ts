@@ -308,9 +308,12 @@ export const adminGetGuardias = (token: string) => get<Guardia[]>(`/admin/guardi
 export const adminCrearGuardia = (
   token: string,
   input: {
-    nombre_usuario: string;
+    nombre_usuario?: string;
     usuariocol: string;
     password: string;
+    nombres?: string;
+    apellido_paterno?: string;
+    apellido_materno?: string;
     rut?: string;
     telefono?: string;
     fecha_nacimiento?: string;
@@ -328,6 +331,9 @@ export const adminActualizarGuardia = (
     nombre_usuario?: string;
     password?: string;
     flg_vigencia?: number;
+    nombres?: string;
+    apellido_paterno?: string;
+    apellido_materno?: string | null;
     rut?: string | null;
     telefono?: string | null;
     fecha_nacimiento?: string | null;

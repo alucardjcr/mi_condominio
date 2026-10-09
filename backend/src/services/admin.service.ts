@@ -22,7 +22,7 @@ async function getIdByGls(table: string, idColumn: string, glsColumn: string, va
 export async function listarGuardias(condominioId: number) {
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.nombres, gp.apellido_paterno, gp.apellido_materno, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
        FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
        LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario
@@ -36,6 +36,9 @@ export async function listarGuardias(condominioId: number) {
 // toca; `null` = se borra. foto_url solo la fijan las rutas de
 // Administrador/Comité (/admin/guardias) — ver admin.ts.
 export interface PerfilGuardiaInput {
+  nombres?: string | null;
+  apellido_paterno?: string | null;
+  apellido_materno?: string | null;
   rut?: string | null;
   telefono?: string | null;
   fecha_nacimiento?: string | null;
@@ -46,6 +49,12 @@ export interface PerfilGuardiaInput {
 async function upsertGuardiaPerfil(usuarioId: number, perfil: PerfilGuardiaInput) {
   const campos: string[] = [];
   const valores: unknown[] = [];
+  for (const k of ["nombres", "apellido_paterno", "apellido_materno"] as const) {
+    if (perfil[k] !== undefined) {
+      campos.push(k);
+      valores.push(perfil[k]?.trim() || null);
+    }
+  }
   if (perfil.rut !== undefined) {
     campos.push("rut");
     valores.push(perfil.rut?.trim() || null);
@@ -79,8 +88,17 @@ async function upsertGuardiaPerfil(usuarioId: number, perfil: PerfilGuardiaInput
   }
 }
 
+// Une nombres + apellidos en el texto que se guarda en usuario.nombre_usuario
+// (lo que se ve en listados, bitácora, etc.).
+export function nombreCompletoGuardia(nombres?: string | null, paterno?: string | null, materno?: string | null): string {
+  return [nombres, paterno, materno].map((x) => (x ?? "").trim()).filter(Boolean).join(" ");
+}
+
 export async function crearGuardia(input: {
   nombre_usuario: string;
+  nombres?: string | null;
+  apellido_paterno?: string | null;
+  apellido_materno?: string | null;
   usuariocol: string;
   password: string;
   condominio_id_condominio: number;
@@ -96,13 +114,14 @@ export async function crearGuardia(input: {
 }) {
   const tipoGuardiaId = await getIdByGls("tipo_usuario", "id_tipousuario", "gls_tipousuario", "Guardia");
   const passwordHash = bcrypt.hashSync(input.password, 10);
+  const nombreCompleto = nombreCompletoGuardia(input.nombres, input.apellido_paterno, input.apellido_materno) || input.nombre_usuario;
   const insert = await db
     .prepare(
       `INSERT INTO usuario (nombre_usuario, usuariocol, password_usuario, tipo_usuario_id_tipousuario, condominio_id_condominio, flg_interno, empresa_externa)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
-      input.nombre_usuario,
+      nombreCompleto,
       input.usuariocol,
       passwordHash,
       tipoGuardiaId,
@@ -115,6 +134,9 @@ export async function crearGuardia(input: {
   // ninguna membresía y no podría loguearse (ver auth.service.ts -> login).
   await sincronizarMembresiaPrincipal(id);
   await upsertGuardiaPerfil(id, {
+    nombres: input.nombres || undefined,
+    apellido_paterno: input.apellido_paterno || undefined,
+    apellido_materno: input.apellido_materno || undefined,
     rut: input.rut || undefined,
     telefono: input.telefono || undefined,
     fecha_nacimiento: input.fecha_nacimiento || undefined,
@@ -123,7 +145,7 @@ export async function crearGuardia(input: {
   });
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.nombres, gp.apellido_paterno, gp.apellido_materno, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
        FROM usuario u LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
     )
     .get(id);
@@ -133,6 +155,9 @@ export async function actualizarGuardia(
   id: number,
   input: {
     nombre_usuario?: string;
+    nombres?: string | null;
+    apellido_paterno?: string | null;
+    apellido_materno?: string | null;
     password?: string;
     flg_vigencia?: number;
     rut?: string | null;
@@ -144,7 +169,11 @@ export async function actualizarGuardia(
     empresa_externa?: string | null;
   }
 ) {
-  if (input.nombre_usuario !== undefined) {
+  if (input.nombres !== undefined && input.apellido_paterno) {
+    // Nombre separado: el texto de nombre_usuario se reconstruye a partir de las partes.
+    const completo = nombreCompletoGuardia(input.nombres, input.apellido_paterno, input.apellido_materno);
+    await db.prepare(`UPDATE usuario SET nombre_usuario = ? WHERE id_usuario = ?`).run(completo, id);
+  } else if (input.nombre_usuario !== undefined) {
     await db.prepare(`UPDATE usuario SET nombre_usuario = ? WHERE id_usuario = ?`).run(input.nombre_usuario, id);
   }
   if (input.password) {
@@ -160,6 +189,9 @@ export async function actualizarGuardia(
     await db.prepare(`UPDATE usuario SET flg_interno = ?, empresa_externa = ? WHERE id_usuario = ?`).run(interno, empresa, id);
   }
   await upsertGuardiaPerfil(id, {
+    nombres: input.nombres,
+    apellido_paterno: input.apellido_paterno,
+    apellido_materno: input.apellido_materno,
     rut: input.rut,
     telefono: input.telefono,
     fecha_nacimiento: input.fecha_nacimiento,
@@ -169,7 +201,7 @@ export async function actualizarGuardia(
   await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.nombres, gp.apellido_paterno, gp.apellido_materno, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
        FROM usuario u LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
     )
     .get(id);

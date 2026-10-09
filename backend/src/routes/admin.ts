@@ -157,14 +157,17 @@ adminRouter.get("/guardias", async (req, res) => {
 
 adminRouter.post("/guardias", async (req, res) => {
   try {
-    const { nombre_usuario, usuariocol, password, rut, telefono, fecha_nacimiento, os10_vigente, foto, flg_interno, empresa_externa } = req.body;
-    if (!nombre_usuario || !usuariocol || !password) {
-      return res.status(400).json({ error: "Faltan campos: nombre_usuario, usuariocol, password." });
+    const { nombre_usuario, nombres, apellido_paterno, apellido_materno, usuariocol, password, rut, telefono, fecha_nacimiento, os10_vigente, foto, flg_interno, empresa_externa } = req.body;
+    if ((!nombre_usuario && !(nombres && apellido_paterno)) || !usuariocol || !password) {
+      return res.status(400).json({ error: "Faltan campos: nombres, apellido_paterno, usuariocol, password." });
     }
     const condominioId = req.guardia!.condominio_id_condominio!;
     res.status(201).json(
       await crearGuardia({
-        nombre_usuario,
+        nombre_usuario: nombre_usuario ?? "",
+        nombres,
+        apellido_paterno,
+        apellido_materno,
         usuariocol,
         password,
         condominio_id_condominio: condominioId,
@@ -187,10 +190,13 @@ adminRouter.post("/guardias", async (req, res) => {
 
 adminRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
-    const { nombre_usuario, password, flg_vigencia, rut, telefono, fecha_nacimiento, os10_vigente, foto, flg_interno, empresa_externa } = req.body;
+    const { nombre_usuario, nombres, apellido_paterno, apellido_materno, password, flg_vigencia, rut, telefono, fecha_nacimiento, os10_vigente, foto, flg_interno, empresa_externa } = req.body;
     res.json(
       await actualizarGuardia(Number(req.params.id), {
         nombre_usuario,
+        nombres,
+        apellido_paterno,
+        apellido_materno,
         password,
         flg_vigencia: flg_vigencia !== undefined ? Number(flg_vigencia) : undefined,
         rut,

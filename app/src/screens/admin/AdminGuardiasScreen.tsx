@@ -29,7 +29,9 @@ export default function AdminGuardiasScreen() {
   const [guardias, setGuardias] = useState<Guardia[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [nombre, setNombre] = useState("");
+  const [nombres, setNombres] = useState("");
+  const [apPaterno, setApPaterno] = useState("");
+  const [apMaterno, setApMaterno] = useState("");
   const [usuariocol, setUsuariocol] = useState("");
   const [password, setPassword] = useState("");
   const [rut, setRut] = useState("");
@@ -45,6 +47,9 @@ export default function AdminGuardiasScreen() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [editInterno, setEditInterno] = useState<boolean | null>(null);
   const [editEmpresa, setEditEmpresa] = useState("");
+  const [editNombres, setEditNombres] = useState("");
+  const [editApPaterno, setEditApPaterno] = useState("");
+  const [editApMaterno, setEditApMaterno] = useState("");
   const [editRut, setEditRut] = useState("");
   const [editTelefono, setEditTelefono] = useState("");
   const [editFechaNac, setEditFechaNac] = useState("");
@@ -71,8 +76,8 @@ export default function AdminGuardiasScreen() {
   );
 
   const handleCrear = async () => {
-    if (!token || !nombre || !usuariocol || !password) {
-      Alert.alert("Faltan datos", "Nombre, usuario y contraseña son obligatorios.");
+    if (!token || !nombres.trim() || !apPaterno.trim() || !usuariocol || !password) {
+      Alert.alert("Faltan datos", "Nombres, apellido paterno, usuario y contraseña son obligatorios.");
       return;
     }
     if (rut.trim() && !esRutValido(rut)) {
@@ -86,7 +91,9 @@ export default function AdminGuardiasScreen() {
     setCreando(true);
     try {
       await adminCrearGuardia(token, {
-        nombre_usuario: nombre,
+        nombres: nombres.trim(),
+        apellido_paterno: apPaterno.trim(),
+        apellido_materno: apMaterno.trim() || undefined,
         usuariocol,
         password,
         rut: rut.trim() ? formatearRut(rut) : undefined,
@@ -97,7 +104,9 @@ export default function AdminGuardiasScreen() {
         flg_interno: esInterno ?? undefined,
         empresa_externa: esInterno === false ? empresaExterna.trim() || undefined : undefined,
       });
-      setNombre("");
+      setNombres("");
+      setApPaterno("");
+      setApMaterno("");
       setUsuariocol("");
       setPassword("");
       setRut("");
@@ -129,6 +138,11 @@ export default function AdminGuardiasScreen() {
     setEditandoId(g.id_usuario);
     setEditInterno(g.flg_interno === null || g.flg_interno === undefined ? null : Boolean(g.flg_interno));
     setEditEmpresa(g.empresa_externa ?? "");
+    // Guardias cargados antes de separar el nombre no tienen las partes: se
+    // dejan vacías y el nombre solo se toca si se completan.
+    setEditNombres(g.nombres ?? "");
+    setEditApPaterno(g.apellido_paterno ?? "");
+    setEditApMaterno(g.apellido_materno ?? "");
     setEditRut(g.rut ?? "");
     setEditTelefono(g.telefono ?? "");
     setEditFechaNac(g.fecha_nacimiento ?? "");
@@ -146,9 +160,17 @@ export default function AdminGuardiasScreen() {
       Alert.alert("Falta la empresa", "Si el guardia es externo, indica el nombre de la empresa a la que pertenece.");
       return;
     }
+    const tocoNombre = !!(editNombres.trim() || editApPaterno.trim() || editApMaterno.trim());
+    if (tocoNombre && (!editNombres.trim() || !editApPaterno.trim())) {
+      Alert.alert("Falta el nombre", "Para cambiar el nombre indica Nombres y Apellido paterno (el materno es opcional).");
+      return;
+    }
     setGuardandoInterno(true);
     try {
       await adminActualizarGuardia(token, id, {
+        ...(tocoNombre
+          ? { nombres: editNombres.trim(), apellido_paterno: editApPaterno.trim(), apellido_materno: editApMaterno.trim() || null }
+          : {}),
         rut: editRut.trim() ? formatearRut(editRut) : null,
         telefono: editTelefono.trim() || null,
         fecha_nacimiento: editFechaNac || null,
@@ -208,8 +230,12 @@ export default function AdminGuardiasScreen() {
           </View>
 
           <View style={styles.campo}>
-            <Text style={styles.label}>Nombre</Text>
-            <TextInput style={styles.input} placeholder="Nombre completo" value={nombre} onChangeText={setNombre} />
+            <Text style={styles.label}>Nombres</Text>
+            <TextInput style={styles.input} placeholder="Nombres" value={nombres} onChangeText={setNombres} />
+            <Text style={styles.label}>Apellido paterno</Text>
+            <TextInput style={styles.input} placeholder="Apellido paterno" value={apPaterno} onChangeText={setApPaterno} />
+            <Text style={styles.label}>Apellido materno (opcional)</Text>
+            <TextInput style={styles.input} placeholder="Apellido materno" value={apMaterno} onChangeText={setApMaterno} />
           </View>
 
           <View style={styles.campo}>
@@ -338,6 +364,10 @@ export default function AdminGuardiasScreen() {
 
           {editandoId === item.id_usuario ? (
             <View style={styles.subForm}>
+              <Text style={styles.detalle}>Nombre (déjalo vacío si no quieres cambiarlo):</Text>
+              <TextInput style={styles.input} placeholder="Nombres" value={editNombres} onChangeText={setEditNombres} />
+              <TextInput style={styles.input} placeholder="Apellido paterno" value={editApPaterno} onChangeText={setEditApPaterno} />
+              <TextInput style={styles.input} placeholder="Apellido materno (opcional)" value={editApMaterno} onChangeText={setEditApMaterno} />
               <DateField label="Fecha de nacimiento" value={editFechaNac} onChange={setEditFechaNac} maximumDate={new Date()} opcional />
               <View style={styles.filaChips}>
                 <TouchableOpacity style={[styles.chip, editOs10 === true && styles.chipActivo]} onPress={() => setEditOs10(true)}>
