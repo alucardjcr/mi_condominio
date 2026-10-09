@@ -1338,6 +1338,9 @@ export interface PerfilGuardiaPropio {
   nombres?: string | null;
   apellido_paterno?: string | null;
   foto_url?: string | null;
+  os10_vigente?: boolean | number | null;
+  flg_interno?: boolean | number | null;
+  empresa_externa?: string | null;
 }
 
 export interface PerfilAdministrador {

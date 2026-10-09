@@ -1,5 +1,5 @@
 import { db, withTransaction } from "../db/client";
-import { sembrarCatalogosAmonestacionMulta } from "./catalogos-default.service";
+import { sembrarCatalogosAmonestacionMulta, sembrarCatalogosPaqueteria } from "./catalogos-default.service";
 
 // Ronda 26: asistente de creación de condominio — lo usa un Administrador
 // para dar de alta un condominio nuevo que él mismo va a administrar (ver
@@ -204,6 +204,7 @@ export async function crearCondominioConEstructura(idUsuarioAdmin: number, input
     // agregar los suyos propios o desactivar los que no use (ver
     // catalogos-default.service.ts).
     await sembrarCatalogosAmonestacionMulta(condominioId, tx);
+    await sembrarCatalogosPaqueteria(condominioId, tx);
 
     // El administrador que lo creó queda vinculado automáticamente vía
     // `membresia` — sin esto, habría creado un condominio al que ni

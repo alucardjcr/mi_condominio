@@ -88,3 +88,60 @@ export async function sembrarCatalogosAmonestacionMulta(condominioId: number, co
     }
   }
 }
+
+// Catálogo de paquetería por defecto. Un condominio creado desde la app no lo
+// traía (solo el de demo, vía seed.ts), por eso el combo "Tipo de paquete"
+// salía vacío. Idempotente: solo siembra lo que le falta a ese condominio.
+export const TIPOS_PAQUETE_DEFAULT = [
+  "Carta",
+  "Sobre certificado",
+  "Paquete pequeño",
+  "Paquete mediano",
+  "Paquete grande",
+  "Caja de compras online",
+  "Documento importante",
+  "Encomienda express",
+  "Sobre con documentación legal",
+  "Revista o catálogo",
+  "Alimento no perecible",
+  "Medicamento",
+  "Paquete frágil",
+  "Correspondencia interna",
+  "Otro",
+  "Bulto", // default cuando el guardia no selecciona ningún tipo
+];
+
+export const ESTADOS_PAQUETE_DEFAULT = [
+  "Recepcionado",
+  "Notificado",
+  "En portería",
+  "Entregado a residente",
+  "Rechazado por el residente",
+  "Devuelto al remitente",
+  "Perdido",
+];
+
+const TIPOS_NOTIFICACION_PAQUETE = ["Paquete recibido", "Paquete en portería", "Alerta paquete sin retirar"];
+
+export async function sembrarCatalogosPaqueteria(condominioId: number, conn: DbLike = db) {
+  const tieneTipos = await conn.prepare(`SELECT 1 FROM tipo_paquete WHERE condominio_id_condominio = ? LIMIT 1`).get(condominioId);
+  if (!tieneTipos) {
+    for (const gls of TIPOS_PAQUETE_DEFAULT) {
+      await conn.prepare(`INSERT INTO tipo_paquete (gls_tipopaquete, condominio_id_condominio) VALUES (?, ?)`).run(gls, condominioId);
+    }
+  }
+  const tieneEstados = await conn.prepare(`SELECT 1 FROM estado_paquete WHERE condominio_id_condominio = ? LIMIT 1`).get(condominioId);
+  if (!tieneEstados) {
+    for (const gls of ESTADOS_PAQUETE_DEFAULT) {
+      await conn.prepare(`INSERT INTO estado_paquete (gls_estadopaquete, condominio_id_condominio) VALUES (?, ?)`).run(gls, condominioId);
+    }
+  }
+  for (const gls of TIPOS_NOTIFICACION_PAQUETE) {
+    const existe = await conn
+      .prepare(`SELECT 1 FROM tipo_notificacion WHERE gls_tiponotificacion = ? AND condominio_id_condominio = ?`)
+      .get(gls, condominioId);
+    if (!existe) {
+      await conn.prepare(`INSERT INTO tipo_notificacion (gls_tiponotificacion, condominio_id_condominio) VALUES (?, ?)`).run(gls, condominioId);
+    }
+  }
+}

@@ -38,14 +38,13 @@ export default function PaqueteRegistrarScreen({ navigation }: any) {
   const [receptorSel, setReceptorSel] = useState<OpcionSelect | null>(null);
   const [receptorLibre, setReceptorLibre] = useState("");
   const [usandoReceptorLibre, setUsandoReceptorLibre] = useState(false);
-  const [rutReceptor, setRutReceptor] = useState("");
   const [foto, setFoto] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
     if (!token) return;
     getTorres(token, CONDOMINIO_ID).then(setTorres).catch((e) => Alert.alert("Error", e.message));
-    getTiposPaquete(token, CONDOMINIO_ID).then(setTipos).catch((e) => Alert.alert("Error", e.message));
+    getTiposPaquete(token, CONDOMINIO_ID).then(setTipos).catch(() => {});
   }, [token]);
 
   const handleSeleccionarTorre = async (opcion: OpcionSelect) => {
@@ -79,7 +78,6 @@ export default function PaqueteRegistrarScreen({ navigation }: any) {
     setReceptorSel(null);
     setReceptorLibre("");
     setUsandoReceptorLibre(false);
-    setRutReceptor("");
     setFoto(null);
   };
 
@@ -100,7 +98,6 @@ export default function PaqueteRegistrarScreen({ navigation }: any) {
         unidad_id_unidad: unidadSel.id,
         nombre_receptor: nombreReceptorFinal,
         residente_receptor_usuario_id: usandoReceptorLibre ? undefined : receptorSel?.id,
-        rut_receptor: rutReceptor.trim() || undefined,
         tipo_paquete_id_tipopaquete: tipoSel?.id,
         foto_recepcion: foto,
         condominio_id_condominio: CONDOMINIO_ID,
@@ -177,15 +174,6 @@ export default function PaqueteRegistrarScreen({ navigation }: any) {
             />
           </>
         )}
-
-        <Text style={styles.label}>RUT (opcional)</Text>
-        <TextInput
-          style={styles.input}
-          value={rutReceptor}
-          onChangeText={setRutReceptor}
-          placeholder="Ej: 12.345.678-9"
-          placeholderTextColor={colors.textMutedOnNavy}
-        />
 
         <SelectModal
           label="Tipo de paquete (opcional)"

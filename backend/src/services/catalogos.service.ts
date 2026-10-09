@@ -1,3 +1,4 @@
+import { sembrarCatalogosPaqueteria } from "./catalogos-default.service";
 import { db } from "../db/client";
 
 export async function listarTorres(condominioId: number) {
@@ -53,6 +54,8 @@ export async function listarTiposTenenciaPatente() {
 // Tipos de paquete (paquetería) — incluye "Bulto", el default cuando el
 // guardia no elige ningún tipo al registrar la llegada.
 export async function listarTiposPaquete(condominioId: number) {
+  // Condominios creados antes de este arreglo no tenían el catálogo: se completa solo.
+  await sembrarCatalogosPaqueteria(condominioId);
   return db
     .prepare(
       `SELECT id_tipopaquete, gls_tipopaquete FROM tipo_paquete WHERE condominio_id_condominio = ? AND flg_vigencia = 1 ORDER BY id_tipopaquete`

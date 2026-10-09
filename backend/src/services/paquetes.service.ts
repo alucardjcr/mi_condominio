@@ -1,5 +1,6 @@
 import { db, withTransaction, DbLike } from "../db/client";
 import { guardarImagenBase64 } from "../utils/imagenes";
+import { sembrarCatalogosPaqueteria } from "./catalogos-default.service";
 import {
   crearNotificacionParaUnidad,
   enviarPushesDeNotificacion,
@@ -100,6 +101,8 @@ export async function registrarLlegada(input: RegistrarLlegadaInput, guardiaId: 
       );
     }
 
+    // Por si el condominio es anterior a la siembra del catálogo de paquetería.
+    await sembrarCatalogosPaqueteria(input.condominio_id_condominio, tx);
     const tipoId =
       input.tipo_paquete_id_tipopaquete ??
       (await getIdByGls(tx, "tipo_paquete", "id_tipopaquete", "gls_tipopaquete", GLS_TIPO_PAQUETE_DEFAULT, input.condominio_id_condominio));

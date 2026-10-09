@@ -37,7 +37,7 @@ miPerfilRouter.get("/guardia", async (req, res) => {
   }
   const fila = await db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, gp.nombres, gp.apellido_paterno, gp.foto_url
+      `SELECT u.id_usuario, u.nombre_usuario, u.flg_interno, u.empresa_externa, gp.nombres, gp.apellido_paterno, gp.foto_url, gp.os10_vigente
          FROM usuario u
          LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario
         WHERE u.id_usuario = ?`
