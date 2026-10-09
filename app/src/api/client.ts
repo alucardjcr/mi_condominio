@@ -23,7 +23,7 @@ import {
   VacunaMascota,
   VisitaHogar,
   AdministradorCondominio,
-  PerfilAdministrador,
+  PerfilAdministrador, PerfilGuardiaPropio,
   Notificacion,
   Paquete,
   PaquetePendiente,
@@ -320,6 +320,7 @@ export const adminCrearGuardia = (
     fecha_nacimiento?: string;
     os10_vigente?: boolean | null;
     foto?: string; // data URL; solo Administrador/Comité
+    correo_usuario?: string;
     flg_interno?: boolean;
     empresa_externa?: string;
   }
@@ -340,6 +341,7 @@ export const adminActualizarGuardia = (
     fecha_nacimiento?: string | null;
     os10_vigente?: boolean | null;
     foto?: string;
+    correo_usuario?: string | null;
     flg_interno?: boolean | null;
     empresa_externa?: string | null;
   }
@@ -1066,6 +1068,8 @@ export const actualizarEstacionamiento = (
 ) => send<EstacionamientoAdmin>(`/admin/estacionamientos/${id}`, "PATCH", token, input);
 
 // --- Ronda 32: derechos ARCO (Ley 21.719 de Protección de Datos) -----------
+
+export const getMiPerfilGuardia = (token: string) => get<PerfilGuardiaPropio>(`/mi-perfil/guardia`, token);
 
 export const getMiPerfilAdmin = (token: string) => get<PerfilAdministrador>(`/mi-perfil`, token);
 

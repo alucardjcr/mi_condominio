@@ -88,7 +88,7 @@ export default function SelectModal({
             onChangeText={setBusqueda}
             autoFocus
           />
-          <FlatList
+          <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
             data={filtradas}
             keyExtractor={(item) => String(item.id)}
             renderItem={({ item }) => (

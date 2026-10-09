@@ -150,7 +150,7 @@ export default function MiEquipoScreen() {
   const tituloRol = rol === "JefeAseo" ? "de Aseo" : rol === "JefeJardineria" ? "de Jardinería" : "";
 
   return (
-    <ScrollView
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       style={styles.container}
       contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}
       refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}

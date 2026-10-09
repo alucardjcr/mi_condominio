@@ -459,7 +459,7 @@ export default function AdminResidentesScreen() {
   }
 
   return (
-    <FlatList
+    <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       style={styles.container}
       data={residentesFiltrados}
       keyExtractor={(item) => String(item.id_usuario)}

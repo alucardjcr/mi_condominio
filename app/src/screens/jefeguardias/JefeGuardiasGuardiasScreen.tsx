@@ -60,6 +60,8 @@ export default function JefeGuardiasGuardiasScreen() {
       Alert.alert("RUT inválido", "El RUT ingresado no es correcto. Revísalo antes de continuar.");
       return;
     }
+    const nombreCreado = nombre;
+    const usuarioCreado = usuariocol;
     setCreando(true);
     try {
       await jefeCrearGuardia(token, {
@@ -75,8 +77,9 @@ export default function JefeGuardiasGuardiasScreen() {
       setRutNuevo("");
       setTelefonoNuevo("");
       cargar();
+      Alert.alert("✅ Guardia creado", `${nombreCreado} quedó registrado. Ya puede entrar a la app con el usuario "${usuarioCreado}".`);
     } catch (e: any) {
-      Alert.alert("Error", e.message);
+      Alert.alert("No se pudo crear el guardia", e.message);
     } finally {
       setCreando(false);
     }
@@ -109,6 +112,7 @@ export default function JefeGuardiasGuardiasScreen() {
       await jefeActualizarGuardia(token, id, { rut: rutEditar.trim() ? formatearRut(rutEditar) : undefined, telefono: telefonoEditar.trim() || undefined });
       setPerfilEnEdicion(null);
       cargar();
+      Alert.alert("✅ Datos guardados", "Los datos del guardia quedaron actualizados.");
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
@@ -125,7 +129,7 @@ export default function JefeGuardiasGuardiasScreen() {
   }
 
   return (
-    <FlatList
+    <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       style={styles.container}
       data={guardias}
       keyExtractor={(item) => String(item.id_usuario)}

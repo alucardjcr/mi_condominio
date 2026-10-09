@@ -120,7 +120,7 @@ export default function AdminPatentesScreen() {
   }
 
   return (
-    <FlatList
+    <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       style={styles.container}
       data={patentesFiltradas}
       keyExtractor={(item) => String(item.id_patente)}

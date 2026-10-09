@@ -56,7 +56,7 @@ export default function AdminComunicadosScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" style={styles.container} contentContainerStyle={{ padding: 16 }}>
       <Text style={styles.intro}>
         Redacta un mensaje y le llega como notificación a todos los residentes con acceso activo a la app en este
         condominio (dueños y ocupantes de todos los deptos) — a su bandeja de notificaciones, y como push real si ya

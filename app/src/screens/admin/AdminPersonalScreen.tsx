@@ -145,7 +145,7 @@ export default function AdminPersonalScreen({ navigation }: any) {
   }
 
   return (
-    <FlatList
+    <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       style={styles.container}
       data={personal}
       keyExtractor={(item) => String(item.id_usuario)}

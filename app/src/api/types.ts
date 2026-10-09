@@ -267,6 +267,7 @@ export interface Guardia {
   // Curso OS10: null = sin definir, 1 = vigente, 0 = no vigente.
   os10_vigente?: boolean | number | null;
   foto_url?: string | null;
+  correo_usuario?: string | null;
   // Ronda 69, a pedido explícito del usuario.
   flg_interno?: boolean | number | null;
   empresa_externa?: string | null;
@@ -1331,6 +1332,14 @@ export interface AdministradorCondominio {
 }
 
 // Perfil propio del Administrador (pantalla "Mis datos").
+export interface PerfilGuardiaPropio {
+  id_usuario: number;
+  nombre_usuario: string;
+  nombres?: string | null;
+  apellido_paterno?: string | null;
+  foto_url?: string | null;
+}
+
 export interface PerfilAdministrador {
   id_usuario: number;
   nombre_usuario: string;

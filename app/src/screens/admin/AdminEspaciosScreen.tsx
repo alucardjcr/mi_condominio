@@ -183,7 +183,7 @@ export default function AdminEspaciosScreen() {
   }
 
   return (
-    <FlatList
+    <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       style={styles.container}
       data={espacios}
       keyExtractor={(item) => String(item.id_espaciocomun)}

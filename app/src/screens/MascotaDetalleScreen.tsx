@@ -242,7 +242,7 @@ export default function MascotaDetalleScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" style={styles.container} contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
       <View style={styles.filaFoto}>
         <View style={styles.fotoWrap}>
           {mascota.foto_url ? (

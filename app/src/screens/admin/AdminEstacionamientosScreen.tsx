@@ -272,7 +272,7 @@ export default function AdminEstacionamientosScreen() {
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <ScrollView contentContainerStyle={styles.lista}>
+      <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.lista}>
         {filtrados.length === 0 && <Text style={styles.vacio}>No hay cupos de este tipo.</Text>}
         {filtrados.map((e) => (
           <View key={e.id_estacionamiento} style={styles.tarjeta}>
@@ -371,7 +371,7 @@ export default function AdminEstacionamientosScreen() {
       <Modal visible={!!cupoAsignando} animationType="slide" transparent onRequestClose={() => setCupoAsignando(null)}>
         <View style={styles.overlay}>
           <View style={styles.modalCard}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitulo}>Cupo {cupoAsignando?.numero_estacionamiento}</Text>
               <Text style={styles.modalSubtitulo}>
                 {cupoAsignando?.numero_unidad

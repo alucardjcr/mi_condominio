@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import {
   getMascotas,
   getMiAdministrador,
+  getMiPerfilGuardia,
   getMisResidentesDelHogar,
   getNotificaciones,
   getVacunasMascota,
@@ -12,7 +13,7 @@ import {
   personalGetTurnoActual,
   personalIniciarTurno,
 } from "../api/client";
-import { AdministradorCondominio, Mascota, ResidenteAdmin, VacunaMascota } from "../api/types";
+import { AdministradorCondominio, Mascota, PerfilGuardiaPropio, ResidenteAdmin, VacunaMascota } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { colors, radius, spacing, typography } from "../theme/theme";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
@@ -47,6 +48,26 @@ function saludoSegunHora(): string {
 function primerNombre(nombreCompleto?: string | null): string {
   if (!nombreCompleto) return "";
   return nombreCompleto.trim().split(/\s+/)[0];
+}
+
+// "Hola, Primer-nombre Apellido-paterno" del guardia. Si el guardia se creó
+// antes de separar el nombre, se deduce del nombre completo.
+function nombreCortoGuardia(p: PerfilGuardiaPropio | null, completo?: string | null): string {
+  if (p?.nombres && p?.apellido_paterno) return `${p.nombres.trim().split(/\s+/)[0]} ${p.apellido_paterno.trim()}`;
+  const w = (completo ?? "").trim().split(/\s+/).filter(Boolean);
+  if (w.length <= 1) return w[0] ?? "";
+  if (w.length === 2) return `${w[0]} ${w[1]}`;
+  if (w.length === 3) return `${w[0]} ${w[1]}`;
+  return `${w[0]} ${w[2]}`;
+}
+
+function CajaMenu({ icono, label, onPress }: { icono: string; label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.cajaMenu, pressed && { opacity: 0.8 }]}>
+      <Text style={styles.cajaMenuIcono}>{icono}</Text>
+      <Text style={styles.cajaMenuTexto}>{label}</Text>
+    </Pressable>
+  );
 }
 
 function AccesoRapido({ icon, label, color, onPress }: { icon: string; color: string; label: string; onPress: () => void }) {
@@ -146,6 +167,16 @@ export default function HomeScreen({ navigation }: any) {
   const esComite = rol === "Residente" && esAdmin;
   const esPersonal = rol === "Personal";
   const esJefeGuardias = rol === "JefeGuardias";
+
+  // Perfil propio del guardia (foto + nombre corto) para el encabezado del Inicio.
+  const esGuardiaRol = rol === "Guardia";
+  const [perfilGuardia, setPerfilGuardia] = useState<PerfilGuardiaPropio | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      if (!token || !esGuardiaRol) return;
+      getMiPerfilGuardia(token).then(setPerfilGuardia).catch(() => {});
+    }, [token, esGuardiaRol])
+  );
 
   // Ronda 16: contador de notificaciones sin leer, para el enlace
   // "Notificaciones" del Home — se refresca cada vez que se vuelve a esta
@@ -283,7 +314,24 @@ export default function HomeScreen({ navigation }: any) {
       {/* Ronda 78: para el residente el saludo ya va adentro del hero de
           "Mi hogar" (más abajo) — acá arriba solo se muestra para el resto
           de los roles, que no tienen ese hero. */}
-      {!esResidente && <Text style={styles.saludo}>Hola, {guardia?.nombre_usuario}</Text>}
+      {esGuardiaRol ? (
+        <View style={styles.encabezadoGuardia}>
+          {fuenteImagenPrivada(perfilGuardia?.foto_url, token) ? (
+            <Image source={fuenteImagenPrivada(perfilGuardia?.foto_url, token)!} style={styles.encabezadoGuardiaFoto} />
+          ) : (
+            <View style={[styles.encabezadoGuardiaFoto, styles.encabezadoGuardiaIniciales]}>
+              <Text style={styles.encabezadoGuardiaInicialesTexto}>
+                {iniciales(nombreCortoGuardia(perfilGuardia, guardia?.nombre_usuario))}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.encabezadoGuardiaSaludo} numberOfLines={2}>
+            Hola, {nombreCortoGuardia(perfilGuardia, guardia?.nombre_usuario)}
+          </Text>
+        </View>
+      ) : (
+        !esResidente && <Text style={styles.saludo}>Hola, {guardia?.nombre_usuario}</Text>
+      )}
       {esComite && guardia?.nombre_torre && (
         <Text style={styles.subtitulo}>
           {guardia.nombre_torre} · Depto {guardia.numero_unidad} · Comité
@@ -570,38 +618,20 @@ export default function HomeScreen({ navigation }: any) {
         </>
       ) : (
         <>
-          <BotonAccion label="VISITAS" color={colors.success} onPress={() => navigation.navigate("VisitasMenu")} />
-          <BotonAccion
-            label="CONSULTA PATENTE"
-            color={colors.info}
-            onPress={() => navigation.navigate("ConsultaPatente")}
-          />
-          <BotonAccion
-            label="PAQUETES"
-            color={colors.navy500}
-            onPress={() => navigation.navigate("PaquetePendientes")}
-          />
-          <BotonAccion
-            label="RESERVA ÁREA COMÚN"
-            color={colors.warning}
-            onPress={() => navigation.navigate("GuardiaReservas")}
-          />
-          <BotonAccion
-            label="MANTENCIONES"
-            color={colors.navy600}
-            onPress={() => navigation.navigate("GuardiaMantenciones")}
-          />
-          <BotonAccion
-            label="CONSULTA VETADOS"
-            color={colors.danger}
-            onPress={() => navigation.navigate("ConsultaVetado")}
-          />
-          <EnlaceSecundario
-            label="Estacionamientos en arriendo"
-            onPress={() => navigation.navigate("EstacionamientosArriendo")}
-          />
-          <EnlaceSecundario label="Bitácora" onPress={() => navigation.navigate("Bitacora")} />
-          <EnlaceSecundario label="Ver disponibilidad de cupos" onPress={() => navigation.navigate("Disponibilidad")} />
+          <View style={styles.gridMenu}>
+            <CajaMenu icono="🚪" label="Visitas" onPress={() => navigation.navigate("VisitasMenu")} />
+            <CajaMenu icono="🔎" label="Consulta patente" onPress={() => navigation.navigate("ConsultaPatente")} />
+            <CajaMenu icono="📦" label="Paquetes" onPress={() => navigation.navigate("PaquetePendientes")} />
+            <CajaMenu icono="📅" label="Reserva área común" onPress={() => navigation.navigate("GuardiaReservas")} />
+            <CajaMenu icono="🛠️" label="Mantenciones" onPress={() => navigation.navigate("GuardiaMantenciones")} />
+            <CajaMenu icono="🚫" label="Consulta vetados" onPress={() => navigation.navigate("ConsultaVetado")} />
+            <CajaMenu icono="🅿️" label="Estacionamientos en arriendo" onPress={() => navigation.navigate("EstacionamientosArriendo")} />
+            <CajaMenu icono="📒" label="Bitácora" onPress={() => navigation.navigate("Bitacora")} />
+            <CajaMenu icono="🚗" label="Ver disponibilidad de cupos" onPress={() => navigation.navigate("Disponibilidad")} />
+            <CajaMenu icono="🏢" label="Cambiar de condominio" onPress={() => navigation.navigate("CambiarCondominio")} />
+            <CajaMenu icono="👤" label="Mis datos" onPress={() => navigation.navigate("MisDatos")} />
+            <CajaMenu icono="🔑" label="Cambiar contraseña" onPress={() => navigation.navigate("CambiarPassword")} />
+          </View>
         </>
       )}
 
@@ -609,11 +639,11 @@ export default function HomeScreen({ navigation }: any) {
           ajustes ⚙️ del hero de arriba — se ocultan acá para no duplicarlos.
           Guardia/Personal/JefeGuardias (que no tienen ese ⚙️) los siguen
           viendo igual que antes. */}
-      {!esAdmin && !esResidente && (
+      {!esAdmin && !esResidente && !esGuardiaRol && (
         <EnlaceSecundario label="Cambiar de condominio" onPress={() => navigation.navigate("CambiarCondominio")} />
       )}
-      {!esAdmin && !esResidente && <EnlaceSecundario label="Mis datos" onPress={() => navigation.navigate("MisDatos")} />}
-      {!esAdmin && !esResidente && (
+      {!esAdmin && !esResidente && !esGuardiaRol && <EnlaceSecundario label="Mis datos" onPress={() => navigation.navigate("MisDatos")} />}
+      {!esAdmin && !esResidente && !esGuardiaRol && (
         <EnlaceSecundario label="Cambiar contraseña" onPress={() => navigation.navigate("CambiarPassword")} />
       )}
 
@@ -685,6 +715,25 @@ const styles = StyleSheet.create({
   adminDato: { color: "#000", fontSize: 14, marginTop: 3, textAlign: "center" },
   enlace: { marginTop: spacing.md, alignItems: "center" },
   enlaceTexto: { color: colors.goldSoft, fontSize: 14, fontWeight: "600" },
+  encabezadoGuardia: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.lg },
+  encabezadoGuardiaFoto: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.navy700 },
+  encabezadoGuardiaIniciales: { alignItems: "center", justifyContent: "center", backgroundColor: colors.gold },
+  encabezadoGuardiaInicialesTexto: { fontWeight: "800", fontSize: 24, color: colors.navy900 },
+  encabezadoGuardiaSaludo: { ...typography.heading, color: colors.textOnNavy, flex: 1 },
+  gridMenu: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  cajaMenu: {
+    width: "48.5%",
+    minHeight: 96,
+    backgroundColor: colors.navy800,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  cajaMenuIcono: { fontSize: 28 },
+  cajaMenuTexto: { color: colors.textOnNavy, fontSize: 13, fontWeight: "700", textAlign: "center" },
   cerrarSesion: { marginTop: spacing.lg, alignItems: "center" },
   cerrarSesionTexto: { color: colors.textMutedOnNavy, fontSize: 13 },
 

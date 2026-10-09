@@ -254,7 +254,7 @@ function CalendarioMensual({
   onRefresh: () => void;
 }) {
   return (
-    <ScrollView
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       contentContainerStyle={{ padding: spacing.md, gap: spacing.xs }}
       refreshControl={<RefreshControl refreshing={refrescando} onRefresh={onRefresh} tintColor={colors.textOnNavy} />}
     >
@@ -426,7 +426,7 @@ function GeneradorPatron({
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
       <Text style={styles.ayudaCalendario}>
         Genera automáticamente todo el calendario de un rango, rotando por las duplas cada tantos días — reproduce el
         patrón "4x4": cada dupla cubre {diasPorBloque || "N"} días seguidos (uno de día, el otro de noche), y se pasa
@@ -576,7 +576,7 @@ function GestionBloques({ bloques, onCambio }: { bloques: TurnoBloque[]; onCambi
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
       <Text style={styles.ayudaCalendario}>
         Define los horarios de turno del condominio — por ejemplo "Día" 08:00–20:00 y "Noche" 20:00–08:00 para un
         patrón de 12 horas.

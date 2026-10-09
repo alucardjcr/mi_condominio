@@ -169,7 +169,7 @@ export default function AdminReservasScreen({ navigation }: any) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+      <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} style={styles.chips} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {CHIPS.map((c, i) => (
           <TouchableOpacity
             key={c.label}
@@ -190,7 +190,7 @@ export default function AdminReservasScreen({ navigation }: any) {
           <ActivityIndicator size="large" color={colors.gold} />
         </View>
       ) : (
-        <FlatList
+        <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
           data={reservas}
           keyExtractor={(item) => String(item.id_reserva)}
           contentContainerStyle={{ padding: 16, paddingTop: 8, gap: 10 }}

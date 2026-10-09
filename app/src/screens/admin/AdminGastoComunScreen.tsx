@@ -70,7 +70,7 @@ export default function AdminGastoComunScreen() {
   }
 
   return (
-    <FlatList
+    <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       style={styles.container}
       data={unidadesFiltradas}
       keyExtractor={(item) => String(item.id_unidad)}

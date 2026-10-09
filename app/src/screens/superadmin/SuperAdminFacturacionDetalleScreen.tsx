@@ -86,7 +86,7 @@ export default function SuperAdminFacturacionDetalleScreen({ route }: any) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.container}>
       <Text style={styles.titulo}>{nombre}</Text>
 
       <View style={styles.card}>

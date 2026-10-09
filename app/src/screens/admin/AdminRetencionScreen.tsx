@@ -126,7 +126,7 @@ export default function AdminRetencionScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.container}>
       <Text style={styles.intro}>
         Define cuánto tiempo quieres conservar cada tipo de dato operativo antes de poder borrarlo — en días,
         semanas o años, como prefieras. Vacío = nunca se borra nada de esa categoría. La limpieza corre sola todos

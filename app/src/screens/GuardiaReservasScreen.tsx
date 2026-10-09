@@ -117,7 +117,7 @@ export default function GuardiaReservasScreen() {
           <ActivityIndicator size="large" color={colors.gold} />
         </View>
       ) : (
-        <FlatList
+        <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
           data={reservas}
           keyExtractor={(item) => String(item.id_reserva)}
           contentContainerStyle={{ padding: 16, gap: 10 }}

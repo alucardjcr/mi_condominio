@@ -235,7 +235,7 @@ function Listado({
   };
 
   return (
-    <ScrollView style={{ backgroundColor: colors.navy900 }} contentContainerStyle={styles.lista}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" style={{ backgroundColor: colors.navy900 }} contentContainerStyle={styles.lista}>
       <View style={styles.filtroEstados}>
         {ESTADOS_CHIP.map((e) => (
           <TouchableOpacity
@@ -400,7 +400,7 @@ function NuevaAmonestacion({
   };
 
   return (
-    <ScrollView style={{ backgroundColor: colors.navy900 }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" style={{ backgroundColor: colors.navy900 }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
       <View style={styles.card}>
         <SelectModal
           label="Torre"
@@ -557,7 +557,7 @@ function GestionTipos({
   };
 
   return (
-    <ScrollView style={{ backgroundColor: colors.navy900 }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" style={{ backgroundColor: colors.navy900 }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
       <View style={styles.filtroEstados}>
         <TouchableOpacity
           style={[styles.filtroChip, subvista === "amonestacion" && styles.filtroChipActivo]}

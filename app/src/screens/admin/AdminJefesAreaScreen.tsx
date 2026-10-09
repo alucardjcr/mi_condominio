@@ -127,7 +127,7 @@ export default function AdminJefesAreaScreen() {
   }
 
   return (
-    <FlatList
+    <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       style={styles.container}
       data={jefes}
       keyExtractor={(item) => String(item.id_usuario)}

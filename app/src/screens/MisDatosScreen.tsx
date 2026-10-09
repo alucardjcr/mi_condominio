@@ -167,7 +167,7 @@ export default function MisDatosScreen({ navigation }: any) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.container}>
       <Text style={styles.intro}>
         Acá puedes ver toda la información que Mi Condominio tiene sobre ti, descargarla, o pedir que se corrija,
         elimine, o te opongas a algún uso — según la Ley N° 21.719 de Protección de Datos Personales.

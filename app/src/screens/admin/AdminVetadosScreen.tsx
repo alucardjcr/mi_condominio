@@ -203,7 +203,7 @@ export default function AdminVetadosScreen() {
   }
 
   return (
-    <ScrollView
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       style={styles.container}
       contentContainerStyle={{ padding: 16, gap: 10 }}
       refreshControl={<RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} tintColor={colors.textOnNavy} />}

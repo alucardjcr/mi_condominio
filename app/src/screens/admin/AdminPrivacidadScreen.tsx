@@ -79,7 +79,7 @@ export default function AdminPrivacidadScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
-      <ScrollView contentContainerStyle={styles.lista}>
+      <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.lista}>
         <Text style={styles.intro}>
           Solicitudes de derechos ARCO (Ley N° 21.719) que mandaron residentes, guardias o personal desde "Mis
           datos". Las pendientes van primero.

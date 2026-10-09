@@ -83,7 +83,7 @@ export default function AdminElementosMantencionScreen() {
   }
 
   return (
-    <FlatList
+    <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       style={styles.container}
       data={elementos}
       keyExtractor={(item) => String(item.id_tipoelementomantencion)}

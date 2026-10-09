@@ -32,7 +32,7 @@ export default function ConsultaVetadoScreen() {
   };
 
   return (
-    <ScrollView style={{ backgroundColor: colors.navy900 }} contentContainerStyle={styles.container}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" style={{ backgroundColor: colors.navy900 }} contentContainerStyle={styles.container}>
       <Text style={styles.label}>RUT a consultar</Text>
       <TextInput
         style={styles.input}

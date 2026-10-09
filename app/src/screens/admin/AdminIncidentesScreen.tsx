@@ -146,7 +146,7 @@ export default function AdminIncidentesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
-      <ScrollView contentContainerStyle={styles.lista}>
+      <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.lista}>
         <Text style={styles.intro}>
           Si detectas un incidente que compromete datos personales (ej. una fuga, acceso indebido), regístralo acá —
           tienes 72 horas desde la detección para notificar a la Agencia de Protección de Datos.
@@ -220,7 +220,7 @@ export default function AdminIncidentesScreen() {
 
       <Modal visible={modalCrearAbierto} animationType="slide" transparent onRequestClose={() => setModalCrearAbierto(false)}>
         <View style={styles.overlay}>
-          <ScrollView style={styles.modalCard}>
+          <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" style={styles.modalCard}>
             <Text style={styles.modalTitulo}>Registrar incidente</Text>
 
             <Text style={styles.label}>Fecha/hora de detección</Text>

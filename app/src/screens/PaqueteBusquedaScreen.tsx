@@ -119,7 +119,7 @@ export default function PaqueteBusquedaScreen() {
       </View>
 
       {buscado && (
-        <FlatList
+        <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
           data={resultados}
           keyExtractor={(item) => String(item.id_paquete)}
           contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40, gap: 10 }}

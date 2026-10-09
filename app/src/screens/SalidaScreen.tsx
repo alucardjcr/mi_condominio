@@ -108,7 +108,7 @@ export default function SalidaScreen({ route }: any) {
         value={busqueda}
         onChangeText={setBusqueda}
       />
-      <FlatList
+      <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         style={styles.container}
         data={visitasFiltradas}
         keyExtractor={(item) => String(item.id_visita)}

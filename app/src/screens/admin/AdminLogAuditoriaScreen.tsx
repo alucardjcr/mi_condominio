@@ -80,7 +80,7 @@ export default function AdminLogAuditoriaScreen() {
           <ActivityIndicator size="large" color={colors.gold} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.lista}>
+        <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.lista}>
           {logs.length === 0 && <Text style={styles.vacio}>No hay registros con estos filtros.</Text>}
           {logs.map((l) => (
             <View key={l.id_logauditoria} style={styles.tarjeta}>

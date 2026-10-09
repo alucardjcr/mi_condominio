@@ -30,6 +30,22 @@ async function leerPerfil(idUsuario: number) {
     .get(idUsuario);
 }
 
+// Perfil propio del GUARDIA (solo lectura): nombre corto y foto para el Inicio.
+miPerfilRouter.get("/guardia", async (req, res) => {
+  if (req.guardia?.rol !== "Guardia") {
+    return res.status(403).json({ error: "Este perfil es solo para la cuenta Guardia." });
+  }
+  const fila = await db
+    .prepare(
+      `SELECT u.id_usuario, u.nombre_usuario, gp.nombres, gp.apellido_paterno, gp.foto_url
+         FROM usuario u
+         LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario
+        WHERE u.id_usuario = ?`
+    )
+    .get(req.guardia!.id_usuario);
+  res.json(fila);
+});
+
 miPerfilRouter.get("/", async (req, res) => {
   if (!soloAdministrador(req, res)) return;
   res.json(await leerPerfil(req.guardia!.id_usuario));

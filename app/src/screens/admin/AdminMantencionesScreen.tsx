@@ -134,7 +134,7 @@ export default function AdminMantencionesScreen({ navigation }: any) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.navy900 }}>
-      <ScrollView
+      <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.chips}
@@ -165,7 +165,7 @@ export default function AdminMantencionesScreen({ navigation }: any) {
           <ActivityIndicator size="large" color={colors.gold} />
         </View>
       ) : (
-        <FlatList
+        <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
           data={mantenciones}
           keyExtractor={(item) => String(item.id_mantencion)}
           contentContainerStyle={{ padding: 16, paddingTop: 8, gap: 10 }}

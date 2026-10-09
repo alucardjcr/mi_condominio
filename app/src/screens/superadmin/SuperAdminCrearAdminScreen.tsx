@@ -128,7 +128,7 @@ export default function SuperAdminCrearAdminScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <FotoCapture label="Foto del administrador" value={foto} onChange={setFoto} recorteCuadrado />
 

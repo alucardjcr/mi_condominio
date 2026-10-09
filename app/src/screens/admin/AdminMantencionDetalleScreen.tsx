@@ -173,7 +173,7 @@ export default function AdminMantencionDetalleScreen({ route }: any) {
   const esCancelada = mantencion.gls_estadomantencion === "Cancelada";
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" style={styles.container} contentContainerStyle={{ padding: 16, gap: 12 }}>
       {editando ? (
         <View style={styles.card}>
           <Text style={styles.cardTitulo}>Editar mantención</Text>

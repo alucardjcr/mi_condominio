@@ -306,7 +306,7 @@ export default function MiHogarScreen({ navigation }: any) {
   const iconoHogar = esCasas ? "🏠" : "🏢";
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" style={styles.container} contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
       <Text style={styles.nombreCondominioArriba}>{nombreCondominioActual ?? "Mi condominio"}</Text>
       <View style={styles.filaTitulo}>
         <View style={{ flex: 1 }}>

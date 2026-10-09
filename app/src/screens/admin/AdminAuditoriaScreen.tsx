@@ -57,7 +57,7 @@ export default function AdminAuditoriaScreen() {
       </TouchableOpacity>
 
       {resultados !== null && (
-        <FlatList
+        <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
           style={{ marginTop: 20 }}
           data={resultados}
           keyExtractor={(item) => String(item.id_visita)}

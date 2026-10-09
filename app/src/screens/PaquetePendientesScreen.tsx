@@ -122,7 +122,7 @@ export default function PaquetePendientesScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <FlatList
+      <FlatList automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         data={paquetes}
         keyExtractor={(p) => String(p.id_paquete)}
         contentContainerStyle={styles.lista}
