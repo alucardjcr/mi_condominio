@@ -16,9 +16,10 @@ import { Visita } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/theme";
+import { hora24 } from "../utils/fechas";
 
 function formatearHora(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+  return hora24(iso);
 }
 
 export default function SalidaScreen({ route }: any) {

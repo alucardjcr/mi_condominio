@@ -30,6 +30,7 @@ export default function PaqueteEntregaScreen({ navigation, route }: any) {
   const [nombreQuienRetira, setNombreQuienRetira] = useState("");
   const [fotoRetiro, setFotoRetiro] = useState<string | null>(null);
   const [firma, setFirma] = useState<string | null>(null);
+  const [firmando, setFirmando] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function PaqueteEntregaScreen({ navigation, route }: any) {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.navy900 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} scrollEnabled={!firmando}>
         <View style={styles.resumen}>
           <Text style={styles.resumenTipo}>{paquete.gls_tipopaquete}</Text>
           <Text style={styles.resumenReceptor}>{paquete.nombre_receptor}</Text>
@@ -130,7 +131,7 @@ export default function PaqueteEntregaScreen({ navigation, route }: any) {
           </>
         )}
 
-        <SignaturePad value={firma} onChange={setFirma} />
+        <SignaturePad value={firma} onChange={setFirma} onFirmando={setFirmando} />
 
         <TouchableOpacity
           style={[styles.boton, enviando && styles.botonDeshabilitado]}

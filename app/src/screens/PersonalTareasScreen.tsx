@@ -5,19 +5,14 @@ import { personalCompletarTarea, personalGetTareas } from "../api/client";
 import { TareaPersonal } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/theme";
+import { fechaHora24 } from "../utils/fechas";
 
 // Ronda 18: bandeja de tareas del propio trabajador de personal externo —
 // mensajes puntuales que le escribió administrador/comité (ej. "cortar
 // árboles costado sur"), que marca como completadas él mismo.
 function formatearFecha(fechaMysql: string) {
   const iso = fechaMysql.replace(" ", "T");
-  return new Date(iso).toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return fechaHora24(iso);
 }
 
 export default function PersonalTareasScreen() {

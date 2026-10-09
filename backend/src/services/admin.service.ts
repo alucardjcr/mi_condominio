@@ -131,6 +131,9 @@ export async function crearGuardia(input: {
       input.flg_interno === false ? input.empresa_externa?.trim() || null : null
     );
   const id = Number(insert.lastInsertRowid);
+  // La clave la eligió el Administrador, no el guardia: en su primer ingreso
+  // debe cambiarla por una propia (mismo mecanismo que el Administrador nuevo).
+  await db.prepare(`INSERT IGNORE INTO usuario_cambio_password_pendiente (usuario_id_usuario) VALUES (?)`).run(id);
   if (input.correo_usuario && input.correo_usuario.trim()) {
     await db.prepare(`UPDATE usuario SET correo_usuario = ? WHERE id_usuario = ?`).run(input.correo_usuario.trim(), id);
   }
@@ -187,6 +190,9 @@ export async function actualizarGuardia(
   if (input.password) {
     const hash = bcrypt.hashSync(input.password, 10);
     await db.prepare(`UPDATE usuario SET password_usuario = ? WHERE id_usuario = ?`).run(hash, id);
+ 
+    // Clave restablecida por el Administrador: debe cambiarla al próximo ingreso.
+    await db.prepare(`INSERT IGNORE INTO usuario_cambio_password_pendiente (usuario_id_usuario) VALUES (?)`).run(id);
   }
   if (input.flg_vigencia !== undefined) {
     await db.prepare(`UPDATE usuario SET flg_vigencia = ? WHERE id_usuario = ?`).run(input.flg_vigencia, id);

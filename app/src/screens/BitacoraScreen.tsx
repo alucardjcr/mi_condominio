@@ -6,15 +6,11 @@ import { EntradaBitacora } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/theme";
+import { fechaHora24 } from "../utils/fechas";
 
 function formatearFecha(fechaMysql: string) {
   const iso = fechaMysql.replace(" ", "T");
-  return new Date(iso).toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return fechaHora24(iso, false);
 }
 
 // Ronda 20: bitácora de novedades del turno de portería — libro tradicional

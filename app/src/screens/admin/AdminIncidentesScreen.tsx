@@ -12,6 +12,7 @@ import { IncidenteSeguridad } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { CONDOMINIO_ID } from "../../config/api";
 import { colors, radius, spacing, typography } from "../../theme/theme";
+import { fechaHora24 } from "../../utils/fechas";
 
 function badgePlazo(inc: IncidenteSeguridad) {
   if (inc.notificado_agencia_fecha) return { texto: "Agencia notificada", color: "#DCFCE7" };
@@ -164,7 +165,7 @@ export default function AdminIncidentesScreen() {
           return (
             <View key={inc.id_incidenteseguridad} style={styles.tarjeta}>
               <View style={styles.tarjetaHeader}>
-                <Text style={styles.fecha}>{new Date(inc.fecha_deteccion).toLocaleString("es-CL")}</Text>
+                <Text style={styles.fecha}>{fechaHora24(inc.fecha_deteccion)}</Text>
                 <View style={[styles.badge, { backgroundColor: inc.estado === "Cerrado" ? colors.border : badge.color }]}>
                   <Text style={styles.badgeTexto}>{inc.estado === "Cerrado" ? "Cerrado" : badge.texto}</Text>
                 </View>
@@ -187,7 +188,7 @@ export default function AdminIncidentesScreen() {
                     </TouchableOpacity>
                   ) : (
                     <Text style={styles.notificadoTexto}>
-                      Agencia notificada {new Date(inc.notificado_agencia_fecha).toLocaleString("es-CL")}
+                      Agencia notificada {fechaHora24(inc.notificado_agencia_fecha)}
                     </Text>
                   )}
                   {!inc.notificado_afectados_fecha ? (
@@ -200,7 +201,7 @@ export default function AdminIncidentesScreen() {
                     </TouchableOpacity>
                   ) : (
                     <Text style={styles.notificadoTexto}>
-                      Afectados notificados {new Date(inc.notificado_afectados_fecha).toLocaleString("es-CL")}
+                      Afectados notificados {fechaHora24(inc.notificado_afectados_fecha)}
                     </Text>
                   )}
                   <TouchableOpacity

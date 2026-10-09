@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { elegirDeGaleria, tomarFoto } from "../utils/camara";
+import { colors } from "../theme/theme";
 
 interface Props {
   label: string;
@@ -20,6 +21,19 @@ interface Props {
 // como para la foto de quien lo retira, y para fotos de perfil (ronda 67:
 // se agregó la opción de galería; ronda 72: recorte cuadrado opcional +
 // toda foto se normaliza a JPEG, antes fallaba con HEIC desde iPhone).
+// Si el error es por permiso denegado, iOS no vuelve a preguntar: se ofrece
+// abrir los Ajustes del teléfono para activarlo.
+function avisarError(mensaje: string) {
+  if (/permiso/i.test(mensaje)) {
+    Alert.alert("Falta el permiso", mensaje, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Abrir ajustes", onPress: () => Linking.openSettings() },
+    ]);
+  } else {
+    Alert.alert("Error", mensaje);
+  }
+}
+
 export default function FotoCapture({ label, value, onChange, recorteCuadrado }: Props) {
   const [cargando, setCargando] = useState<"camara" | "galeria" | null>(null);
   const opcionesRecorte = recorteCuadrado ? { editable: true as const, aspecto: [1, 1] as [number, number] } : {};
@@ -30,7 +44,7 @@ export default function FotoCapture({ label, value, onChange, recorteCuadrado }:
       const foto = await tomarFoto(opcionesRecorte);
       if (foto) onChange(foto);
     } catch (e: any) {
-      Alert.alert("Error", e.message);
+      avisarError(e.message);
     } finally {
       setCargando(null);
     }
@@ -42,7 +56,7 @@ export default function FotoCapture({ label, value, onChange, recorteCuadrado }:
       const foto = await elegirDeGaleria(opcionesRecorte);
       if (foto) onChange(foto);
     } catch (e: any) {
-      Alert.alert("Error", e.message);
+      avisarError(e.message);
     } finally {
       setCargando(null);
     }
@@ -82,14 +96,14 @@ export default function FotoCapture({ label, value, onChange, recorteCuadrado }:
 
 const styles = StyleSheet.create({
   wrap: { marginTop: 12 },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 4 },
-  previewWrap: { height: 160, borderRadius: 10, overflow: "hidden", backgroundColor: "#fafafa", marginBottom: 8 },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textOnNavy, marginBottom: 4 },
+  previewWrap: { height: 160, borderRadius: 10, overflow: "hidden", backgroundColor: colors.navy700, marginBottom: 8 },
   previewWrapCuadrada: { height: 180, width: 180, alignSelf: "center", borderRadius: 90 },
   preview: { flex: 1 },
   filaBotones: { flexDirection: "row", gap: 8 },
   boton: { borderRadius: 10, paddingVertical: 14, alignItems: "center" },
-  botonPrimario: { backgroundColor: "#014BD2" },
-  botonPrimarioTexto: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  botonSecundario: { borderWidth: 1, borderColor: "#ddd" },
-  botonSecundarioTexto: { color: "#555", fontWeight: "600", fontSize: 13 },
+  botonPrimario: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonPrimarioTexto: { color: colors.botonNaranjaTexto, fontWeight: "700", fontSize: 15 },
+  botonSecundario: { backgroundColor: colors.botonNaranja, borderWidth: 1, borderColor: colors.botonNaranjaBorde },
+  botonSecundarioTexto: { color: colors.botonNaranjaTexto, fontWeight: "700", fontSize: 13 },
 });

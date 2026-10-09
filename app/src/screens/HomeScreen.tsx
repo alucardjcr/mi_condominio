@@ -325,9 +325,28 @@ export default function HomeScreen({ navigation }: any) {
               </Text>
             </View>
           )}
-          <Text style={styles.encabezadoGuardiaSaludo} numberOfLines={2}>
-            Hola, {nombreCortoGuardia(perfilGuardia, guardia?.nombre_usuario)}
-          </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.encabezadoGuardiaSaludo} numberOfLines={2}>
+              Hola, {nombreCortoGuardia(perfilGuardia, guardia?.nombre_usuario)}
+            </Text>
+            <Text style={styles.encabezadoGuardiaDato}>
+              Curso OS10:{" "}
+              <Text style={perfilGuardia?.os10_vigente ? styles.datoOk : perfilGuardia?.os10_vigente === 0 || perfilGuardia?.os10_vigente === false ? styles.datoMal : undefined}>
+                {perfilGuardia?.os10_vigente === null || perfilGuardia?.os10_vigente === undefined
+                  ? "sin definir"
+                  : perfilGuardia.os10_vigente
+                  ? "Vigente"
+                  : "No vigente"}
+              </Text>
+            </Text>
+            <Text style={styles.encabezadoGuardiaDato}>
+              {perfilGuardia?.flg_interno === null || perfilGuardia?.flg_interno === undefined
+                ? "Interno/externo: sin definir"
+                : perfilGuardia.flg_interno
+                ? `Interno — ${nombreCondominioActual ?? "condominio"}`
+                : `Externo${perfilGuardia.empresa_externa ? ` — ${perfilGuardia.empresa_externa}` : ""}`}
+            </Text>
+          </View>
         </View>
       ) : (
         !esResidente && <Text style={styles.saludo}>Hola, {guardia?.nombre_usuario}</Text>
@@ -719,7 +738,10 @@ const styles = StyleSheet.create({
   encabezadoGuardiaFoto: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.navy700 },
   encabezadoGuardiaIniciales: { alignItems: "center", justifyContent: "center", backgroundColor: colors.gold },
   encabezadoGuardiaInicialesTexto: { fontWeight: "800", fontSize: 24, color: colors.navy900 },
-  encabezadoGuardiaSaludo: { ...typography.heading, color: colors.textOnNavy, flex: 1 },
+  encabezadoGuardiaSaludo: { ...typography.heading, color: colors.textOnNavy },
+  encabezadoGuardiaDato: { color: colors.textMutedOnNavy, fontSize: 13, marginTop: 3 },
+  datoOk: { color: "#4ADE80", fontWeight: "700" },
+  datoMal: { color: "#F87171", fontWeight: "700" },
   gridMenu: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   cajaMenu: {
     width: "48.5%",

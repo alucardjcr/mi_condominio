@@ -476,6 +476,8 @@ export interface Paquete {
   numero_unidad: string;
   nombre_torre: string;
   nombre_guardia_creador: string;
+  guardia_creador_nombres?: string | null;
+  guardia_creador_apellido_paterno?: string | null;
   nombre_guardia_entrega: string | null;
 }
 

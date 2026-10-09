@@ -29,7 +29,8 @@ export default function AdminGuardiasScreen() {
   const [guardias, setGuardias] = useState<Guardia[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [nombres, setNombres] = useState("");
+  const [nombres, setNombres] = useState(""); // primer nombre
+  const [segundoNombre, setSegundoNombre] = useState("");
   const [apPaterno, setApPaterno] = useState("");
   const [apMaterno, setApMaterno] = useState("");
   const [usuariocol, setUsuariocol] = useState("");
@@ -49,7 +50,8 @@ export default function AdminGuardiasScreen() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [editInterno, setEditInterno] = useState<boolean | null>(null);
   const [editEmpresa, setEditEmpresa] = useState("");
-  const [editNombres, setEditNombres] = useState("");
+  const [editNombres, setEditNombres] = useState(""); // primer nombre
+  const [editSegundo, setEditSegundo] = useState("");
   const [editApPaterno, setEditApPaterno] = useState("");
   const [editApMaterno, setEditApMaterno] = useState("");
   const [editRut, setEditRut] = useState("");
@@ -80,7 +82,7 @@ export default function AdminGuardiasScreen() {
 
   const handleCrear = async () => {
     if (!token || !nombres.trim() || !apPaterno.trim() || !usuariocol || !password) {
-      Alert.alert("Faltan datos", "Nombres, apellido paterno, usuario y contraseña son obligatorios.");
+      Alert.alert("Faltan datos", "Primer nombre, apellido paterno, usuario y contraseña son obligatorios.");
       return;
     }
     if (rut.trim() && !esRutValido(rut)) {
@@ -95,12 +97,12 @@ export default function AdminGuardiasScreen() {
       Alert.alert("Falta la empresa", "Si el guardia es externo, indica el nombre de la empresa a la que pertenece.");
       return;
     }
-    const nombreCreado = [nombres, apPaterno, apMaterno].map((x) => x.trim()).filter(Boolean).join(" ");
+    const nombreCreado = [nombres, segundoNombre, apPaterno, apMaterno].map((x) => x.trim()).filter(Boolean).join(" ");
     const usuarioCreado = usuariocol;
     setCreando(true);
     try {
       await adminCrearGuardia(token, {
-        nombres: nombres.trim(),
+        nombres: [nombres, segundoNombre].map((x) => x.trim()).filter(Boolean).join(" "),
         apellido_paterno: apPaterno.trim(),
         apellido_materno: apMaterno.trim() || undefined,
         usuariocol,
@@ -115,6 +117,7 @@ export default function AdminGuardiasScreen() {
         empresa_externa: esInterno === false ? empresaExterna.trim() || undefined : undefined,
       });
       setNombres("");
+      setSegundoNombre("");
       setApPaterno("");
       setApMaterno("");
       setUsuariocol("");
@@ -153,7 +156,11 @@ export default function AdminGuardiasScreen() {
     setEditEmpresa(g.empresa_externa ?? "");
     // Guardias cargados antes de separar el nombre no tienen las partes: se
     // dejan vacías y el nombre solo se toca si se completan.
-    setEditNombres(g.nombres ?? "");
+    {
+      const partes = (g.nombres ?? "").trim().split(/\s+/).filter(Boolean);
+      setEditNombres(partes[0] ?? "");
+      setEditSegundo(partes.slice(1).join(" "));
+    }
     setEditApPaterno(g.apellido_paterno ?? "");
     setEditApMaterno(g.apellido_materno ?? "");
     setEditRut(g.rut ?? "");
@@ -178,16 +185,16 @@ export default function AdminGuardiasScreen() {
       Alert.alert("Falta la empresa", "Si el guardia es externo, indica el nombre de la empresa a la que pertenece.");
       return;
     }
-    const tocoNombre = !!(editNombres.trim() || editApPaterno.trim() || editApMaterno.trim());
+    const tocoNombre = !!(editNombres.trim() || editSegundo.trim() || editApPaterno.trim() || editApMaterno.trim());
     if (tocoNombre && (!editNombres.trim() || !editApPaterno.trim())) {
-      Alert.alert("Falta el nombre", "Para cambiar el nombre indica Nombres y Apellido paterno (el materno es opcional).");
+      Alert.alert("Falta el nombre", "Para cambiar el nombre indica Primer nombre y Apellido paterno (el materno es opcional).");
       return;
     }
     setGuardandoInterno(true);
     try {
       await adminActualizarGuardia(token, id, {
         ...(tocoNombre
-          ? { nombres: editNombres.trim(), apellido_paterno: editApPaterno.trim(), apellido_materno: editApMaterno.trim() || null }
+          ? { nombres: [editNombres, editSegundo].map((x) => x.trim()).filter(Boolean).join(" "), apellido_paterno: editApPaterno.trim(), apellido_materno: editApMaterno.trim() || null }
           : {}),
         rut: editRut.trim() ? formatearRut(editRut) : null,
         telefono: editTelefono.trim() || null,
@@ -258,8 +265,10 @@ export default function AdminGuardiasScreen() {
               </View>
     
               <View style={styles.campo}>
-                <Text style={styles.label}>Nombres</Text>
-                <TextInput style={styles.input} placeholder="Nombres" placeholderTextColor={colors.textMutedOnNavy} value={nombres} onChangeText={setNombres} />
+                <Text style={styles.label}>Primer nombre</Text>
+                <TextInput style={styles.input} placeholder="Primer nombre" placeholderTextColor={colors.textMutedOnNavy} value={nombres} onChangeText={setNombres} />
+                <Text style={styles.label}>Segundo nombre (opcional)</Text>
+                <TextInput style={styles.input} placeholder="Segundo nombre" placeholderTextColor={colors.textMutedOnNavy} value={segundoNombre} onChangeText={setSegundoNombre} />
                 <Text style={styles.label}>Apellido paterno</Text>
                 <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor={colors.textMutedOnNavy} value={apPaterno} onChangeText={setApPaterno} />
                 <Text style={styles.label}>Apellido materno (opcional)</Text>
@@ -425,8 +434,10 @@ export default function AdminGuardiasScreen() {
                 <Text style={styles.label}>RUT</Text>
                 <TextInput style={styles.input} placeholder="RUT" placeholderTextColor={colors.textMutedOnNavy} value={editRut} onChangeText={setEditRut} autoCapitalize="characters" />
                 <Text style={styles.detalle}>Nombre (déjalo vacío si no quieres cambiarlo):</Text>
-                <Text style={styles.label}>Nombres</Text>
-                <TextInput style={styles.input} placeholder="Nombres" placeholderTextColor={colors.textMutedOnNavy} value={editNombres} onChangeText={setEditNombres} />
+                <Text style={styles.label}>Primer nombre</Text>
+                <TextInput style={styles.input} placeholder="Primer nombre" placeholderTextColor={colors.textMutedOnNavy} value={editNombres} onChangeText={setEditNombres} />
+                <Text style={styles.label}>Segundo nombre (opcional)</Text>
+                <TextInput style={styles.input} placeholder="Segundo nombre" placeholderTextColor={colors.textMutedOnNavy} value={editSegundo} onChangeText={setEditSegundo} />
                 <Text style={styles.label}>Apellido paterno</Text>
                 <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor={colors.textMutedOnNavy} value={editApPaterno} onChangeText={setEditApPaterno} />
                 <Text style={styles.label}>Apellido materno (opcional)</Text>

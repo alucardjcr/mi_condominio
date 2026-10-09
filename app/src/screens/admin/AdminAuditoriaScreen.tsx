@@ -12,14 +12,10 @@ import { adminAuditarPatente } from "../../api/client";
 import { AuditoriaPatenteItem } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { colors } from "../../theme/theme";
+import { fechaHora24 } from "../../utils/fechas";
 
 function formatear(iso: string) {
-  return new Date(iso).toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return fechaHora24(iso, false);
 }
 
 export default function AdminAuditoriaScreen() {

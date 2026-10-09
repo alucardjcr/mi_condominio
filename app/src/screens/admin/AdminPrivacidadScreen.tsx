@@ -6,6 +6,7 @@ import { SolicitudArcoAdmin } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { CONDOMINIO_ID } from "../../config/api";
 import { colors, radius, spacing, typography } from "../../theme/theme";
+import { fecha24 } from "../../utils/fechas";
 
 const TITULO_TIPO: Record<string, string> = {
   Rectificacion: "Corregir un dato",
@@ -105,7 +106,7 @@ export default function AdminPrivacidadScreen() {
             </Text>
             <Text style={styles.detalle}>{s.detalle}</Text>
             {s.respuesta_admin && <Text style={styles.respuesta}>Respuesta: {s.respuesta_admin}</Text>}
-            <Text style={styles.fecha}>{new Date(s.fecha_solicitud).toLocaleDateString("es-CL")}</Text>
+            <Text style={styles.fecha}>{fecha24(s.fecha_solicitud)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>

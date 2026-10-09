@@ -15,17 +15,18 @@ import { CONDOMINIO_ID } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import { descargarYCompartirArchivo } from "../../utils/descargas";
 import { colors } from "../../theme/theme";
+import { fecha24, hora24 } from "../../utils/fechas";
 
 function formatearMonto(monto: number) {
   return `$${monto.toLocaleString("es-CL")}`;
 }
 
 function formatearFecha(iso: string) {
-  return new Date(iso).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return fecha24(iso);
 }
 
 function formatearHora(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+  return hora24(iso);
 }
 
 function primerDiaDelMes() {

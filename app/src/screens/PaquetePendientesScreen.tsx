@@ -17,6 +17,7 @@ import { EstadoPaqueteGls, PaquetePendiente } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/theme";
+import { fechaHora24 } from "../utils/fechas";
 
 const OPCIONES_ESTADO_EXCEPCION: { gls: EstadoPaqueteGls; label: string }[] = [
   { gls: "Rechazado por el residente", label: "Rechazado por el residente" },
@@ -25,8 +26,7 @@ const OPCIONES_ESTADO_EXCEPCION: { gls: EstadoPaqueteGls; label: string }[] = [
 ];
 
 function formatearFecha(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return fechaHora24(iso);
 }
 
 function colorEstado(gls: string) {

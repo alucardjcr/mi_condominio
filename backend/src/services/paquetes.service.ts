@@ -120,7 +120,7 @@ export interface RegistrarLlegadaInput {
  *
  * La foto es obligatoria (para dejar constancia del estado en que llegó).
  * El tipo de paquete es opcional: si no se manda, queda "Bulto" por
- * defecto. Queda en estado "Recepcionado".
+ * defecto. Queda en estado "En portería".
  */
 export async function registrarLlegada(input: RegistrarLlegadaInput, guardiaId: number) {
   const resultado = await withTransaction(async (tx) => {
@@ -135,12 +135,14 @@ export async function registrarLlegada(input: RegistrarLlegadaInput, guardiaId: 
     const tipoId =
       input.tipo_paquete_id_tipopaquete ??
       (await getIdByGls(tx, "tipo_paquete", "id_tipopaquete", "gls_tipopaquete", GLS_TIPO_PAQUETE_DEFAULT, input.condominio_id_condominio));
+    // Un paquete que llega queda de inmediato "En portería" (ahí está, y los
+    // guardias no lo marcarían a mano).
     const estadoRecepcionadoId = await getIdByGls(
       tx,
       "estado_paquete",
       "id_estadopaquete",
       "gls_estadopaquete",
-      GLS_ESTADO_RECEPCIONADO,
+      GLS_ESTADO_EN_PORTERIA,
       input.condominio_id_condominio
     );
 
@@ -193,21 +195,6 @@ export async function registrarLlegada(input: RegistrarLlegadaInput, guardiaId: 
       referenciaId: idPaquete,
       creadoPorUsuarioId: guardiaId,
     });
-
-    // Al avisarle al residente, el paquete queda directamente como "Notificado"
-    // (ya no hace falta marcarlo a mano). Si no había a quién avisar, queda
-    // "Recepcionado".
-    if (idNotificacion) {
-      const estadoNotificadoId = await getIdByGls(
-        tx,
-        "estado_paquete",
-        "id_estadopaquete",
-        "gls_estadopaquete",
-        GLS_ESTADO_NOTIFICADO,
-        input.condominio_id_condominio
-      );
-      await tx.prepare(`UPDATE paquete SET estado_paquete_id_estadopaquete = ? WHERE id_paquete = ?`).run(estadoNotificadoId, idPaquete);
-    }
 
     return { paquete: await getPaqueteConDetalle(tx, idPaquete), receptorCoincide: !!receptorCoincide, idNotificacion };
   });

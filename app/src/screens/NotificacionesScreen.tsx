@@ -5,6 +5,7 @@ import { getNotificaciones, marcarNotificacionLeida } from "../api/client";
 import { Notificacion, TipoNotificacionGls } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/theme";
+import { fechaHora24 } from "../utils/fechas";
 
 // Bandeja de notificaciones (ronda 16): paquetes, visitas y comunicados que
 // le llegaron a este usuario. Esta pantalla es la que SIEMPRE funciona
@@ -13,13 +14,7 @@ import { colors } from "../theme/theme";
 function formatearFecha(fechaMysql: string) {
   // "YYYY-MM-DD HH:MM:SS" (DATETIME de MySQL, dateStrings:true) -> Date
   const iso = fechaMysql.replace(" ", "T");
-  return new Date(iso).toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return fechaHora24(iso);
 }
 
 const ICONOS: Record<TipoNotificacionGls, string> = {

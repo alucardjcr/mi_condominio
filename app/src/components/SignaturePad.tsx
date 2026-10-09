@@ -8,6 +8,9 @@ interface Props {
   label?: string;
   value: string | null; // data URL de la firma ya capturada, o null si aún no se firma
   onChange: (dataUrl: string | null) => void;
+  // Avisa a la pantalla cuando el dedo empieza/termina de dibujar, para que
+  // bloquee el scroll mientras se firma.
+  onFirmando?: (firmando: boolean) => void;
 }
 
 const ALTO_LIENZO = 170;
@@ -15,7 +18,9 @@ const ALTO_LIENZO = 170;
 // Pad de firma dibujada con el dedo (PanResponder + react-native-svg),
 // capturada como PNG con react-native-view-shot. Reemplaza el cuaderno
 // físico que hoy se firma al entregar un paquete.
-export default function SignaturePad({ label = "Firma de quien retira *", value, onChange }: Props) {
+export default function SignaturePad({ label = "Firma de quien retira *", value, onChange, onFirmando }: Props) {
+  const onFirmandoRef = useRef(onFirmando);
+  onFirmandoRef.current = onFirmando;
   const [paths, setPaths] = useState<string[]>([]);
   const [activePath, setActivePath] = useState("");
   const viewShotRef = useRef<ViewShotRef>(null);
@@ -23,8 +28,14 @@ export default function SignaturePad({ label = "Firma de quien retira *", value,
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      // Que ni el scroll ni nadie más le quite el gesto mientras se dibuja.
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
       onPanResponderGrant: (evt) => {
+        onFirmandoRef.current?.(true);
         const { locationX, locationY } = evt.nativeEvent;
         setActivePath(`M${locationX.toFixed(1)},${locationY.toFixed(1)}`);
       },
@@ -32,7 +43,11 @@ export default function SignaturePad({ label = "Firma de quien retira *", value,
         const { locationX, locationY } = evt.nativeEvent;
         setActivePath((prev) => `${prev} L${locationX.toFixed(1)},${locationY.toFixed(1)}`);
       },
+      onPanResponderTerminate: () => {
+        onFirmandoRef.current?.(false);
+      },
       onPanResponderRelease: () => {
+        onFirmandoRef.current?.(false);
         setActivePath((prev) => {
           if (prev) setPaths((all) => [...all, prev]);
           return "";

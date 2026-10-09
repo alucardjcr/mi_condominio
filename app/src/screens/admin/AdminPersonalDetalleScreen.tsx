@@ -6,6 +6,7 @@ import { TareaPersonal, TurnoPersonal } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { CONDOMINIO_ID } from "../../config/api";
 import { colors } from "../../theme/theme";
+import { fechaHora24 } from "../../utils/fechas";
 
 // Ronda 18: historial de cumplimiento de UN trabajador — solo
 // Administrador/Comité lo ve (decisión explícita del usuario). Junta turno
@@ -14,13 +15,7 @@ import { colors } from "../../theme/theme";
 function formatearFecha(fechaMysql: string | null) {
   if (!fechaMysql) return "—";
   const iso = fechaMysql.replace(" ", "T");
-  return new Date(iso).toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return fechaHora24(iso);
 }
 
 type Fila = { tipo: "turno"; data: TurnoPersonal } | { tipo: "tarea"; data: TareaPersonal };

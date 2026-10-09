@@ -27,3 +27,33 @@ export function formatearFechaHora(valor: string | null | undefined): string {
   const fecha = formatearFecha(f);
   return h ? `${fecha} ${h.slice(0, 5)}` : fecha;
 }
+
+// Formato 24 horas en todo el sistema (a pedido explícito del usuario).
+// Aceptan ISO ('2026-10-09T14:44:00.000Z') o 'YYYY-MM-DD HH:MM:SS' y muestran
+// la hora local del teléfono.
+function aDate(valor: string | null | undefined): Date | null {
+  if (!valor) return null;
+  const d = new Date(valor.includes("T") ? valor : valor.replace(" ", "T"));
+  return isNaN(d.getTime()) ? null : d;
+}
+const dos = (n: number) => String(n).padStart(2, "0");
+
+// 'DD/MM/AAAA HH:MM' (o 'DD/MM HH:MM' si conAnio=false).
+export function fechaHora24(valor: string | null | undefined, conAnio = true): string {
+  const d = aDate(valor);
+  if (!d) return "";
+  const fecha = `${dos(d.getDate())}/${dos(d.getMonth() + 1)}${conAnio ? `/${d.getFullYear()}` : ""}`;
+  return `${fecha} ${dos(d.getHours())}:${dos(d.getMinutes())}`;
+}
+
+// 'HH:MM' en 24 horas.
+export function hora24(valor: string | null | undefined): string {
+  const d = aDate(valor);
+  return d ? `${dos(d.getHours())}:${dos(d.getMinutes())}` : "";
+}
+
+// 'DD/MM/AAAA' de una fecha/hora cualquiera.
+export function fecha24(valor: string | null | undefined): string {
+  const d = aDate(valor);
+  return d ? `${dos(d.getDate())}/${dos(d.getMonth() + 1)}/${d.getFullYear()}` : "";
+}

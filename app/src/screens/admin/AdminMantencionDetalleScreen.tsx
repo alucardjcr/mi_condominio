@@ -15,6 +15,7 @@ import SelectModal, { OpcionSelect } from "../../components/SelectModal";
 import FotoCapture from "../../components/FotoCapture";
 import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
 import { colors } from "../../theme/theme";
+import { fechaHora24 } from "../../utils/fechas";
 
 function formatearMonto(monto: number) {
   return `$${monto.toLocaleString("es-CL")}`;
@@ -23,13 +24,7 @@ function formatearMonto(monto: number) {
 function formatearFecha(fechaMysql: string | null) {
   if (!fechaMysql) return "—";
   const iso = fechaMysql.replace(" ", "T");
-  return new Date(iso).toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return fechaHora24(iso);
 }
 
 // Ronda 31: urlCompleta local se reemplazó por fuenteImagenPrivada

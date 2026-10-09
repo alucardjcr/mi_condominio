@@ -6,6 +6,7 @@ import { LogAuditoria } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { CONDOMINIO_ID } from "../../config/api";
 import { colors, radius, spacing, typography } from "../../theme/theme";
+import { fechaHora24 } from "../../utils/fechas";
 
 const ACCIONES = ["Todas", "POST", "PATCH", "PUT", "DELETE"] as const;
 
@@ -88,7 +89,7 @@ export default function AdminLogAuditoriaScreen() {
                 <View style={[styles.badge, { backgroundColor: colorAccion(l.accion) }]}>
                   <Text style={styles.badgeTexto}>{l.accion}</Text>
                 </View>
-                <Text style={styles.fecha}>{new Date(l.fecha).toLocaleString("es-CL")}</Text>
+                <Text style={styles.fecha}>{fechaHora24(l.fecha)}</Text>
               </View>
               <Text style={styles.ruta}>{l.ruta}</Text>
               {l.detalle && <Text style={styles.detalle}>{l.detalle}</Text>}
