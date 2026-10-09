@@ -62,6 +62,8 @@ async function getPaqueteConDetalle(conn: DbLike, idPaquete: number) {
          u.numero_unidad,
          tb.nombre_torre,
          gc.nombre_usuario as nombre_guardia_creador,
+         gcp.nombres as guardia_creador_nombres,
+         gcp.apellido_paterno as guardia_creador_apellido_paterno,
          ge.nombre_usuario as nombre_guardia_entrega
        FROM paquete p
        JOIN tipo_paquete tp ON tp.id_tipopaquete = p.tipo_paquete_id_tipopaquete
@@ -69,6 +71,7 @@ async function getPaqueteConDetalle(conn: DbLike, idPaquete: number) {
        JOIN unidad u ON u.id_unidad = p.unidad_id_unidad
        JOIN torre_block tb ON tb.id_torreblock = u.torre_block_id_torreblock
        JOIN usuario gc ON gc.id_usuario = p.usuario_id_usuario_creador
+       LEFT JOIN guardia_perfil gcp ON gcp.usuario_id_usuario = gc.id_usuario
        LEFT JOIN usuario ge ON ge.id_usuario = p.usuario_id_usuario_entrega
        WHERE p.id_paquete = ?`
     )
@@ -371,6 +374,7 @@ export async function listarPendientes(condominioId: number) {
        JOIN unidad u ON u.id_unidad = p.unidad_id_unidad
        JOIN torre_block tb ON tb.id_torreblock = u.torre_block_id_torreblock
        JOIN usuario gc ON gc.id_usuario = p.usuario_id_usuario_creador
+       LEFT JOIN guardia_perfil gcp ON gcp.usuario_id_usuario = gc.id_usuario
        WHERE p.condominio_id_condominio = ?
          AND ep.gls_estadopaquete IN (?, ?, ?)
        ORDER BY p.fecha_recepcion ASC`
@@ -468,6 +472,8 @@ export async function buscarPaquetes(filtro: BuscarPaquetesFiltro) {
          u.numero_unidad,
          tb.nombre_torre,
          gc.nombre_usuario as nombre_guardia_creador,
+         gcp.nombres as guardia_creador_nombres,
+         gcp.apellido_paterno as guardia_creador_apellido_paterno,
          ge.nombre_usuario as nombre_guardia_entrega
        FROM paquete p
        JOIN tipo_paquete tp ON tp.id_tipopaquete = p.tipo_paquete_id_tipopaquete
@@ -475,6 +481,7 @@ export async function buscarPaquetes(filtro: BuscarPaquetesFiltro) {
        JOIN unidad u ON u.id_unidad = p.unidad_id_unidad
        JOIN torre_block tb ON tb.id_torreblock = u.torre_block_id_torreblock
        JOIN usuario gc ON gc.id_usuario = p.usuario_id_usuario_creador
+       LEFT JOIN guardia_perfil gcp ON gcp.usuario_id_usuario = gc.id_usuario
        LEFT JOIN usuario ge ON ge.id_usuario = p.usuario_id_usuario_entrega
        WHERE ${condiciones.join(" AND ")}
        ORDER BY p.fecha_recepcion DESC`
