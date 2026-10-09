@@ -22,6 +22,7 @@ import {
   EspecieMascota,
   VacunaMascota,
   VisitaHogar,
+  AdministradorCondominio,
   Notificacion,
   Paquete,
   PaquetePendiente,
@@ -522,6 +523,9 @@ export const adminResolverGarantia = (
 // --- Mi depto: autoadministración del hogar por el dueño (ronda 15) -------
 // Solo funciona si el residente logeado es el propietario de su unidad
 // (guardia.esPropietario) — el backend además valida esto por su cuenta.
+
+export const getMiAdministrador = (token: string) =>
+  get<AdministradorCondominio | null>(`/mi-depto/administrador`, token);
 
 export const getMisVisitas = (token: string) => get<VisitaHogar[]>(`/mi-depto/visitas`, token);
 

@@ -1313,3 +1313,12 @@ export interface ResumenTurnoGuardia {
   hora_termino: string;
   cantidad: number;
 }
+
+export interface AdministradorCondominio {
+  id_usuario: number;
+  nombre_usuario: string;
+  correo_usuario: string | null;
+  foto_url: string | null;
+  numero_registro_rnac: string | null;
+  telefono: string | null;
+}

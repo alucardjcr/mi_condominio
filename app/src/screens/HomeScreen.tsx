@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
 import {
   getMascotas,
+  getMiAdministrador,
   getMisResidentesDelHogar,
   getNotificaciones,
   getVacunasMascota,
@@ -11,7 +12,7 @@ import {
   personalGetTurnoActual,
   personalIniciarTurno,
 } from "../api/client";
-import { Mascota, ResidenteAdmin, VacunaMascota } from "../api/types";
+import { AdministradorCondominio, Mascota, ResidenteAdmin, VacunaMascota } from "../api/types";
 import { CONDOMINIO_ID } from "../config/api";
 import { colors, radius, spacing, typography } from "../theme/theme";
 import { fuenteImagenPrivada } from "../utils/imagenesPrivadas";
@@ -184,6 +185,28 @@ export default function HomeScreen({ navigation }: any) {
         .catch(() => {});
     }, [token, esResidente])
   );
+  // "Mi administrador": se carga al abrir el módulo por primera vez.
+  const [adminAbierto, setAdminAbierto] = useState(false);
+  const [adminCondo, setAdminCondo] = useState<AdministradorCondominio | null>(null);
+  const [adminCargado, setAdminCargado] = useState(false);
+  const [adminError, setAdminError] = useState(false);
+  const toggleAdmin = () => {
+    const abrir = !adminAbierto;
+    setAdminAbierto(abrir);
+    if (abrir && !adminCargado && token) {
+      setAdminError(false);
+      getMiAdministrador(token)
+        .then((a) => {
+          setAdminCondo(a);
+          setAdminError(false);
+          setAdminCargado(true);
+        })
+        .catch(() => {
+          // No se marca como cargado: al volver a tocar, reintenta.
+          setAdminError(true);
+        });
+    }
+  };
   // El propietario siempre va primero; el resto conserva su orden.
   const residentesHogarActivos = residentesHogar
     .filter((r) => r.flg_vigencia)
@@ -464,7 +487,46 @@ export default function HomeScreen({ navigation }: any) {
             </Text>
           </View>
 
-          <EnlaceSecundario label="Ver mis reservas" onPress={() => navigation.navigate("MisReservas")} />
+          <View style={styles.modulosFila}>
+            <Pressable
+              onPress={() => navigation.navigate("MisReservas")}
+              style={({ pressed }) => [styles.modulo, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={styles.moduloIcono}>📅</Text>
+              <Text style={styles.moduloTitulo}>Ver mis reservas</Text>
+            </Pressable>
+            <Pressable onPress={toggleAdmin} style={({ pressed }) => [styles.modulo, pressed && { opacity: 0.7 }]}>
+              <Text style={styles.moduloIcono}>🛡️</Text>
+              <Text style={styles.moduloTitulo}>Mi administrador</Text>
+            </Pressable>
+          </View>
+          {adminAbierto && (
+            <View style={styles.adminCard}>
+              {adminError ? (
+                <Text style={styles.adminDato}>No se pudo cargar la información. Cierra y vuelve a tocar para reintentar.</Text>
+              ) : !adminCargado ? (
+                <ActivityIndicator color="#000" />
+              ) : !adminCondo ? (
+                <Text style={styles.adminDato}>Este condominio aún no tiene un administrador asignado.</Text>
+              ) : (
+                <>
+                  {fuenteImagenPrivada(adminCondo.foto_url, token) ? (
+                    <Image source={fuenteImagenPrivada(adminCondo.foto_url, token)!} style={styles.adminFoto} />
+                  ) : (
+                    <View style={[styles.adminFoto, { alignItems: "center", justifyContent: "center" }]}>
+                      <Text style={{ fontSize: 40 }}>👤</Text>
+                    </View>
+                  )}
+                  <Text style={styles.adminNombre}>{adminCondo.nombre_usuario}</Text>
+                  {adminCondo.numero_registro_rnac ? (
+                    <Text style={styles.adminDato}>N° RNAC: {adminCondo.numero_registro_rnac}</Text>
+                  ) : null}
+                  {adminCondo.telefono ? <Text style={styles.adminDato}>📞 {adminCondo.telefono}</Text> : null}
+                  {adminCondo.correo_usuario ? <Text style={styles.adminDato}>✉️ {adminCondo.correo_usuario}</Text> : null}
+                </>
+              )}
+            </View>
+          )}
         </>
       ) : esPersonal ? (
         <>
@@ -600,6 +662,27 @@ const styles = StyleSheet.create({
   botonPresionado: { transform: [{ scale: 0.97 }], opacity: 0.92 },
   botonDeshabilitado: { opacity: 0.6 },
   botonTexto: { color: colors.textOnNavy, fontSize: 17, fontWeight: "800", letterSpacing: 0.4 },
+  modulosFila: { flexDirection: "row", gap: spacing.md, marginTop: spacing.md },
+  modulo: {
+    flex: 1,
+    backgroundColor: colors.cardBlue,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+  },
+  moduloIcono: { fontSize: 26, marginBottom: 6 },
+  moduloTitulo: { color: "#000", fontSize: 14, fontWeight: "700", textAlign: "center" },
+  adminCard: {
+    backgroundColor: colors.cardBlue,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginTop: spacing.md,
+    alignItems: "center",
+  },
+  adminFoto: { width: 110, height: 110, borderRadius: 55, marginBottom: spacing.md, backgroundColor: colors.cardBlueBorder },
+  adminNombre: { color: "#000", fontSize: 18, fontWeight: "700", marginBottom: 6, textAlign: "center" },
+  adminDato: { color: "#000", fontSize: 14, marginTop: 3, textAlign: "center" },
   enlace: { marginTop: spacing.md, alignItems: "center" },
   enlaceTexto: { color: colors.goldSoft, fontSize: 14, fontWeight: "600" },
   cerrarSesion: { marginTop: spacing.lg, alignItems: "center" },
