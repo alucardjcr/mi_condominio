@@ -157,7 +157,7 @@ adminRouter.get("/guardias", async (req, res) => {
 
 adminRouter.post("/guardias", async (req, res) => {
   try {
-    const { nombre_usuario, usuariocol, password, rut, telefono, flg_interno, empresa_externa } = req.body;
+    const { nombre_usuario, usuariocol, password, rut, telefono, fecha_nacimiento, os10_vigente, foto, flg_interno, empresa_externa } = req.body;
     if (!nombre_usuario || !usuariocol || !password) {
       return res.status(400).json({ error: "Faltan campos: nombre_usuario, usuariocol, password." });
     }
@@ -170,6 +170,12 @@ adminRouter.post("/guardias", async (req, res) => {
         condominio_id_condominio: condominioId,
         rut,
         telefono,
+        fecha_nacimiento,
+        os10_vigente: os10_vigente === undefined ? undefined : os10_vigente === null ? null : Boolean(os10_vigente),
+        // La foto del guardia la carga SOLO el Administrador/Comité (esta ruta
+        // está detrás de requireAdmin): así un guardia no puede cambiar su
+        // foto por la de otra persona.
+        foto_url: foto ? await guardarImagenBase64(foto, "guardia", "guardias") : undefined,
         flg_interno: flg_interno === undefined ? undefined : flg_interno === null ? null : Boolean(flg_interno),
         empresa_externa,
       })
@@ -181,7 +187,7 @@ adminRouter.post("/guardias", async (req, res) => {
 
 adminRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_usuario"), async (req, res) => {
   try {
-    const { nombre_usuario, password, flg_vigencia, rut, telefono, flg_interno, empresa_externa } = req.body;
+    const { nombre_usuario, password, flg_vigencia, rut, telefono, fecha_nacimiento, os10_vigente, foto, flg_interno, empresa_externa } = req.body;
     res.json(
       await actualizarGuardia(Number(req.params.id), {
         nombre_usuario,
@@ -189,6 +195,9 @@ adminRouter.patch("/guardias/:id", requirePerteneceAlCondominio("usuario", "id_u
         flg_vigencia: flg_vigencia !== undefined ? Number(flg_vigencia) : undefined,
         rut,
         telefono,
+        fecha_nacimiento,
+        os10_vigente: os10_vigente === undefined ? undefined : os10_vigente === null ? null : Boolean(os10_vigente),
+        foto_url: foto ? await guardarImagenBase64(foto, "guardia", "guardias") : undefined,
         flg_interno: flg_interno === undefined ? undefined : flg_interno === null ? null : Boolean(flg_interno),
         empresa_externa,
       })

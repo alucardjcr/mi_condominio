@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -13,6 +14,11 @@ import { useFocusEffect } from "@react-navigation/native";
 import { adminActualizarGuardia, adminCrearGuardia, adminGetGuardias } from "../../api/client";
 import { Guardia } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
+import { colors } from "../../theme/theme";
+import { calcularEdad, esRutValido, formatearRut } from "../../utils/validarRut";
+import { fuenteImagenPrivada } from "../../utils/imagenesPrivadas";
+import DateField from "../../components/DateField";
+import FotoCapture from "../../components/FotoCapture";
 
 // Ronda 69, a pedido explícito del usuario: "¿tenemos si los guardias o
 // conserjes... son internos?" — antes no existía este dato. `esInterno`
@@ -26,6 +32,11 @@ export default function AdminGuardiasScreen() {
   const [nombre, setNombre] = useState("");
   const [usuariocol, setUsuariocol] = useState("");
   const [password, setPassword] = useState("");
+  const [rut, setRut] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [fechaNac, setFechaNac] = useState("");
+  const [os10, setOs10] = useState<boolean | null>(null);
+  const [foto, setFoto] = useState<string | null>(null);
   const [esInterno, setEsInterno] = useState<boolean | null>(null);
   const [empresaExterna, setEmpresaExterna] = useState("");
   const [creando, setCreando] = useState(false);
@@ -34,6 +45,11 @@ export default function AdminGuardiasScreen() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [editInterno, setEditInterno] = useState<boolean | null>(null);
   const [editEmpresa, setEditEmpresa] = useState("");
+  const [editRut, setEditRut] = useState("");
+  const [editTelefono, setEditTelefono] = useState("");
+  const [editFechaNac, setEditFechaNac] = useState("");
+  const [editOs10, setEditOs10] = useState<boolean | null>(null);
+  const [editFoto, setEditFoto] = useState<string | null>(null);
   const [guardandoInterno, setGuardandoInterno] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -59,18 +75,36 @@ export default function AdminGuardiasScreen() {
       Alert.alert("Faltan datos", "Nombre, usuario y contraseña son obligatorios.");
       return;
     }
+    if (rut.trim() && !esRutValido(rut)) {
+      Alert.alert("RUT inválido", "Revisa el RUT del guardia.");
+      return;
+    }
+    if (esInterno === false && !empresaExterna.trim()) {
+      Alert.alert("Falta la empresa", "Si el guardia es externo, indica el nombre de la empresa a la que pertenece.");
+      return;
+    }
     setCreando(true);
     try {
       await adminCrearGuardia(token, {
         nombre_usuario: nombre,
         usuariocol,
         password,
+        rut: rut.trim() ? formatearRut(rut) : undefined,
+        telefono: telefono.trim() || undefined,
+        fecha_nacimiento: fechaNac || undefined,
+        os10_vigente: os10,
+        foto: foto ?? undefined,
         flg_interno: esInterno ?? undefined,
         empresa_externa: esInterno === false ? empresaExterna.trim() || undefined : undefined,
       });
       setNombre("");
       setUsuariocol("");
       setPassword("");
+      setRut("");
+      setTelefono("");
+      setFechaNac("");
+      setOs10(null);
+      setFoto(null);
       setEsInterno(null);
       setEmpresaExterna("");
       cargar();
@@ -95,13 +129,31 @@ export default function AdminGuardiasScreen() {
     setEditandoId(g.id_usuario);
     setEditInterno(g.flg_interno === null || g.flg_interno === undefined ? null : Boolean(g.flg_interno));
     setEditEmpresa(g.empresa_externa ?? "");
+    setEditRut(g.rut ?? "");
+    setEditTelefono(g.telefono ?? "");
+    setEditFechaNac(g.fecha_nacimiento ?? "");
+    setEditOs10(g.os10_vigente === null || g.os10_vigente === undefined ? null : Boolean(g.os10_vigente));
+    setEditFoto(null);
   };
 
   const handleGuardarInterno = async (id: number) => {
     if (!token) return;
+    if (editRut.trim() && !esRutValido(editRut)) {
+      Alert.alert("RUT inválido", "Revisa el RUT del guardia.");
+      return;
+    }
+    if (editInterno === false && !editEmpresa.trim()) {
+      Alert.alert("Falta la empresa", "Si el guardia es externo, indica el nombre de la empresa a la que pertenece.");
+      return;
+    }
     setGuardandoInterno(true);
     try {
       await adminActualizarGuardia(token, id, {
+        rut: editRut.trim() ? formatearRut(editRut) : null,
+        telefono: editTelefono.trim() || null,
+        fecha_nacimiento: editFechaNac || null,
+        os10_vigente: editOs10,
+        foto: editFoto ?? undefined,
         flg_interno: editInterno,
         empresa_externa: editInterno === false ? editEmpresa.trim() || null : null,
       });
@@ -131,39 +183,103 @@ export default function AdminGuardiasScreen() {
       ListHeaderComponent={
         <View style={styles.form}>
           <Text style={styles.formTitulo}>Nuevo guardia</Text>
-          <TextInput style={styles.input} placeholder="Nombre" value={nombre} onChangeText={setNombre} />
-          <TextInput
-            style={styles.input}
-            placeholder="Usuario (para login)"
-            value={usuariocol}
-            onChangeText={setUsuariocol}
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Contraseña"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
 
-          <Text style={styles.label}>¿Es personal interno del condominio o externo?</Text>
-          <View style={styles.filaChips}>
-            <TouchableOpacity style={[styles.chip, esInterno === true && styles.chipActivo]} onPress={() => setEsInterno(true)}>
-              <Text style={[styles.chipTexto, esInterno === true && styles.chipTextoActivo]}>Interno</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.chip, esInterno === false && styles.chipActivo]} onPress={() => setEsInterno(false)}>
-              <Text style={[styles.chipTexto, esInterno === false && styles.chipTextoActivo]}>Externo</Text>
-            </TouchableOpacity>
+          {/* Orden pedido por el usuario: foto (redonda), RUT, nombre,
+              teléfono, fecha de nacimiento, curso OS10 y, al final,
+              usuario y contraseña. */}
+          <View style={styles.campo}>
+            {!foto && (
+              <View style={styles.fotoVacia}>
+                <Text style={{ fontSize: 56 }}>👤</Text>
+              </View>
+            )}
+            <FotoCapture label="Foto del guardia (solo la carga el Administrador)" value={foto} onChange={setFoto} recorteCuadrado />
           </View>
-          {esInterno === false && (
+
+          <View style={styles.campo}>
+            <Text style={styles.label}>RUT</Text>
             <TextInput
               style={styles.input}
-              placeholder="Nombre de la empresa (ej: Vigilancia Segura SPA)"
-              value={empresaExterna}
-              onChangeText={setEmpresaExterna}
+              placeholder="12345678-9 (opcional)"
+              value={rut}
+              onChangeText={setRut}
+              autoCapitalize="characters"
             />
-          )}
+          </View>
+
+          <View style={styles.campo}>
+            <Text style={styles.label}>Nombre</Text>
+            <TextInput style={styles.input} placeholder="Nombre completo" value={nombre} onChangeText={setNombre} />
+          </View>
+
+          <View style={styles.campo}>
+            <Text style={styles.label}>Teléfono</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="+56 9 1234 5678 (opcional)"
+              value={telefono}
+              onChangeText={setTelefono}
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          <View style={styles.campo}>
+            <DateField label="Fecha de nacimiento (opcional)" value={fechaNac} onChange={setFechaNac} maximumDate={new Date()} opcional />
+          </View>
+
+          <View style={styles.campo}>
+            <Text style={styles.label}>Curso OS10</Text>
+            <View style={styles.filaChips}>
+              <TouchableOpacity style={[styles.chip, os10 === true && styles.chipActivo]} onPress={() => setOs10(true)}>
+                <Text style={[styles.chipTexto, os10 === true && styles.chipTextoActivo]}>Vigente</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.chip, os10 === false && styles.chipActivo]} onPress={() => setOs10(false)}>
+                <Text style={[styles.chipTexto, os10 === false && styles.chipTextoActivo]}>No vigente</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.campo}>
+            <Text style={styles.label}>¿Es personal interno del condominio o externo?</Text>
+            <View style={styles.filaChips}>
+              <TouchableOpacity style={[styles.chip, esInterno === true && styles.chipActivo]} onPress={() => setEsInterno(true)}>
+                <Text style={[styles.chipTexto, esInterno === true && styles.chipTextoActivo]}>Interno</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.chip, esInterno === false && styles.chipActivo]} onPress={() => setEsInterno(false)}>
+                <Text style={[styles.chipTexto, esInterno === false && styles.chipTextoActivo]}>Externo</Text>
+              </TouchableOpacity>
+            </View>
+            {esInterno === false && (
+              <TextInput
+                style={styles.input}
+                placeholder="Nombre de la empresa a la que pertenece *"
+                value={empresaExterna}
+                onChangeText={setEmpresaExterna}
+              />
+            )}
+          </View>
+
+          <View style={styles.campo}>
+            <Text style={styles.label}>Usuario (para entrar a la app)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Usuario"
+              value={usuariocol}
+              onChangeText={setUsuariocol}
+              autoCapitalize="none"
+            />
+          </View>
+
+          <View style={styles.campo}>
+            <Text style={styles.label}>Contraseña</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
 
           <TouchableOpacity style={styles.botonCrear} onPress={handleCrear} disabled={creando}>
             <Text style={styles.botonCrearTexto}>{creando ? "Creando..." : "Crear guardia"}</Text>
@@ -173,10 +289,36 @@ export default function AdminGuardiasScreen() {
       renderItem={({ item }) => (
         <View style={styles.card}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {fuenteImagenPrivada(item.foto_url, token) ? (
+              <Image source={fuenteImagenPrivada(item.foto_url, token)!} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, { alignItems: "center", justifyContent: "center" }]}>
+                <Text style={{ fontSize: 22 }}>👤</Text>
+              </View>
+            )}
             <View style={{ flex: 1 }}>
               <Text style={styles.nombreItem}>{item.nombre_usuario}</Text>
               <Text style={styles.detalle}>
                 usuario: {item.usuariocol} · {item.flg_vigencia ? "Activo" : "Inactivo"}
+              </Text>
+              <Text style={styles.detalle}>
+                {item.rut ? `RUT: ${item.rut}` : "RUT: sin registrar"} ·{" "}
+                {item.telefono ? `Tel: ${item.telefono}` : "Tel: sin registrar"}
+              </Text>
+              <Text style={styles.detalle}>
+                {item.fecha_nacimiento
+                  ? `Nac.: ${item.fecha_nacimiento.split("-").reverse().join("/")}${
+                      calcularEdad(item.fecha_nacimiento) !== null ? ` (${calcularEdad(item.fecha_nacimiento)} años)` : ""
+                    }`
+                  : "Nac.: sin registrar"}
+              </Text>
+              <Text style={styles.detalle}>
+                Curso OS10:{" "}
+                {item.os10_vigente === null || item.os10_vigente === undefined
+                  ? "sin definir"
+                  : item.os10_vigente
+                  ? "Vigente"
+                  : "No vigente"}
               </Text>
               <Text style={styles.detalle}>
                 {item.flg_interno === null || item.flg_interno === undefined
@@ -196,6 +338,24 @@ export default function AdminGuardiasScreen() {
 
           {editandoId === item.id_usuario ? (
             <View style={styles.subForm}>
+              <DateField label="Fecha de nacimiento" value={editFechaNac} onChange={setEditFechaNac} maximumDate={new Date()} opcional />
+              <View style={styles.filaChips}>
+                <TouchableOpacity style={[styles.chip, editOs10 === true && styles.chipActivo]} onPress={() => setEditOs10(true)}>
+                  <Text style={[styles.chipTexto, editOs10 === true && styles.chipTextoActivo]}>OS10 vigente</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.chip, editOs10 === false && styles.chipActivo]} onPress={() => setEditOs10(false)}>
+                  <Text style={[styles.chipTexto, editOs10 === false && styles.chipTextoActivo]}>OS10 no vigente</Text>
+                </TouchableOpacity>
+              </View>
+              <FotoCapture label="Cambiar foto (solo Administrador/Comité)" value={editFoto} onChange={setEditFoto} recorteCuadrado />
+              <TextInput style={styles.input} placeholder="RUT" value={editRut} onChangeText={setEditRut} autoCapitalize="characters" />
+              <TextInput
+                style={styles.input}
+                placeholder="Teléfono"
+                value={editTelefono}
+                onChangeText={setEditTelefono}
+                keyboardType="phone-pad"
+              />
               <View style={styles.filaChips}>
                 <TouchableOpacity style={[styles.chip, editInterno === true && styles.chipActivo]} onPress={() => setEditInterno(true)}>
                   <Text style={[styles.chipTexto, editInterno === true && styles.chipTextoActivo]}>Interno</Text>
@@ -205,7 +365,7 @@ export default function AdminGuardiasScreen() {
                 </TouchableOpacity>
               </View>
               {editInterno === false && (
-                <TextInput style={styles.input} placeholder="Nombre de la empresa" value={editEmpresa} onChangeText={setEditEmpresa} />
+                <TextInput style={styles.input} placeholder="Nombre de la empresa a la que pertenece *" value={editEmpresa} onChangeText={setEditEmpresa} />
               )}
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
@@ -222,7 +382,7 @@ export default function AdminGuardiasScreen() {
             </View>
           ) : (
             <TouchableOpacity onPress={() => handleAbrirEdicionInterno(item)}>
-              <Text style={styles.enlaceEditar}>✏️ Editar interno/externo</Text>
+              <Text style={styles.enlaceEditar}>✏️ Editar datos</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -250,13 +410,32 @@ const styles = StyleSheet.create({
   chipActivo: { borderColor: "#014BD2", backgroundColor: "#EEF2FF" },
   chipTexto: { color: "#666", fontWeight: "600", fontSize: 13 },
   chipTextoActivo: { color: "#014BD2" },
-  botonCrear: { backgroundColor: "#1a9d5c", borderRadius: 10, padding: 14, alignItems: "center" },
-  botonCrearTexto: { color: "#fff", fontWeight: "700" },
+  campo: { marginBottom: 18 },
+  fotoVacia: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#e6e8ee",
+  },
+  botonCrear: {
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  botonCrearTexto: { color: colors.botonNaranjaTexto, fontWeight: "700" },
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 14,
   },
+  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#e6e8ee", marginRight: 12, overflow: "hidden" },
   nombreItem: { fontSize: 16, fontWeight: "700" },
   detalle: { color: "#666", marginTop: 2, fontSize: 13 },
   botonToggle: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },

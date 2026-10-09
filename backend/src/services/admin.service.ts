@@ -22,7 +22,7 @@ async function getIdByGls(table: string, idColumn: string, glsColumn: string, va
 export async function listarGuardias(condominioId: number) {
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
        FROM usuario u
        JOIN tipo_usuario tu ON tu.id_tipousuario = u.tipo_usuario_id_tipousuario
        LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario
@@ -32,28 +32,50 @@ export async function listarGuardias(condominioId: number) {
     .all(condominioId);
 }
 
-async function upsertGuardiaPerfil(usuarioId: number, rut?: string | null, telefono?: string | null) {
-  if (rut === undefined && telefono === undefined) return;
+// Datos del perfil del guardia. Cada campo es opcional: `undefined` = no se
+// toca; `null` = se borra. foto_url solo la fijan las rutas de
+// Administrador/Comité (/admin/guardias) — ver admin.ts.
+export interface PerfilGuardiaInput {
+  rut?: string | null;
+  telefono?: string | null;
+  fecha_nacimiento?: string | null;
+  os10_vigente?: boolean | null;
+  foto_url?: string | null;
+}
+
+async function upsertGuardiaPerfil(usuarioId: number, perfil: PerfilGuardiaInput) {
+  const campos: string[] = [];
+  const valores: unknown[] = [];
+  if (perfil.rut !== undefined) {
+    campos.push("rut");
+    valores.push(perfil.rut?.trim() || null);
+  }
+  if (perfil.telefono !== undefined) {
+    campos.push("telefono");
+    valores.push(perfil.telefono?.trim() || null);
+  }
+  if (perfil.fecha_nacimiento !== undefined) {
+    campos.push("fecha_nacimiento");
+    valores.push(perfil.fecha_nacimiento?.trim() || null);
+  }
+  if (perfil.os10_vigente !== undefined) {
+    campos.push("os10_vigente");
+    valores.push(perfil.os10_vigente === null ? null : perfil.os10_vigente ? 1 : 0);
+  }
+  if (perfil.foto_url !== undefined) {
+    campos.push("foto_url");
+    valores.push(perfil.foto_url || null);
+  }
+  if (campos.length === 0) return;
   const existente = await db.prepare(`SELECT id_guardiaperfil FROM guardia_perfil WHERE usuario_id_usuario = ?`).get(usuarioId);
   if (existente) {
-    const campos: string[] = [];
-    const valores: unknown[] = [];
-    if (rut !== undefined) {
-      campos.push("rut = ?");
-      valores.push(rut?.trim() || null);
-    }
-    if (telefono !== undefined) {
-      campos.push("telefono = ?");
-      valores.push(telefono?.trim() || null);
-    }
-    if (campos.length > 0) {
-      valores.push(usuarioId);
-      await db.prepare(`UPDATE guardia_perfil SET ${campos.join(", ")} WHERE usuario_id_usuario = ?`).run(...valores);
-    }
+    await db
+      .prepare(`UPDATE guardia_perfil SET ${campos.map((c) => `${c} = ?`).join(", ")} WHERE usuario_id_usuario = ?`)
+      .run(...valores, usuarioId);
   } else {
     await db
-      .prepare(`INSERT INTO guardia_perfil (usuario_id_usuario, rut, telefono) VALUES (?, ?, ?)`)
-      .run(usuarioId, rut?.trim() || null, telefono?.trim() || null);
+      .prepare(`INSERT INTO guardia_perfil (usuario_id_usuario, ${campos.join(", ")}) VALUES (?, ${campos.map(() => "?").join(", ")})`)
+      .run(usuarioId, ...valores);
   }
 }
 
@@ -64,6 +86,9 @@ export async function crearGuardia(input: {
   condominio_id_condominio: number;
   rut?: string;
   telefono?: string;
+  fecha_nacimiento?: string | null;
+  os10_vigente?: boolean | null;
+  foto_url?: string | null;
   // Ronda 69, a pedido explícito del usuario: "¿tenemos si los guardias
   // o conserjes... son internos?" — antes no había ningún dato de esto.
   flg_interno?: boolean | null;
@@ -89,12 +114,16 @@ export async function crearGuardia(input: {
   // Ronda 26 (fase 2): sin esto, un Guardia recién creado no tendría
   // ninguna membresía y no podría loguearse (ver auth.service.ts -> login).
   await sincronizarMembresiaPrincipal(id);
-  if (input.rut || input.telefono) {
-    await upsertGuardiaPerfil(id, input.rut, input.telefono);
-  }
+  await upsertGuardiaPerfil(id, {
+    rut: input.rut || undefined,
+    telefono: input.telefono || undefined,
+    fecha_nacimiento: input.fecha_nacimiento || undefined,
+    os10_vigente: input.os10_vigente,
+    foto_url: input.foto_url || undefined,
+  });
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
        FROM usuario u LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
     )
     .get(id);
@@ -108,6 +137,9 @@ export async function actualizarGuardia(
     flg_vigencia?: number;
     rut?: string | null;
     telefono?: string | null;
+    fecha_nacimiento?: string | null;
+    os10_vigente?: boolean | null;
+    foto_url?: string | null;
     flg_interno?: boolean | null;
     empresa_externa?: string | null;
   }
@@ -127,11 +159,17 @@ export async function actualizarGuardia(
     const empresa = input.flg_interno === false ? input.empresa_externa?.trim() || null : null;
     await db.prepare(`UPDATE usuario SET flg_interno = ?, empresa_externa = ? WHERE id_usuario = ?`).run(interno, empresa, id);
   }
-  await upsertGuardiaPerfil(id, input.rut, input.telefono);
+  await upsertGuardiaPerfil(id, {
+    rut: input.rut,
+    telefono: input.telefono,
+    fecha_nacimiento: input.fecha_nacimiento,
+    os10_vigente: input.os10_vigente,
+    foto_url: input.foto_url,
+  });
   await sincronizarMembresiaPrincipal(id);
   return db
     .prepare(
-      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono
+      `SELECT u.id_usuario, u.nombre_usuario, u.usuariocol, u.flg_vigencia, u.flg_interno, u.empresa_externa, gp.rut, gp.telefono, gp.fecha_nacimiento, gp.os10_vigente, gp.foto_url
        FROM usuario u LEFT JOIN guardia_perfil gp ON gp.usuario_id_usuario = u.id_usuario WHERE u.id_usuario = ?`
     )
     .get(id);

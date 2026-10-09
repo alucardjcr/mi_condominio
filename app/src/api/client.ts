@@ -307,13 +307,35 @@ export const adminGetGuardias = (token: string) => get<Guardia[]>(`/admin/guardi
 
 export const adminCrearGuardia = (
   token: string,
-  input: { nombre_usuario: string; usuariocol: string; password: string; flg_interno?: boolean; empresa_externa?: string }
+  input: {
+    nombre_usuario: string;
+    usuariocol: string;
+    password: string;
+    rut?: string;
+    telefono?: string;
+    fecha_nacimiento?: string;
+    os10_vigente?: boolean | null;
+    foto?: string; // data URL; solo Administrador/Comité
+    flg_interno?: boolean;
+    empresa_externa?: string;
+  }
 ) => send<Guardia>(`/admin/guardias`, "POST", token, input);
 
 export const adminActualizarGuardia = (
   token: string,
   id: number,
-  input: { nombre_usuario?: string; password?: string; flg_vigencia?: number; flg_interno?: boolean | null; empresa_externa?: string | null }
+  input: {
+    nombre_usuario?: string;
+    password?: string;
+    flg_vigencia?: number;
+    rut?: string | null;
+    telefono?: string | null;
+    fecha_nacimiento?: string | null;
+    os10_vigente?: boolean | null;
+    foto?: string;
+    flg_interno?: boolean | null;
+    empresa_externa?: string | null;
+  }
 ) => send<Guardia>(`/admin/guardias/${id}`, "PATCH", token, input);
 
 export const adminGetResidentes = (token: string) => get<ResidenteAdmin[]>(`/admin/residentes`, token);

@@ -260,6 +260,10 @@ export interface Guardia {
   // Ronda 53, a pedido explícito del usuario, con referencia visual.
   rut?: string | null;
   telefono?: string | null;
+  fecha_nacimiento?: string | null;
+  // Curso OS10: null = sin definir, 1 = vigente, 0 = no vigente.
+  os10_vigente?: boolean | number | null;
+  foto_url?: string | null;
   // Ronda 69, a pedido explícito del usuario.
   flg_interno?: boolean | number | null;
   empresa_externa?: string | null;
