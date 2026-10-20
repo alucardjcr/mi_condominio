@@ -176,7 +176,7 @@ export default function EntradaScreen({ navigation, route }: any) {
 
         Alert.alert(
           "Entrada peatonal registrada",
-          `${nombreVisita} quedó registrado ingresando a pie a ${torreSel.label} ${unidadSel.label}. Es gratis y sin límite de tiempo — registrar su salida es opcional.`
+          `${nombreVisita} quedó registrado ingresando a pie a ${torreSel.label} ${unidadSel.label}. Marcar su salida en el sistema es opcional.`
         );
         limpiarFormulario();
         navigation.navigate("Home");
@@ -335,7 +335,7 @@ export default function EntradaScreen({ navigation, route }: any) {
         {esPeatonal ? (
           <>
             <Text style={styles.notaPeatonal}>
-              La visita peatonal es gratis y no tiene límite de tiempo. No ocupa cupo de
+              La visita peatonal no tiene límite de tiempo. No ocupa cupo de
               estacionamiento, y registrar su salida es opcional (puede que se retire sin avisar).
               Igual que en la visita vehicular, indicar a quién visita es obligatorio.
             </Text>

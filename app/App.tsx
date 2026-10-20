@@ -34,7 +34,6 @@ import PaquetePendientesScreen from "./src/screens/PaquetePendientesScreen";
 import PaqueteEntregaScreen from "./src/screens/PaqueteEntregaScreen";
 import PaqueteBusquedaScreen from "./src/screens/PaqueteBusquedaScreen";
 import MisPaquetesScreen from "./src/screens/MisPaquetesScreen";
-import MisPaquetesBusquedaScreen from "./src/screens/MisPaquetesBusquedaScreen";
 import MisVisitasScreen from "./src/screens/MisVisitasScreen";
 import CambiarPasswordScreen from "./src/screens/CambiarPasswordScreen";
 import ReservasEspaciosScreen from "./src/screens/ReservasEspaciosScreen";
@@ -126,7 +125,7 @@ function AppNavigator() {
       // la misma `key` de arriba, que ya fuerza el remount correcto del
       // navigator al cambiar de rol.
       initialRouteName={
-        esResidente ? "MiHogar" : esJefeGuardias ? "JefeGuardiasHome" : esJefeAseo || esJefeJardineria ? "MiEquipo" : undefined
+        esJefeGuardias ? "JefeGuardiasHome" : esJefeAseo || esJefeJardineria ? "MiEquipo" : undefined
       }
     >
       {!token && requiereOnboarding ? (
@@ -246,11 +245,6 @@ function AppNavigator() {
                 name="MisPaquetes"
                 component={MisPaquetesScreen}
                 options={{ title: "Mis paquetes" }}
-              />
-              <Stack.Screen
-                name="MisPaquetesBusqueda"
-                component={MisPaquetesBusquedaScreen}
-                options={{ title: "Buscar paquete" }}
               />
               <Stack.Screen
                 name="ReservasEspacios"
