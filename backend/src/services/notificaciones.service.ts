@@ -42,6 +42,16 @@ async function getIdByGls(
   const row = (await conn
     .prepare(`SELECT ${idColumn} as id FROM ${table} WHERE ${glsColumn} = ? AND condominio_id_condominio = ?`)
     .get(valor, condominioId)) as { id: number } | undefined;
+  if (!row && table === "tipo_notificacion") {
+    // Condominios creados antes de que existiera un tipo: se siembra al vuelo.
+    await conn
+      .prepare(`INSERT INTO tipo_notificacion (gls_tiponotificacion, condominio_id_condominio) VALUES (?, ?)`)
+      .run(valor, condominioId);
+    const creado = (await conn
+      .prepare(`SELECT ${idColumn} as id FROM ${table} WHERE ${glsColumn} = ? AND condominio_id_condominio = ?`)
+      .get(valor, condominioId)) as { id: number } | undefined;
+    if (creado) return creado.id;
+  }
   if (!row) throw new Error(`No se encontró "${valor}" en ${table} para este condominio.`);
   return row.id;
 }
