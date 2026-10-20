@@ -1,5 +1,5 @@
 import { db, withTransaction, DbLike } from "../db/client";
-import { crearNotificacionParaUnidad, enviarPushesDeNotificacion, GLS_TIPONOTIF_VISITA } from "./notificaciones.service";
+import { crearNotificacionParaUnidad, crearNotificacionParaUsuario, enviarPushesDeNotificacion, GLS_TIPONOTIF_VISITA } from "./notificaciones.service";
 import { verificarAlertaVetado } from "./vetados.service";
 
 const GLS_ESTADO_DISPONIBLE = "Disponible";
@@ -138,16 +138,21 @@ async function registrarEntradaPeatonal(conn: DbLike, input: RegistrarEntradaInp
   // Notificación al residente (ronda 16, a pedido del usuario: "las visitas
   // también deben llegarle como notificación al residente") — le llega a
   // todos los residentes activos con acceso de ese depto.
-  const idNotificacion = await crearNotificacionParaUnidad(conn, {
+  // Privacidad: si el guardia marcó a un residente concreto, solo a él le
+  // llega el aviso; si no hay residente marcado/coincidente, a toda la unidad.
+  const paramsNotif1 = {
     condominioId: input.condominio_id_condominio,
-    unidadId: input.unidad_id_unidad!,
     tipoGls: GLS_TIPONOTIF_VISITA,
     titulo: "Visita registrada",
     cuerpo: `${input.nombre_visita} está ingresando a tu depto (visita peatonal).`,
     referenciaTipo: "visita",
     referenciaId: idVisita,
     creadoPorUsuarioId: guardiaId,
-  });
+  };
+  const idNotificacion =
+    input.residente_visitado_usuario_id && residenteCoincide
+      ? await crearNotificacionParaUsuario(conn, { ...paramsNotif1, usuarioId: input.residente_visitado_usuario_id })
+      : await crearNotificacionParaUnidad(conn, { ...paramsNotif1, unidadId: input.unidad_id_unidad! });
 
   // Ronda 20: alerta VETADOS, solo informativa (nunca bloquea el registro).
   const alertaVetado = await verificarAlertaVetado(conn, input.condominio_id_condominio, input.rut_visita, input.patente);
@@ -348,16 +353,20 @@ export async function registrarEntrada(input: RegistrarEntradaInput, guardiaId: 
     // de discapacitados a nombre propio, no hay "visita" que avisar.
     let idNotificacion: number | null = null;
     if (tipoOcupante === "Visita") {
-      idNotificacion = await crearNotificacionParaUnidad(tx, {
+      const paramsNotif2 = {
         condominioId: input.condominio_id_condominio,
-        unidadId: unidadId!,
         tipoGls: GLS_TIPONOTIF_VISITA,
         titulo: "Visita registrada",
         cuerpo: `${nombreVisita} está ingresando a tu depto.`,
         referenciaTipo: "visita",
         referenciaId: idVisita,
         creadoPorUsuarioId: guardiaId,
-      });
+      };
+      // Privacidad: solo al residente marcado (si coincide con el depto).
+      idNotificacion =
+        residenteVisitadoUsuarioId && residenteCoincide
+          ? await crearNotificacionParaUsuario(tx, { ...paramsNotif2, usuarioId: residenteVisitadoUsuarioId })
+          : await crearNotificacionParaUnidad(tx, { ...paramsNotif2, unidadId: unidadId! });
     }
 
     // Ronda 20: alerta VETADOS, solo informativa (nunca bloquea el
