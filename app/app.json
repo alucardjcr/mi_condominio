@@ -14,6 +14,7 @@
       }
     },
     "android": {
+      "package": "com.micondominio.app",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png",
