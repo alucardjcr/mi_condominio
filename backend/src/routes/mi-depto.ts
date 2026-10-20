@@ -34,6 +34,26 @@ function rechazarSiNoEsPropietario(req: any, res: any): boolean {
   return false;
 }
 
+// "Mi administrador": datos de contacto del Administrador vigente del
+// condominio, visibles para cualquier residente. NO se expone RUT ni fecha
+// de nacimiento.
+miDeptoRouter.get("/administrador", soloResidente, async (req, res) => {
+  const fila = await db
+    .prepare(
+      `SELECT u.id_usuario, u.nombre_usuario, u.correo_usuario,
+              ap.foto_url, ap.numero_registro_rnac, ap.telefono
+         FROM membresia m
+         JOIN usuario u ON u.id_usuario = m.usuario_id_usuario
+         JOIN tipo_usuario tu ON tu.id_tipousuario = m.tipo_usuario_id_tipousuario AND tu.gls_tipousuario = 'Administrador'
+         LEFT JOIN administrador_perfil ap ON ap.usuario_id_usuario = u.id_usuario
+        WHERE m.condominio_id_condominio = ? AND m.flg_vigencia = 1
+        ORDER BY u.flg_vigencia DESC, m.id_membresia
+        LIMIT 1`
+    )
+    .get(req.guardia!.condominio_id_condominio);
+  res.json(fila ?? null);
+});
+
 miDeptoRouter.get("/residentes", soloResidente, async (req, res) => {
   if (rechazarSiNoEsPropietario(req, res)) return;
   res.json(await listarResidentes(req.guardia!.condominio_id_condominio!, req.guardia!.unidad_id_unidad));

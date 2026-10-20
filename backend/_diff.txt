@@ -1,0 +1,180 @@
+diff --git a/app/App.tsx b/app/App.tsx
+index c1b65e9..fe6000c 100644
+--- a/app/App.tsx
++++ b/app/App.tsx
+@@ -34,7 +34,6 @@ import PaquetePendientesScreen from "./src/screens/PaquetePendientesScreen";
+ import PaqueteEntregaScreen from "./src/screens/PaqueteEntregaScreen";
+ import PaqueteBusquedaScreen from "./src/screens/PaqueteBusquedaScreen";
+ import MisPaquetesScreen from "./src/screens/MisPaquetesScreen";
+-import MisPaquetesBusquedaScreen from "./src/screens/MisPaquetesBusquedaScreen";
+ import MisVisitasScreen from "./src/screens/MisVisitasScreen";
+ import CambiarPasswordScreen from "./src/screens/CambiarPasswordScreen";
+ import ReservasEspaciosScreen from "./src/screens/ReservasEspaciosScreen";
+@@ -126,7 +125,7 @@ function AppNavigator() {
+       // la misma `key` de arriba, que ya fuerza el remount correcto del
+       // navigator al cambiar de rol.
+       initialRouteName={
+-        esResidente ? "MiHogar" : esJefeGuardias ? "JefeGuardiasHome" : esJefeAseo || esJefeJardineria ? "MiEquipo" : undefined
++        esJefeGuardias ? "JefeGuardiasHome" : esJefeAseo || esJefeJardineria ? "MiEquipo" : undefined
+       }
+     >
+       {!token && requiereOnboarding ? (
+@@ -247,11 +246,6 @@ function AppNavigator() {
+                 component={MisPaquetesScreen}
+                 options={{ title: "Mis paquetes" }}
+               />
+-              <Stack.Screen
+-                name="MisPaquetesBusqueda"
+-                component={MisPaquetesBusquedaScreen}
+-                options={{ title: "Buscar paquete" }}
+-              />
+               <Stack.Screen
+                 name="ReservasEspacios"
+                 component={ReservasEspaciosScreen}
+diff --git a/app/src/screens/EntradaScreen.tsx b/app/src/screens/EntradaScreen.tsx
+index b6aff62..563269f 100644
+--- a/app/src/screens/EntradaScreen.tsx
++++ b/app/src/screens/EntradaScreen.tsx
+@@ -176,7 +176,7 @@ export default function EntradaScreen({ navigation, route }: any) {
+ 
+         Alert.alert(
+           "Entrada peatonal registrada",
+-          `${nombreVisita} quedó registrado ingresando a pie a ${torreSel.label} ${unidadSel.label}. Es gratis y sin límite de tiempo — registrar su salida es opcional.`
++          `${nombreVisita} quedó registrado ingresando a pie a ${torreSel.label} ${unidadSel.label}. Marcar su salida en el sistema es opcional.`
+         );
+         limpiarFormulario();
+         navigation.navigate("Home");
+@@ -335,7 +335,7 @@ export default function EntradaScreen({ navigation, route }: any) {
+         {esPeatonal ? (
+           <>
+             <Text style={styles.notaPeatonal}>
+-              La visita peatonal es gratis y no tiene límite de tiempo. No ocupa cupo de
++              La visita peatonal no tiene límite de tiempo. No ocupa cupo de
+               estacionamiento, y registrar su salida es opcional (puede que se retire sin avisar).
+               Igual que en la visita vehicular, indicar a quién visita es obligatorio.
+             </Text>
+diff --git a/backend/src/routes/mi-depto.ts b/backend/src/routes/mi-depto.ts
+index 7d2ba63..e8ba57a 100644
+--- a/backend/src/routes/mi-depto.ts
++++ b/backend/src/routes/mi-depto.ts
+@@ -34,26 +34,6 @@ function rechazarSiNoEsPropietario(req: any, res: any): boolean {
+   return false;
+ }
+ 
+-// "Mi administrador": datos de contacto del Administrador vigente del
+-// condominio, visibles para cualquier residente. NO se expone RUT ni fecha
+-// de nacimiento.
+-miDeptoRouter.get("/administrador", soloResidente, async (req, res) => {
+-  const fila = await db
+-    .prepare(
+-      `SELECT u.id_usuario, u.nombre_usuario, u.correo_usuario,
+-              ap.foto_url, ap.numero_registro_rnac, ap.telefono
+-         FROM membresia m
+-         JOIN usuario u ON u.id_usuario = m.usuario_id_usuario
+-         JOIN tipo_usuario tu ON tu.id_tipousuario = m.tipo_usuario_id_tipousuario AND tu.gls_tipousuario = 'Administrador'
+-         LEFT JOIN administrador_perfil ap ON ap.usuario_id_usuario = u.id_usuario
+-        WHERE m.condominio_id_condominio = ? AND m.flg_vigencia = 1
+-        ORDER BY u.flg_vigencia DESC, m.id_membresia
+-        LIMIT 1`
+-    )
+-    .get(req.guardia!.condominio_id_condominio);
+-  res.json(fila ?? null);
+-});
+-
+ miDeptoRouter.get("/residentes", soloResidente, async (req, res) => {
+   if (rechazarSiNoEsPropietario(req, res)) return;
+   res.json(await listarResidentes(req.guardia!.condominio_id_condominio!, req.guardia!.unidad_id_unidad));
+@@ -78,10 +58,11 @@ miDeptoRouter.get("/visitas", soloResidente, async (req, res) => {
+          JOIN tipo_permiso_visita tp ON tp.id_tipopermiso = v.tipo_permiso_id_tipopermiso
+          LEFT JOIN estacionamiento e ON e.id_estacionamiento = v.estacionamiento_id_estacionamiento
+          WHERE v.unidad_id_unidad = ? AND v.condominio_id_condominio = ? AND v.tipo_ocupante = 'Visita'
++           AND (v.residente_visitado_usuario_id IS NULL OR v.residente_coincide = 0 OR v.residente_visitado_usuario_id = ?)
+          ORDER BY (v.fecha_salida IS NULL) DESC, v.fecha_entrada DESC
+          LIMIT 100`
+       )
+-      .all(unidadId, req.guardia!.condominio_id_condominio!);
++      .all(unidadId, req.guardia!.condominio_id_condominio!, req.guardia!.id_usuario);
+     res.json(filas);
+   } catch (err: any) {
+     res.status(500).json({ error: err.message });
+diff --git a/backend/src/services/estacionamientoVisita.service.ts b/backend/src/services/estacionamientoVisita.service.ts
+index e67890c..8ce31a6 100644
+--- a/backend/src/services/estacionamientoVisita.service.ts
++++ b/backend/src/services/estacionamientoVisita.service.ts
+@@ -1,5 +1,5 @@
+ import { db, withTransaction, DbLike } from "../db/client";
+-import { crearNotificacionParaUnidad, enviarPushesDeNotificacion, GLS_TIPONOTIF_VISITA } from "./notificaciones.service";
++import { crearNotificacionParaUnidad, crearNotificacionParaUsuario, enviarPushesDeNotificacion, GLS_TIPONOTIF_VISITA } from "./notificaciones.service";
+ import { verificarAlertaVetado } from "./vetados.service";
+ 
+ const GLS_ESTADO_DISPONIBLE = "Disponible";
+@@ -138,16 +138,21 @@ async function registrarEntradaPeatonal(conn: DbLike, input: RegistrarEntradaInp
+   // Notificación al residente (ronda 16, a pedido del usuario: "las visitas
+   // también deben llegarle como notificación al residente") — le llega a
+   // todos los residentes activos con acceso de ese depto.
+-  const idNotificacion = await crearNotificacionParaUnidad(conn, {
++  // Privacidad: si el guardia marcó a un residente concreto, solo a él le
++  // llega el aviso; si no hay residente marcado/coincidente, a toda la unidad.
++  const paramsNotif1 = {
+     condominioId: input.condominio_id_condominio,
+-    unidadId: input.unidad_id_unidad!,
+     tipoGls: GLS_TIPONOTIF_VISITA,
+     titulo: "Visita registrada",
+     cuerpo: `${input.nombre_visita} está ingresando a tu depto (visita peatonal).`,
+     referenciaTipo: "visita",
+     referenciaId: idVisita,
+     creadoPorUsuarioId: guardiaId,
+-  });
++  };
++  const idNotificacion =
++    input.residente_visitado_usuario_id && residenteCoincide
++      ? await crearNotificacionParaUsuario(conn, { ...paramsNotif1, usuarioId: input.residente_visitado_usuario_id })
++      : await crearNotificacionParaUnidad(conn, { ...paramsNotif1, unidadId: input.unidad_id_unidad! });
+ 
+   // Ronda 20: alerta VETADOS, solo informativa (nunca bloquea el registro).
+   const alertaVetado = await verificarAlertaVetado(conn, input.condominio_id_condominio, input.rut_visita, input.patente);
+@@ -348,16 +353,20 @@ export async function registrarEntrada(input: RegistrarEntradaInput, guardiaId:
+     // de discapacitados a nombre propio, no hay "visita" que avisar.
+     let idNotificacion: number | null = null;
+     if (tipoOcupante === "Visita") {
+-      idNotificacion = await crearNotificacionParaUnidad(tx, {
++      const paramsNotif2 = {
+         condominioId: input.condominio_id_condominio,
+-        unidadId: unidadId!,
+         tipoGls: GLS_TIPONOTIF_VISITA,
+         titulo: "Visita registrada",
+         cuerpo: `${nombreVisita} está ingresando a tu depto.`,
+         referenciaTipo: "visita",
+         referenciaId: idVisita,
+         creadoPorUsuarioId: guardiaId,
+-      });
++      };
++      // Privacidad: solo al residente marcado (si coincide con el depto).
++      idNotificacion =
++        residenteVisitadoUsuarioId && residenteCoincide
++          ? await crearNotificacionParaUsuario(tx, { ...paramsNotif2, usuarioId: residenteVisitadoUsuarioId })
++          : await crearNotificacionParaUnidad(tx, { ...paramsNotif2, unidadId: unidadId! });
+     }
+ 
+     // Ronda 20: alerta VETADOS, solo informativa (nunca bloquea el
+diff --git a/backend/src/services/notificaciones.service.ts b/backend/src/services/notificaciones.service.ts
+index c1080c1..da2ce46 100644
+--- a/backend/src/services/notificaciones.service.ts
++++ b/backend/src/services/notificaciones.service.ts
+@@ -42,6 +42,16 @@ async function getIdByGls(
+   const row = (await conn
+     .prepare(`SELECT ${idColumn} as id FROM ${table} WHERE ${glsColumn} = ? AND condominio_id_condominio = ?`)
+     .get(valor, condominioId)) as { id: number } | undefined;
++  if (!row && table === "tipo_notificacion") {
++    // Condominios creados antes de que existiera un tipo: se siembra al vuelo.
++    await conn
++      .prepare(`INSERT INTO tipo_notificacion (gls_tiponotificacion, condominio_id_condominio) VALUES (?, ?)`)
++      .run(valor, condominioId);
++    const creado = (await conn
++      .prepare(`SELECT ${idColumn} as id FROM ${table} WHERE ${glsColumn} = ? AND condominio_id_condominio = ?`)
++      .get(valor, condominioId)) as { id: number } | undefined;
++    if (creado) return creado.id;
++  }
+   if (!row) throw new Error(`No se encontró "${valor}" en ${table} para este condominio.`);
+   return row.id;
+ }
