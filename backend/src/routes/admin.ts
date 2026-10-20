@@ -286,6 +286,7 @@ adminRouter.patch("/residentes/:id", requirePerteneceAlCondominio("usuario", "id
       apellido_paterno,
       apellido_materno,
       nacionalidad_id_nacionalidad,
+      telefono,
     } = req.body;
     // Nombrar/quitar gente del comité es una potestad exclusiva del
     // Administrador real (rol === "Administrador"), aunque el resto de esta
@@ -327,6 +328,7 @@ adminRouter.patch("/residentes/:id", requirePerteneceAlCondominio("usuario", "id
         // vacíos, pero apellido_materno sí puede llegar como null explícito
         // (borrar el segundo apellido, ej. si se corrigió a un extranjero).
         nombres: "nombres" in req.body ? nombres : undefined,
+        telefono: "telefono" in req.body ? telefono : undefined,
         apellido_paterno: "apellido_paterno" in req.body ? apellido_paterno : undefined,
         apellido_materno: "apellido_materno" in req.body ? apellido_materno : undefined,
         nacionalidad_id_nacionalidad:

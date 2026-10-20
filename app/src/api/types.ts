@@ -107,6 +107,8 @@ export interface RegistrarEntradaResponse {
   // informativa, nunca bloquea el registro (el guardia decide cómo
   // proceder). null si no hay coincidencia.
   alertaVetado: AlertaVetado | null;
+  // Ronda 80: "Pendiente" si el residente marcado debe autorizar la visita.
+  autorizacion?: "Pendiente" | null;
 }
 
 export interface ConstanciaExcesoTiempo {
@@ -303,6 +305,8 @@ export interface ResidenteAdmin {
   profesion: string | null;
   // Ronda 70, a pedido explícito del usuario.
   foto_url: string | null;
+  // Ronda 80: teléfono de contacto (el guardia lo usa para llamar al residente).
+  telefono?: string | null;
   // Ronda 77, a pedido explícito del usuario: nombre separado en 3 partes
   // (apellido_materno opcional — extranjeros sin segundo apellido) y
   // nacionalidad. nombre_usuario sigue existiendo como el string compuesto
@@ -332,6 +336,27 @@ export interface VisitaHogar {
   numero_estacionamiento: string | null;
   gls_tipovisita: string; // 'Vehicular' | 'Peatonal'
   gls_tipopermiso: string;
+  // Ronda 80: autorización del residente (null = visita sin autorización requerida).
+  estado_autorizacion: "Pendiente" | "Autorizada" | "Rechazada" | null;
+}
+
+// Ronda 80: fila de "Visitas por autorizar" (guardia).
+export interface AutorizacionVisitaGuardia {
+  id_visita: number;
+  nombre_visita: string;
+  patente: string | null;
+  nombre_residente_visitado: string | null;
+  gls_tipovisita: string;
+  numero_unidad: string;
+  nombre_torre: string;
+  estado: "Pendiente" | "Autorizada" | "Rechazada";
+  fecha_solicitud: string;
+  fecha_respuesta: string | null;
+  respondida_por: "Residente" | "Guardia" | null;
+  minutos_espera: number;
+  puede_llamar: boolean;
+  sin_telefono: boolean;
+  telefono_residente: string | null;
 }
 
 export interface TipoResidente {

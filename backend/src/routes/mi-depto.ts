@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { responderComoResidente } from "../services/visitaAutorizacion.service";
 import { actualizarResidente, crearResidente, listarResidentes, residentePerteneceAUnidad } from "../services/admin.service";
 import { requireRol } from "../middleware/auth";
 import { guardarImagenBase64 } from "../utils/imagenes";
@@ -72,20 +73,31 @@ miDeptoRouter.get("/visitas", soloResidente, async (req, res) => {
       .prepare(
         `SELECT v.id_visita, v.fecha_entrada, v.fecha_salida, v.patente, v.nombre_visita,
                 v.nombre_residente_visitado, e.numero_estacionamiento,
-                tv.gls_tipovisita, tp.gls_tipopermiso
+                tv.gls_tipovisita, tp.gls_tipopermiso,
+                va.estado AS estado_autorizacion
          FROM visita v
+         LEFT JOIN visita_autorizacion va ON va.visita_id_visita = v.id_visita
          JOIN tipo_visita tv ON tv.id_tipovisita = v.tipo_visita_id_tipovisita
          JOIN tipo_permiso_visita tp ON tp.id_tipopermiso = v.tipo_permiso_id_tipopermiso
          LEFT JOIN estacionamiento e ON e.id_estacionamiento = v.estacionamiento_id_estacionamiento
          WHERE v.unidad_id_unidad = ? AND v.condominio_id_condominio = ? AND v.tipo_ocupante = 'Visita'
            AND (v.residente_visitado_usuario_id IS NULL OR v.residente_coincide = 0 OR v.residente_visitado_usuario_id = ?)
-         ORDER BY (v.fecha_salida IS NULL) DESC, v.fecha_entrada DESC
+         ORDER BY (va.estado = 'Pendiente') DESC, (v.fecha_salida IS NULL) DESC, v.fecha_entrada DESC
          LIMIT 100`
       )
       .all(unidadId, req.guardia!.condominio_id_condominio!, req.guardia!.id_usuario);
     res.json(filas);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Ronda 80: el residente autoriza o rechaza una visita que viene a verlo.
+miDeptoRouter.post("/visitas/:id/responder", soloResidente, async (req, res) => {
+  try {
+    res.json(await responderComoResidente(Number(req.params.id), req.guardia!.id_usuario, String(req.body?.accion ?? "")));
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
 });
 
@@ -166,6 +178,7 @@ miDeptoRouter.patch("/residentes/:id", soloResidente, async (req, res) => {
       apellido_paterno,
       apellido_materno,
       nacionalidad_id_nacionalidad,
+      telefono,
       foto,
     } = req.body;
     // Deliberadamente NO se aceptan acá flg_comite ni flg_propietario: el
@@ -200,6 +213,7 @@ miDeptoRouter.patch("/residentes/:id", soloResidente, async (req, res) => {
         // Ronda 77, a pedido explícito del usuario: mismo criterio ('in
         // req.body') que rut/fecha_nacimiento/profesion.
         nombres: "nombres" in req.body ? nombres : undefined,
+        telefono: "telefono" in req.body ? telefono : undefined,
         apellido_paterno: "apellido_paterno" in req.body ? apellido_paterno : undefined,
         apellido_materno: "apellido_materno" in req.body ? apellido_materno : undefined,
         nacionalidad_id_nacionalidad:

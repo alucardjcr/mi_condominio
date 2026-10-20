@@ -243,7 +243,7 @@ export async function listarResidentes(condominioId: number, unidadId?: number) 
                        un.numero_unidad, tb.nombre_torre,
                        rd.id_residentediscapacitado, rd.numero_carnet,
                        u.tipo_residente_id_tiporesidente, tr.gls_tiporesidente,
-                       rp.rut, rp.fecha_nacimiento, rp.profesion, rp.foto_url,
+                       rp.rut, rp.fecha_nacimiento, rp.profesion, rp.foto_url, rp.telefono,
                        rp.nombres, rp.apellido_paterno, rp.apellido_materno,
                        rp.nacionalidad_id_nacionalidad, nac.gls_nacionalidad
                 FROM usuario u
@@ -283,6 +283,9 @@ export interface PerfilResidenteInput {
   apellido_paterno?: string | null;
   apellido_materno?: string | null;
   nacionalidad_id_nacionalidad?: number | null;
+  // Ronda 80: teléfono de contacto (el guardia lo usa para llamar al residente
+  // cuando no responde a una autorización de visita).
+  telefono?: string | null;
 }
 
 async function actualizarPerfilResidente(idUsuario: number, input: PerfilResidenteInput) {
@@ -294,12 +297,13 @@ async function actualizarPerfilResidente(idUsuario: number, input: PerfilResiden
     input.nombres !== undefined ||
     input.apellido_paterno !== undefined ||
     input.apellido_materno !== undefined ||
-    input.nacionalidad_id_nacionalidad !== undefined;
+    input.nacionalidad_id_nacionalidad !== undefined ||
+    input.telefono !== undefined;
   if (!tocaAlgo) return;
 
   const existente = (await db
     .prepare(
-      `SELECT id_residenteperfil, rut, fecha_nacimiento, profesion, foto_url, nombres, apellido_paterno, apellido_materno, nacionalidad_id_nacionalidad
+      `SELECT id_residenteperfil, rut, fecha_nacimiento, profesion, foto_url, nombres, apellido_paterno, apellido_materno, nacionalidad_id_nacionalidad, telefono
        FROM residente_perfil WHERE usuario_id_usuario = ?`
     )
     .get(idUsuario)) as
@@ -313,6 +317,7 @@ async function actualizarPerfilResidente(idUsuario: number, input: PerfilResiden
         apellido_paterno: string | null;
         apellido_materno: string | null;
         nacionalidad_id_nacionalidad: number | null;
+        telefono: string | null;
       }
     | undefined;
 
@@ -326,20 +331,22 @@ async function actualizarPerfilResidente(idUsuario: number, input: PerfilResiden
   const nacionalidadId =
     input.nacionalidad_id_nacionalidad !== undefined ? input.nacionalidad_id_nacionalidad : existente?.nacionalidad_id_nacionalidad ?? null;
 
+  const telefono = input.telefono !== undefined ? (input.telefono ? String(input.telefono).trim() || null : null) : existente?.telefono ?? null;
+
   if (existente) {
     await db
       .prepare(
-        `UPDATE residente_perfil SET rut = ?, fecha_nacimiento = ?, profesion = ?, foto_url = ?, nombres = ?, apellido_paterno = ?, apellido_materno = ?, nacionalidad_id_nacionalidad = ?
+        `UPDATE residente_perfil SET rut = ?, fecha_nacimiento = ?, profesion = ?, foto_url = ?, nombres = ?, apellido_paterno = ?, apellido_materno = ?, nacionalidad_id_nacionalidad = ?, telefono = ?
          WHERE id_residenteperfil = ?`
       )
-      .run(rut, fechaNacimiento, profesion, fotoUrl, nombres, apellidoPaterno, apellidoMaterno, nacionalidadId, existente.id_residenteperfil);
+      .run(rut, fechaNacimiento, profesion, fotoUrl, nombres, apellidoPaterno, apellidoMaterno, nacionalidadId, telefono, existente.id_residenteperfil);
   } else {
     await db
       .prepare(
-        `INSERT INTO residente_perfil (usuario_id_usuario, rut, fecha_nacimiento, profesion, foto_url, nombres, apellido_paterno, apellido_materno, nacionalidad_id_nacionalidad)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO residente_perfil (usuario_id_usuario, rut, fecha_nacimiento, profesion, foto_url, nombres, apellido_paterno, apellido_materno, nacionalidad_id_nacionalidad, telefono)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .run(idUsuario, rut, fechaNacimiento, profesion, fotoUrl, nombres, apellidoPaterno, apellidoMaterno, nacionalidadId);
+      .run(idUsuario, rut, fechaNacimiento, profesion, fotoUrl, nombres, apellidoPaterno, apellidoMaterno, nacionalidadId, telefono);
   }
 }
 
@@ -440,6 +447,7 @@ export async function actualizarResidente(
     apellido_paterno?: string | null;
     apellido_materno?: string | null;
     nacionalidad_id_nacionalidad?: number | null;
+    telefono?: string | null;
   }
 ) {
   // Ronda 77: si viene cualquier parte del nombre, se recompone
@@ -526,6 +534,7 @@ export async function actualizarResidente(
     apellido_paterno: input.apellido_paterno,
     apellido_materno: input.apellido_materno,
     nacionalidad_id_nacionalidad: input.nacionalidad_id_nacionalidad,
+    telefono: input.telefono,
   });
   return db
     .prepare(

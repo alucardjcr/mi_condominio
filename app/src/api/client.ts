@@ -83,6 +83,7 @@ import {
   EstacionamientoAdmin,
   TipoEstacionamiento,
   EstadoEstacionamiento,
+  AutorizacionVisitaGuardia,
   MisDatos,
   TipoSolicitudArco,
   SolicitudArco,
@@ -385,6 +386,7 @@ export const adminActualizarResidente = (
     apellido_paterno?: string | null;
     apellido_materno?: string | null;
     nacionalidad_id_nacionalidad?: number | null;
+    telefono?: string | null;
   }
 ) => send<ResidenteAdmin>(`/admin/residentes/${id}`, "PATCH", token, input);
 
@@ -560,6 +562,16 @@ export const getMiAdministrador = (token: string) =>
 
 export const getMisVisitas = (token: string) => get<VisitaHogar[]>(`/mi-depto/visitas`, token);
 
+// Ronda 80: el residente autoriza o rechaza una visita que viene a verlo.
+export const responderVisita = (token: string, idVisita: number, accion: "autorizar" | "rechazar") =>
+  send<{ id_visita: number; estado: string }>(`/mi-depto/visitas/${idVisita}/responder`, "POST", token, { accion });
+
+// Ronda 80: el guardia ve el estado de las autorizaciones y decide si el residente no responde.
+export const getAutorizacionesVisita = (token: string) => get<AutorizacionVisitaGuardia[]>(`/visitas/autorizaciones`, token);
+
+export const decidirVisita = (token: string, idVisita: number, accion: "permitir" | "denegar") =>
+  send<{ id_visita: number; estado: string }>(`/visitas/${idVisita}/decision`, "POST", token, { accion });
+
 export const getMisResidentesDelHogar = (token: string) => get<ResidenteAdmin[]>(`/mi-depto/residentes`, token);
 
 export const crearResidenteDelHogar = (
@@ -593,6 +605,7 @@ export const actualizarResidenteDelHogar = (
     apellido_paterno?: string | null;
     apellido_materno?: string | null;
     nacionalidad_id_nacionalidad?: number | null;
+    telefono?: string | null;
     foto?: string;
   }
 ) => send<ResidenteAdmin>(`/mi-depto/residentes/${id}`, "PATCH", token, input);

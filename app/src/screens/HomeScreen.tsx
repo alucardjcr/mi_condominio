@@ -672,6 +672,7 @@ export default function HomeScreen({ navigation }: any) {
         <>
           <View style={styles.gridMenu}>
             <CajaMenu icono="🚪" label="Visitas" onPress={() => navigation.navigate("VisitasMenu")} />
+            <CajaMenu icono="🛎️" label="Visitas por autorizar" onPress={() => navigation.navigate("VisitasPorAutorizar")} />
             <CajaMenu icono="🔎" label="Consulta patente" onPress={() => navigation.navigate("ConsultaPatente")} />
             <CajaMenu icono="📦" label="Paquetes" onPress={() => navigation.navigate("PaquetePendientes")} />
             <CajaMenu icono="📅" label="Reserva área común" onPress={() => navigation.navigate("GuardiaReservas")} />

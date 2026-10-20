@@ -114,6 +114,7 @@ export default function AdminResidentesScreen() {
   const [nombresEditar, setNombresEditar] = useState("");
   const [apellidoPaternoEditar, setApellidoPaternoEditar] = useState("");
   const [apellidoMaternoEditar, setApellidoMaternoEditar] = useState("");
+  const [telefonoEditar, setTelefonoEditar] = useState("");
   const [nacionalidadEditarSel, setNacionalidadEditarSel] = useState<OpcionSelect | null>(null);
   const [guardandoPerfil, setGuardandoPerfil] = useState(false);
 
@@ -259,6 +260,7 @@ export default function AdminResidentesScreen() {
     setNombresEditar(r.nombres ?? "");
     setApellidoPaternoEditar(r.apellido_paterno ?? "");
     setApellidoMaternoEditar(r.apellido_materno ?? "");
+    setTelefonoEditar(r.telefono ?? "");
     setNacionalidadEditarSel(nacionalidadComoOpcion(r.nacionalidad_id_nacionalidad, r.gls_nacionalidad));
   };
 
@@ -273,6 +275,7 @@ export default function AdminResidentesScreen() {
         nombres: nombresEditar.trim() || null,
         apellido_paterno: apellidoPaternoEditar.trim() || null,
         apellido_materno: apellidoMaternoEditar.trim() || null,
+        telefono: telefonoEditar.trim() || null,
         nacionalidad_id_nacionalidad: nacionalidadEditarSel ? Number(nacionalidadEditarSel.id) : null,
       });
       setPerfilEnEdicion(null);
@@ -807,6 +810,13 @@ export default function AdminResidentesScreen() {
                 placeholder="Apellido materno (opcional)"
                 value={apellidoMaternoEditar}
                 onChangeText={setApellidoMaternoEditar}
+              />
+              <TextInput placeholderTextColor={colors.textMutedOnNavy}
+                style={styles.input}
+                placeholder="Teléfono (opcional)"
+                value={telefonoEditar}
+                onChangeText={setTelefonoEditar}
+                keyboardType="phone-pad"
               />
               <SelectModal
                 label="Nacionalidad"

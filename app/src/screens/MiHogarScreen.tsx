@@ -86,6 +86,7 @@ export default function MiHogarScreen({ navigation }: any) {
   const [nombresEditar, setNombresEditar] = useState("");
   const [apPaternoEditar, setApPaternoEditar] = useState("");
   const [apMaternoEditar, setApMaternoEditar] = useState("");
+  const [telefonoEditar, setTelefonoEditar] = useState("");
   const [nacionalidadEditarSel, setNacionalidadEditarSel] = useState<OpcionSelect | null>(null);
   const [profesionEditarSel, setProfesionEditarSel] = useState<OpcionSelect | null>(null);
   // RUT del perfil que se está editando (solo se puede escribir si todavía
@@ -198,6 +199,7 @@ export default function MiHogarScreen({ navigation }: any) {
     setNombresEditar(r.nombres ?? "");
     setApPaternoEditar(r.apellido_paterno ?? "");
     setApMaternoEditar(r.apellido_materno ?? "");
+    setTelefonoEditar(r.telefono ?? "");
     setNacionalidadEditarSel(r.nacionalidad_id_nacionalidad && r.gls_nacionalidad ? { id: r.nacionalidad_id_nacionalidad, label: r.gls_nacionalidad } : null);
     const prof = r.profesion ? profesiones.find((p) => p.gls_profesion === r.profesion) : null;
     setProfesionEditarSel(r.profesion ? { id: prof ? prof.id_profesion : 0, label: r.profesion } : null);
@@ -238,6 +240,7 @@ export default function MiHogarScreen({ navigation }: any) {
         nombres: nombresEditar.trim(),
         apellido_paterno: apPaternoEditar.trim(),
         apellido_materno: apMaternoEditar.trim() || null,
+        telefono: telefonoEditar.trim() || null,
         nacionalidad_id_nacionalidad: nacionalidadEditarSel ? Number(nacionalidadEditarSel.id) : null,
         foto: fotoEditar || undefined,
       });
@@ -500,6 +503,9 @@ export default function MiHogarScreen({ navigation }: any) {
               </Campo>
               <Campo label="Apellido materno (opcional)">
                 <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Apellido materno" placeholderTextColor={colors.textMutedOnNavy} value={apMaternoEditar} onChangeText={setApMaternoEditar} />
+              </Campo>
+              <Campo label="Teléfono (para que portería pueda llamarte)">
+                <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Ej: +56 9 1234 5678" placeholderTextColor={colors.textMutedOnNavy} keyboardType="phone-pad" value={telefonoEditar} onChangeText={setTelefonoEditar} />
               </Campo>
               <SelectModal
                 label="Nacionalidad"

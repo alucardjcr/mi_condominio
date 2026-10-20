@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { getMisVisitas } from "../api/client";
+import { getMisVisitas, responderVisita } from "../api/client";
 import { VisitaHogar } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import { formatearFechaHoraISO } from "../utils/fechas";
@@ -35,8 +35,37 @@ export default function MisVisitasScreen() {
   useFocusEffect(
     useCallback(() => {
       cargar();
-    }, [cargar])
+      // Ronda 80: se refresca sola para que una visita por autorizar aparezca al toque.
+      const id = setInterval(() => {
+        if (token) getMisVisitas(token).then(setVisitas).catch(() => {});
+      }, 15000);
+      return () => clearInterval(id);
+    }, [cargar, token])
   );
+
+  const [respondiendo, setRespondiendo] = useState<number | null>(null);
+  const responder = async (v: VisitaHogar, accion: "autorizar" | "rechazar") => {
+    if (!token) return;
+    const hacer = async () => {
+      setRespondiendo(v.id_visita);
+      try {
+        await responderVisita(token, v.id_visita, accion);
+        await cargar(true);
+      } catch (e: any) {
+        Alert.alert("Error", e.message);
+      } finally {
+        setRespondiendo(null);
+      }
+    };
+    if (accion === "rechazar") {
+      Alert.alert("Rechazar visita", `¿Confirmas que ${v.nombre_visita} NO debe ingresar?`, [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Rechazar", style: "destructive", onPress: hacer },
+      ]);
+    } else {
+      hacer();
+    }
+  };
 
   if (cargando) {
     return (
@@ -46,7 +75,7 @@ export default function MisVisitasScreen() {
     );
   }
 
-  const adentro = visitas.filter((v) => !v.fecha_salida).length;
+  const adentro = visitas.filter((v) => !v.fecha_salida && v.estado_autorizacion !== "Pendiente").length;
 
   return (
     <ScrollView
@@ -62,7 +91,9 @@ export default function MisVisitasScreen() {
       {visitas.length === 0 && <Text style={styles.vacio}>Todavía no hay visitas registradas en tu depto.</Text>}
 
       {visitas.map((v) => {
-        const dentro = !v.fecha_salida;
+        const pendiente = v.estado_autorizacion === "Pendiente";
+        const rechazada = v.estado_autorizacion === "Rechazada";
+        const dentro = !v.fecha_salida && !pendiente;
         const vehicular = v.gls_tipovisita?.toLowerCase().startsWith("veh");
         return (
           <View key={v.id_visita} style={styles.card}>
@@ -70,8 +101,10 @@ export default function MisVisitasScreen() {
               <Text style={styles.nombre} numberOfLines={2}>
                 {v.nombre_visita}
               </Text>
-              <View style={[styles.badge, { backgroundColor: dentro ? "#DCFCE7" : colors.white }]}>
-                <Text style={styles.badgeTexto}>{dentro ? "Dentro ahora" : "Ya se retiró"}</Text>
+              <View style={[styles.badge, { backgroundColor: pendiente ? "#FDE9C8" : rechazada ? "#FEE2E2" : dentro ? "#DCFCE7" : colors.white }]}>
+                <Text style={styles.badgeTexto}>
+                  {pendiente ? "Por autorizar" : rechazada ? "Rechazada" : dentro ? "Dentro ahora" : "Ya se retiró"}
+                </Text>
               </View>
             </View>
             <Text style={styles.detalle}>
@@ -79,8 +112,26 @@ export default function MisVisitasScreen() {
               {vehicular && v.patente ? `  ·  Patente ${v.patente}` : ""}
               {vehicular && v.numero_estacionamiento ? `  ·  Estac. ${v.numero_estacionamiento}` : ""}
             </Text>
-            <Text style={styles.detalle}>Entró: {formatearFechaHoraISO(v.fecha_entrada)}</Text>
-            {!dentro && <Text style={styles.detalle}>Salió: {formatearFechaHoraISO(v.fecha_salida)}</Text>}
+            <Text style={styles.detalle}>{pendiente ? "Llegó a portería" : "Entró"}: {formatearFechaHoraISO(v.fecha_entrada)}</Text>
+            {!dentro && !pendiente && !rechazada && <Text style={styles.detalle}>Salió: {formatearFechaHoraISO(v.fecha_salida)}</Text>}
+            {pendiente && (
+              <View style={styles.accionesFila}>
+                <TouchableOpacity
+                  style={[styles.botonAutorizar, respondiendo === v.id_visita && { opacity: 0.5 }]}
+                  disabled={respondiendo === v.id_visita}
+                  onPress={() => responder(v, "autorizar")}
+                >
+                  <Text style={styles.botonAutorizarTexto}>✅ Autorizar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.botonRechazar, respondiendo === v.id_visita && { opacity: 0.5 }]}
+                  disabled={respondiendo === v.id_visita}
+                  onPress={() => responder(v, "rechazar")}
+                >
+                  <Text style={styles.botonRechazarTexto}>⛔ Rechazar</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             {v.nombre_residente_visitado ? <Text style={styles.detalle}>Visitó a: {v.nombre_residente_visitado}</Text> : null}
           </View>
         );
@@ -101,4 +152,17 @@ const styles = StyleSheet.create({
   badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
   badgeTexto: { fontSize: 11, fontWeight: "700", color: colors.textDark },
   detalle: { color: colors.textMutedOnNavy, fontWeight: "700", marginTop: 4, fontSize: 12 },
+  accionesFila: { flexDirection: "row", gap: 10, marginTop: 10 },
+  botonAutorizar: {
+    flex: 1,
+    backgroundColor: colors.botonNaranja,
+    borderWidth: 1,
+    borderColor: colors.botonNaranjaBorde,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  botonAutorizarTexto: { color: colors.botonNaranjaTexto, fontWeight: "800" },
+  botonRechazar: { flex: 1, borderWidth: 1, borderColor: colors.danger, borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  botonRechazarTexto: { color: colors.danger, fontWeight: "800" },
 });

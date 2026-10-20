@@ -4,6 +4,7 @@ import {
   registrarSalida,
   listarVisitasActivas,
 } from "../services/estacionamientoVisita.service";
+import { listarAutorizacionesGuardia, decidirComoGuardia } from "../services/visitaAutorizacion.service";
 import { requireAuth, requireRol, requireCondominioAccess, requireSuscripcionAlDia } from "../middleware/auth";
 
 export const visitasRouter = Router();
@@ -109,5 +110,27 @@ visitasRouter.get("/activas", async (req, res) => {
     res.json(visitas);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Ronda 80: GET /visitas/autorizaciones -> visitas esperando la respuesta
+// del residente (y las resueltas hace poco), para el guardia.
+visitasRouter.get("/autorizaciones", async (req, res) => {
+  try {
+    res.json(await listarAutorizacionesGuardia(req.guardia!.condominio_id_condominio!));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /visitas/:id/decision { accion: "permitir" | "denegar" } -> el guardia
+// decide cuando el residente no responde ("permitir" solo tras 5 minutos).
+visitasRouter.post("/:id/decision", async (req, res) => {
+  try {
+    res.json(
+      await decidirComoGuardia(Number(req.params.id), req.guardia!.condominio_id_condominio!, req.guardia!.id_usuario, String(req.body?.accion ?? ""))
+    );
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
 });

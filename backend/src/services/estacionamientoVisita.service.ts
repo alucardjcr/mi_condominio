@@ -1,6 +1,7 @@
 import { db, withTransaction, DbLike } from "../db/client";
 import { crearNotificacionParaUnidad, crearNotificacionParaUsuario, enviarPushesDeNotificacion, GLS_TIPONOTIF_VISITA } from "./notificaciones.service";
 import { verificarAlertaVetado } from "./vetados.service";
+import { crearSolicitudAutorizacion } from "./visitaAutorizacion.service";
 
 const GLS_ESTADO_DISPONIBLE = "Disponible";
 const GLS_ESTADO_OCUPADO = "Ocupado";
@@ -140,12 +141,18 @@ async function registrarEntradaPeatonal(conn: DbLike, input: RegistrarEntradaInp
   // todos los residentes activos con acceso de ese depto.
   // Privacidad: si el guardia marcó a un residente concreto, solo a él le
   // llega el aviso; si no hay residente marcado/coincidente, a toda la unidad.
+  // Ronda 80: con residente concreto marcado, el residente debe AUTORIZAR o
+  // RECHAZAR la visita desde la app (queda "Pendiente").
+  const requiereAutorizacion1 = !!(input.residente_visitado_usuario_id && residenteCoincide);
+  if (requiereAutorizacion1) await crearSolicitudAutorizacion(conn, idVisita);
   const paramsNotif1 = {
     condominioId: input.condominio_id_condominio,
     tipoGls: GLS_TIPONOTIF_VISITA,
-    titulo: "Visita registrada",
-    cuerpo: `${input.nombre_visita} está ingresando a tu depto (visita peatonal).`,
-    referenciaTipo: "visita",
+    titulo: requiereAutorizacion1 ? "Visita por autorizar" : "Visita registrada",
+    cuerpo: requiereAutorizacion1
+      ? `${input.nombre_visita} está en portería y quiere visitarte (visita peatonal). Autoriza o rechaza su ingreso en Visitas.`
+      : `${input.nombre_visita} está ingresando a tu depto (visita peatonal).`,
+    referenciaTipo: "visita" as const,
     referenciaId: idVisita,
     creadoPorUsuarioId: guardiaId,
   };
@@ -161,6 +168,7 @@ async function registrarEntradaPeatonal(conn: DbLike, input: RegistrarEntradaInp
     visita: await getVisitaConDetalle(conn, idVisita),
     cupoAsignado: false,
     residenteCoincide: !!residenteCoincide,
+    autorizacion: requiereAutorizacion1 ? "Pendiente" : null,
     cargoInmediato: null as any,
     idNotificacion,
     alertaVetado,
@@ -352,13 +360,19 @@ export async function registrarEntrada(input: RegistrarEntradaInput, guardiaId: 
     // verdad (tipoOcupante === "Visita"); si es un residente usando el cupo
     // de discapacitados a nombre propio, no hay "visita" que avisar.
     let idNotificacion: number | null = null;
+    let requiereAutorizacion2 = false;
     if (tipoOcupante === "Visita") {
+      // Ronda 80: autorización del residente marcado (queda "Pendiente").
+      requiereAutorizacion2 = !!(residenteVisitadoUsuarioId && residenteCoincide);
+      if (requiereAutorizacion2) await crearSolicitudAutorizacion(tx, idVisita);
       const paramsNotif2 = {
         condominioId: input.condominio_id_condominio,
         tipoGls: GLS_TIPONOTIF_VISITA,
-        titulo: "Visita registrada",
-        cuerpo: `${nombreVisita} está ingresando a tu depto.`,
-        referenciaTipo: "visita",
+        titulo: requiereAutorizacion2 ? "Visita por autorizar" : "Visita registrada",
+        cuerpo: requiereAutorizacion2
+          ? `${nombreVisita} está en portería y quiere visitarte. Autoriza o rechaza su ingreso en Visitas.`
+          : `${nombreVisita} está ingresando a tu depto.`,
+        referenciaTipo: "visita" as const,
         referenciaId: idVisita,
         creadoPorUsuarioId: guardiaId,
       };
@@ -382,6 +396,7 @@ export async function registrarEntrada(input: RegistrarEntradaInput, guardiaId: 
       visita: await getVisitaConDetalle(tx, idVisita),
       cupoAsignado: !!cupo,
       residenteCoincide: !!residenteCoincide,
+      autorizacion: requiereAutorizacion2 ? "Pendiente" : null,
       cargoInmediato,
       idNotificacion,
       alertaVetado,

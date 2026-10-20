@@ -22,6 +22,7 @@ import CambiarCondominioScreen from "./src/screens/CambiarCondominioScreen";
 import MisDatosScreen from "./src/screens/MisDatosScreen";
 import QuienVieneHoyScreen from "./src/screens/QuienVieneHoyScreen";
 import HomeScreen from "./src/screens/HomeScreen";
+import VisitasPorAutorizarScreen from "./src/screens/VisitasPorAutorizarScreen";
 import EntradaScreen from "./src/screens/EntradaScreen";
 import SalidaScreen from "./src/screens/SalidaScreen";
 import VisitasMenuScreen from "./src/screens/VisitasMenuScreen";
@@ -354,6 +355,7 @@ function AppNavigator() {
                 options={{ title: "Registrar salida" }}
               />
               <Stack.Screen name="Entrada" component={EntradaScreen} options={{ title: "Registrar entrada" }} />
+              <Stack.Screen name="VisitasPorAutorizar" component={VisitasPorAutorizarScreen} options={{ title: "Visitas por autorizar" }} />
               <Stack.Screen name="Salida" component={SalidaScreen} options={{ title: "Registrar salida" }} />
               <Stack.Screen
                 name="ConsultaPatente"

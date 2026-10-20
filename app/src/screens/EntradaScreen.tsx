@@ -174,12 +174,15 @@ export default function EntradaScreen({ navigation, route }: any) {
           );
         }
 
+        const pendiente = resultado.autorizacion === "Pendiente";
         Alert.alert(
-          "Entrada peatonal registrada",
-          `${nombreVisita} quedó registrado ingresando a pie a ${torreSel.label} ${unidadSel.label}. Marcar su salida en el sistema es opcional.`
+          pendiente ? "Esperando autorización" : "Entrada peatonal registrada",
+          pendiente
+            ? `Se avisó a ${nombreResidenteFinal} para que autorice o rechace a ${nombreVisita}. NO lo dejes pasar hasta que responda. Si no contesta en 5 minutos podrás llamarlo desde esta pantalla.`
+            : `${nombreVisita} quedó registrado ingresando a pie a ${torreSel.label} ${unidadSel.label}. Marcar su salida en el sistema es opcional.`
         );
         limpiarFormulario();
-        navigation.navigate("Home");
+        navigation.navigate(pendiente ? "VisitasPorAutorizar" : "Home");
       } catch (e: any) {
         Alert.alert("Error", e.message);
       } finally {
@@ -270,9 +273,13 @@ export default function EntradaScreen({ navigation, route }: any) {
         );
       }
 
-      Alert.alert("Entrada registrada", mensaje);
+      const pendienteVeh = resultado.autorizacion === "Pendiente";
+      if (pendienteVeh) {
+        mensaje += `\n\nSe avisó a ${nombreResidenteFinal} para que autorice o rechace la visita. NO la dejes pasar hasta que responda. Si no contesta en 5 minutos podrás llamarlo desde esta pantalla.`;
+      }
+      Alert.alert(pendienteVeh ? "Esperando autorización" : "Entrada registrada", mensaje);
       limpiarFormulario();
-      navigation.navigate("Home");
+      navigation.navigate(pendienteVeh ? "VisitasPorAutorizar" : "Home");
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
